@@ -1,5 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.22.2)
 project(division_engine_c)
+set(CMAKE_C_STANDARD 11)
 
 include(FetchContent)
 
@@ -12,6 +13,7 @@ FetchContent_MakeAvailable(glfw)
 
 set(SOURCES
     src/window.c
+    src/shader_program.c
     lib/glad/src/gl.c
 )
 set(FILES_TO_COPY ${GLFW_BINARY_DIR}/src/libglfw3.a)
