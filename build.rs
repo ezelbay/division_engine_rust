@@ -24,4 +24,16 @@ fn main() {
     for lib_name in dynamic_link_libs {
         println!("cargo:rustc-link-lib=dylib={}", lib_name);
     }
+
+    fs_extra::dir::remove(build_path.join("resources"))
+        .expect("Failed to delete resources folder");
+
+    let mut copy_options = fs_extra::dir::CopyOptions::new();
+    copy_options.copy_inside = true;
+    fs_extra::dir::copy(
+        Path::new("resources"),
+        build_path,
+        &copy_options
+    ).expect("Failed to copy resources folder");
+
 }

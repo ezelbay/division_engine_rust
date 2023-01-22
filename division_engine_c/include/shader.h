@@ -7,4 +7,4 @@ typedef enum {
     DivisionEngineShaderFragment = 1
 } DivisionEngineShaderType;
 
-int32_t create_shader(const char* path, DivisionEngineShaderType type);
+int32_t division_engine_shader_create(const char* path, DivisionEngineShaderType type);

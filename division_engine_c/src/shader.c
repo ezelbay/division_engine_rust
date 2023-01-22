@@ -1,9 +1,9 @@
-#include "shader_program.h"
+#include "shader.h"
 
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 typedef struct {
     GLuint shader_handle;
@@ -18,7 +18,7 @@ static bool check_program_status(GLuint programHandle);
 static void get_program_info_log(GLuint program_handle, char** error_ptr);
 static int shader_type_to_gl_type(DivisionEngineShaderType shaderType);
 
-int32_t create_shader(const char* path, DivisionEngineShaderType type) {
+int32_t division_engine_shader_create(const char* path, DivisionEngineShaderType type) {
     GLuint program_handle = glCreateProgram();
     int gl_shader_type = shader_type_to_gl_type(type);
     if (gl_shader_type < 0) {
@@ -66,6 +66,7 @@ int create_shader_from_spirv(const char* path, GLuint gl_shader_type) {
     }
 
     glShaderBinary(1, &shader, GL_SHADER_BINARY_FORMAT_SPIR_V_ARB, shader_data, (int) shader_file_size);
+    free(shader_data);
     GLint binaryLoadResult = 0;
     glGetShaderiv(shader, GL_SPIR_V_BINARY, &binaryLoadResult);
     if (binaryLoadResult == GL_FALSE) {
@@ -86,6 +87,7 @@ int create_shader_from_spirv(const char* path, GLuint gl_shader_type) {
     glGetShaderInfoLog(shader, error_length, &error_length, error_log_data);
 
     fprintf(stderr, "Failed to specialize shader SPIR-V binary. Info log: \n%s\n", error_log_data);
+    free(error_log_data);
     return -1;
 }
 
@@ -97,6 +99,7 @@ bool check_program_status(GLuint programHandle) {
         char* error;
         get_program_info_log(programHandle, &error);
         fprintf(stderr, "Failed to link a shader program. Info log: \n%s", error);
+        free(error);
         return false;
     }
 
@@ -108,6 +111,7 @@ bool check_program_status(GLuint programHandle) {
         char* error;
         get_program_info_log(programHandle, &error);
         fprintf(stderr, "Failed to validate a shader program. Info log: \n%s", error);
+        free(error);
         return false;
     }
 

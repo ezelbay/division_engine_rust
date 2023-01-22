@@ -7,5 +7,6 @@ edition = "2021"
 
 [build-dependencies]
 cmake = "0.1.49"
+fs_extra = "1.2.0"
 
 [dependencies]

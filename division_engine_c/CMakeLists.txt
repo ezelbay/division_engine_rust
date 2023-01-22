@@ -13,8 +13,8 @@ FetchContent_MakeAvailable(glfw)
 
 set(SOURCES
     src/window.c
-    src/shader_program.c
-    lib/glad/src/gl.c
+    src/shader.c
+    lib/glad/include/glad/gl.h
 )
 set(FILES_TO_COPY ${GLFW_BINARY_DIR}/src/libglfw3.a)
 
