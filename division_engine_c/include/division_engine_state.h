@@ -1,5 +1,5 @@
 #pragma once
 
-struct {
-    float deltaTimeSec;
-} typedef DivisionEngineState;
+typedef struct {
+    double delta_time;
+} DivisionEngineState;

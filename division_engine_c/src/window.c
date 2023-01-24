@@ -1,13 +1,15 @@
 #define GLFW_INCLUDE_NONE
 #define GLAD_GL_IMPLEMENTATION
+#include <time.h>
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
-#include <division_engine_state.h>
-#include <time.h>
 
 #include "window.h"
 
-bool division_engine_init(const DivisionEngineSettings* settings) {
+bool division_engine_create_window(
+    const DivisionEngineSettings* settings,
+    DivisionEngineHandler* output_handler
+) {
     if (!glfwInit()) {
         settings->error_callback(0, "Failed to init GLFW");
         return false;
@@ -31,21 +33,32 @@ bool division_engine_init(const DivisionEngineSettings* settings) {
         return false;
     }
 
-    DivisionEngineState state;
-    time_t last_frame_time, current_time;
-    time(&last_frame_time);
+    output_handler->_internal_data = window;
+    return true;
+}
 
+void division_engine_run_event_loop(DivisionEngineHandler handler, DivisionEngineUpdateFunc update_callback) {
+    GLFWwindow* window = (GLFWwindow*) handler._internal_data;
+    DivisionEngineState state;
+    double last_frame_time, current_time;
+
+    last_frame_time = glfwGetTime();
     while(!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(0,1,0,1);
 
-        time(&current_time);
-        state.deltaTimeSec = (float) (current_time - last_frame_time);
-        time(&last_frame_time);
+        current_time = glfwGetTime();
+        state.delta_time = current_time - last_frame_time;
+        last_frame_time = current_time;
+
+        update_callback(state);
 
         glfwPollEvents();
         glfwSwapBuffers(window);
     }
+}
 
-    return true;
+void division_engine_destroy_window(DivisionEngineHandler handler) {
+    glfwDestroyWindow((GLFWwindow*) handler._internal_data);
+    glfwTerminate();
 }

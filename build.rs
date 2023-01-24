@@ -4,7 +4,7 @@ use std::path::Path;
 
 fn main() {
     let static_link_libs = [ "glfw3" ];
-    let dynamic_link_libs = [ "X11"];
+    let dynamic_link_libs = [ "X11" ];
     let project_name = "division_engine_c";
     let out_dir = env::var("OUT_DIR").unwrap();
 
