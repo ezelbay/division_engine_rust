@@ -33,5 +33,4 @@ unsafe extern "C" fn error_callback(error_code: i32, message: *const c_char) {
 }
 
 unsafe extern "C" fn update_callback(state: DivisionEngineState) {
-    println!("Delta time is: {}", state.delta_time);
 }

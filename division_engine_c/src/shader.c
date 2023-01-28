@@ -13,7 +13,7 @@ typedef struct {
 static DivisionEngineShaderProgram_* programs_;
 static int32_t programs_count_;
 
-static int create_shader_from_spirv(const char* path, GLuint gl_shader_type);
+static int create_shader_from_source(const char* path, GLuint gl_shader_type);
 static bool check_program_status(GLuint programHandle);
 static void get_program_info_log(GLuint program_handle, char** error_ptr);
 static int shader_type_to_gl_type(DivisionEngineShaderType shaderType);
@@ -25,7 +25,7 @@ int32_t division_engine_shader_create(const char* path, DivisionEngineShaderType
         return -1;
     }
 
-    int shader_handle = create_shader_from_spirv(path, gl_shader_type);
+    int shader_handle = create_shader_from_source(path, gl_shader_type);
     if (shader_handle < 0) {
         return -1;
     }
@@ -41,52 +41,49 @@ int32_t division_engine_shader_create(const char* path, DivisionEngineShaderType
     return programIdx;
 }
 
-int create_shader_from_spirv(const char* path, GLuint gl_shader_type) {
-    GLuint shader = glCreateShader(gl_shader_type);
-    if (!shader) {
+int create_shader_from_source(const char* path, GLuint gl_shader_type) {
+    GLuint shader_handle = glCreateShader(gl_shader_type);
+    if (!shader_handle) {
         fprintf(stderr, "Failed to create a shader");
         return -1;
     }
 
-    FILE* shader_file_ptr = fopen(path, "rb");
+    FILE* shader_file_ptr = fopen(path, "rt");
     if (shader_file_ptr == NULL){
         fprintf(stderr, "Failed to open file by path %s", path);
         return -1;
     }
 
     fseek(shader_file_ptr, 0, SEEK_END);
-    size_t shader_file_size = ftell(shader_file_ptr);
+    int shader_file_size = (int) ftell(shader_file_ptr);
     rewind(shader_file_ptr);
 
-    void* shader_data = malloc(shader_file_size);
+    char* shader_data = (char*) malloc(shader_file_size);
     fread(shader_data, 1, shader_file_size, shader_file_ptr);
     if (ferror(shader_file_ptr)) {
         fprintf(stderr, "Failed to read file by path: %s", path);
+        fclose(shader_file_ptr);
+        free(shader_data);
         return -1;
     }
 
-    glShaderBinary(1, &shader, GL_SHADER_BINARY_FORMAT_SPIR_V_ARB, shader_data, (int) shader_file_size);
+    fclose(shader_file_ptr);
+    glShaderSource(shader_handle, 1, &shader_data, &shader_file_size);
+    glCompileShader(shader_handle);
     free(shader_data);
-    GLint binaryLoadResult = 0;
-    glGetShaderiv(shader, GL_SPIR_V_BINARY, &binaryLoadResult);
-    if (binaryLoadResult == GL_FALSE) {
-        fprintf(stderr, "Failed to load SPIR-V shader binary!");
-        return -1;
-    }
 
-    glSpecializeShaderARB(shader, "main", 0, NULL, NULL);
-    GLint compilationResult = 0;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &compilationResult);
-    if (compilationResult == GL_TRUE) {
-        return (int) shader;
+    GLint compile_result = 0;
+    glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &compile_result);
+    if (compile_result == GL_TRUE) {
+        return (int) shader_handle;
     }
 
     GLint error_length = 0;
-    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &error_length);
+    glGetShaderiv(shader_handle, GL_INFO_LOG_LENGTH, &error_length);
     char* error_log_data = malloc(error_length);
-    glGetShaderInfoLog(shader, error_length, &error_length, error_log_data);
+    glGetShaderInfoLog(shader_handle, error_length, &error_length, error_log_data);
 
-    fprintf(stderr, "Failed to specialize shader SPIR-V binary. Info log: \n%s\n", error_log_data);
+    fprintf(stderr, "Failed to compile shader source. Info log: \n%s\n", error_log_data);
     free(error_log_data);
     return -1;
 }
