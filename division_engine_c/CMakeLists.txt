@@ -15,7 +15,7 @@ set(SOURCES
     src/window.c
     src/shader.c
     lib/glad/include/glad/gl.h
-)
+    src/vertex_buffer.c)
 set(FILES_TO_COPY ${GLFW_BINARY_DIR}/src/libglfw3.a)
 
 add_library(division_engine_c STATIC ${SOURCES})

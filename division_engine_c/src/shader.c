@@ -5,40 +5,41 @@
 #include <stdlib.h>
 #include <glad/gl.h>
 
-typedef struct {
-    GLuint shader_handle;
-    GLuint program_handle;
-} DivisionEngineShaderProgram_;
+#include <list_utility.h>
 
-static DivisionEngineShaderProgram_* programs_;
-static int32_t programs_count_;
+DIVISION_LIST_DEFINE(GLuint)
+
+static List_GLuint programs_;
 
 static int create_shader_from_source(const char* path, GLuint gl_shader_type);
 static bool check_program_status(GLuint programHandle);
 static void get_program_info_log(GLuint program_handle, char** error_ptr);
 static int shader_type_to_gl_type(DivisionEngineShaderType shaderType);
 
-int32_t division_engine_shader_create(const char* path, DivisionEngineShaderType type) {
-    GLuint program_handle = glCreateProgram();
+int32_t division_engine_shader_create_program() {
+    GLuint gl_program_handle = glCreateProgram();
+
+    if (programs_.items == NULL) {
+        programs_ = DIVISION_LIST_CREATE(GLuint, 10);
+    }
+
+    DIVISION_LIST_APPEND(programs_, gl_program_handle);
+    return (int) programs_.length - 1;
+}
+
+bool division_engine_shader_attach_to_program(const char* path, DivisionEngineShaderType type, int32_t program_id) {
     int gl_shader_type = shader_type_to_gl_type(type);
     if (gl_shader_type < 0) {
-        return -1;
+        return false;
     }
 
     int shader_handle = create_shader_from_source(path, gl_shader_type);
     if (shader_handle < 0) {
-        return -1;
+        return false;
     }
 
-    glAttachShader(program_handle, shader_handle);
-    glLinkProgram(program_handle);
-    check_program_status(program_handle);
-
-    programs_ = realloc(programs_, sizeof(DivisionEngineShaderProgram_) * programs_count_++);
-    int32_t programIdx = programs_count_ - 1;
-    programs_[programIdx] = (DivisionEngineShaderProgram_) { shader_handle, program_handle };
-
-    return programIdx;
+    glAttachShader(programs_.items[program_id], shader_handle);
+    return true;
 }
 
 int create_shader_from_source(const char* path, GLuint gl_shader_type) {
@@ -88,6 +89,11 @@ int create_shader_from_source(const char* path, GLuint gl_shader_type) {
     return -1;
 }
 
+bool division_engine_shader_link_program(int32_t program_id) {
+    glLinkProgram(programs_.items[program_id]);
+    return check_program_status(programs_.items[program_id]);
+}
+
 bool check_program_status(GLuint programHandle) {
     GLint linkStatus;
     glGetProgramiv(programHandle, GL_LINK_STATUS, &linkStatus);
@@ -134,4 +140,8 @@ int shader_type_to_gl_type(DivisionEngineShaderType shaderType) {
             fprintf(stderr, "Unknown type of shader");
             return -1;
     }
+}
+
+void division_engine_shader_use_program(int32_t program_id) {
+    glUseProgram(programs_.items[program_id]);
 }

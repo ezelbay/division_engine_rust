@@ -44,8 +44,8 @@ void division_engine_run_event_loop(DivisionEngineHandler handler, DivisionEngin
 
     last_frame_time = glfwGetTime();
     while(!glfwWindowShouldClose(window)) {
-        glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(0,1,0,1);
+        glClear(GL_COLOR_BUFFER_BIT);
 
         current_time = glfwGetTime();
         state.delta_time = current_time - last_frame_time;

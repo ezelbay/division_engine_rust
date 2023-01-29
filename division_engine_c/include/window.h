@@ -2,8 +2,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <division_engine_settings.h>
-#include <division_engine_state.h>
+#include <settings.h>
+#include <state.h>
 
 typedef void(*DivisionEngineUpdateFunc)(DivisionEngineState);
 

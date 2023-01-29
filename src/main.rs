@@ -1,6 +1,16 @@
-use std::ffi::{CString, CStr, c_char};
+use std::ffi::{CString, CStr, c_char, c_ulong, c_long, c_float};
+use std::mem::size_of;
 use division_engine_rust::division_engine_c::window::*;
 use division_engine_rust::division_engine_c::shader::*;
+use division_engine_rust::division_engine_c::vertex_buffer::*;
+
+static VERTICES: [f32; 9] = [
+    -0.9, -0.9, 0.,
+    0.85, -0.9, 0.,
+    -0.9, 0.85, 0.
+];
+
+static mut buffer_id: c_long = 0;
 
 fn main() {
     unsafe {
@@ -14,13 +24,40 @@ unsafe fn init_engine() {
         window_width: 512,
         window_height: 512,
         title: title.as_ptr(),
-        error_callback
+        error_callback,
     };
 
-    let mut handler=  DivisionEngineHandler::new();
+    let mut handler = DivisionEngineHandler::new();
     division_engine_create_window(&settings, &mut handler);
-    let shader_path = CString::new("resources/shaders/default_ui.frag").unwrap();
-    division_engine_shader_create(shader_path.as_ptr(), ShaderType::Fragment);
+    let vert_shader_path = CString::new("resources/shaders/default_ui.vert").unwrap();
+    let frag_shader_path = CString::new("resources/shaders/default_ui.frag").unwrap();
+
+    let shader_program_id = division_engine_shader_create_program();
+    division_engine_shader_attach_to_program(
+        vert_shader_path.as_ptr(), ShaderType::Vertex, shader_program_id);
+    division_engine_shader_attach_to_program(
+        frag_shader_path.as_ptr(), ShaderType::Fragment, shader_program_id);
+    division_engine_shader_link_program(shader_program_id);
+    division_engine_shader_use_program(shader_program_id);
+
+    buffer_id = division_engine_vertex_buffer_create(size_of::<c_float>() as c_ulong * 9);
+    {
+        let mut buffer_ptr = division_engine_vertex_buffer_access_ptr_begin(buffer_id);
+        assert!(!buffer_ptr.is_null());
+        let buffer_ptr = buffer_ptr as *mut c_float;
+        for i in 0..8 {
+            buffer_ptr.offset(i).write(VERTICES[i as usize]);
+        }
+        division_engine_vertex_buffer_access_ptr_end(buffer_id);
+    }
+    division_engine_vertex_buffer_define_attribute(buffer_id, VertexAttribute {
+        index: 0,
+        offset: 0,
+        stride: 0,
+        attribute_type: AttributeType::Float,
+        normalized: false,
+        size_of_components: 3,
+    });
 
     division_engine_run_event_loop(handler.clone(), update_callback);
 
@@ -33,4 +70,5 @@ unsafe extern "C" fn error_callback(error_code: i32, message: *const c_char) {
 }
 
 unsafe extern "C" fn update_callback(state: DivisionEngineState) {
+    division_engine_vertex_buffer_draw_triangles(buffer_id, 0, 9);
 }
