@@ -6,7 +6,7 @@
 
 #include "window.h"
 
-bool division_engine_create_window(
+bool division_engine_window_create(
     const DivisionEngineSettings* settings,
     DivisionEngineHandler* output_handler
 ) {
@@ -37,7 +37,7 @@ bool division_engine_create_window(
     return true;
 }
 
-void division_engine_run_event_loop(DivisionEngineHandler handler, DivisionEngineUpdateFunc update_callback) {
+void division_engine_window_run_event_loop(DivisionEngineHandler handler, DivisionEngineUpdateFunc event_update_callback) {
     GLFWwindow* window = (GLFWwindow*) handler._internal_data;
     DivisionEngineState state;
     double last_frame_time, current_time;
@@ -51,14 +51,14 @@ void division_engine_run_event_loop(DivisionEngineHandler handler, DivisionEngin
         state.delta_time = current_time - last_frame_time;
         last_frame_time = current_time;
 
-        update_callback(state);
+        event_update_callback(state);
 
         glfwPollEvents();
         glfwSwapBuffers(window);
     }
 }
 
-void division_engine_destroy_window(DivisionEngineHandler handler) {
+void division_engine_window_destroy(DivisionEngineHandler handler) {
     glfwDestroyWindow((GLFWwindow*) handler._internal_data);
     glfwTerminate();
 }

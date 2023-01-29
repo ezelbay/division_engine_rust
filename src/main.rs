@@ -28,7 +28,7 @@ unsafe fn init_engine() {
     };
 
     let mut handler = DivisionEngineHandler::new();
-    division_engine_create_window(&settings, &mut handler);
+    division_engine_window_create(&settings, &mut handler);
     let vert_shader_path = CString::new("resources/shaders/default_ui.vert").unwrap();
     let frag_shader_path = CString::new("resources/shaders/default_ui.frag").unwrap();
 
@@ -59,9 +59,9 @@ unsafe fn init_engine() {
         size_of_components: 3,
     });
 
-    division_engine_run_event_loop(handler.clone(), update_callback);
+    division_engine_window_run_event_loop(handler.clone(), update_callback);
 
-    division_engine_destroy_window(handler);
+    division_engine_window_destroy(handler);
 }
 
 unsafe extern "C" fn error_callback(error_code: i32, message: *const c_char) {

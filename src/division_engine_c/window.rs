@@ -19,13 +19,13 @@ pub struct DivisionEngineState {
 }
 
 extern "C" {
-    pub fn division_engine_create_window(
+    pub fn division_engine_window_create(
         settings: *const DivisionEngineSettings,
         output_handler: *mut DivisionEngineHandler
     ) -> bool;
 
-    pub fn division_engine_run_event_loop(
+    pub fn division_engine_window_run_event_loop(
         handler: DivisionEngineHandler, update_callback: DivisionEngineUpdateFunc);
 
-    pub fn division_engine_destroy_window(handler: DivisionEngineHandler);
+    pub fn division_engine_window_destroy(handler: DivisionEngineHandler);
 }

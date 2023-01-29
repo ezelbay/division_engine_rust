@@ -11,6 +11,6 @@ typedef struct {
     void* _internal_data;
 } DivisionEngineHandler;
 
-bool division_engine_create_window(const DivisionEngineSettings* settings, DivisionEngineHandler* output_handler);
-void division_engine_run_event_loop(DivisionEngineHandler handler, DivisionEngineUpdateFunc event_update_callback);
-void division_engine_destroy_window(DivisionEngineHandler handler);
+bool division_engine_window_create(const DivisionEngineSettings* settings, DivisionEngineHandler* output_handler);
+void division_engine_window_run_event_loop(DivisionEngineHandler handler, DivisionEngineUpdateFunc event_update_callback);
+void division_engine_window_destroy(DivisionEngineHandler handler);
