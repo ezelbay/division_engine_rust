@@ -1,4 +1,3 @@
-use std::ffi;
 use std::ffi::{c_long, c_ulong, c_void};
 
 #[repr(C)]

@@ -10,7 +10,7 @@ static VERTICES: [f32; 9] = [
     -0.9, 0.85, 0.
 ];
 
-static mut buffer_id: c_long = 0;
+static mut BUFFER_ID: c_long = 0;
 
 fn main() {
     unsafe {
@@ -40,17 +40,17 @@ unsafe fn init_engine() {
     division_engine_shader_link_program(shader_program_id);
     division_engine_shader_use_program(shader_program_id);
 
-    buffer_id = division_engine_vertex_buffer_create(size_of::<c_float>() as c_ulong * 9);
+    BUFFER_ID = division_engine_vertex_buffer_create(size_of::<c_float>() as c_ulong * 9);
     {
-        let mut buffer_ptr = division_engine_vertex_buffer_access_ptr_begin(buffer_id);
+        let buffer_ptr = division_engine_vertex_buffer_access_ptr_begin(BUFFER_ID);
         assert!(!buffer_ptr.is_null());
         let buffer_ptr = buffer_ptr as *mut c_float;
         for i in 0..8 {
             buffer_ptr.offset(i).write(VERTICES[i as usize]);
         }
-        division_engine_vertex_buffer_access_ptr_end(buffer_id);
+        division_engine_vertex_buffer_access_ptr_end(BUFFER_ID);
     }
-    division_engine_vertex_buffer_define_attribute(buffer_id, VertexAttribute {
+    division_engine_vertex_buffer_define_attribute(BUFFER_ID, VertexAttribute {
         index: 0,
         offset: 0,
         stride: 0,
@@ -69,6 +69,6 @@ unsafe extern "C" fn error_callback(error_code: i32, message: *const c_char) {
     eprintln!("Error code:{}, error message: {}", error_code, c_message);
 }
 
-unsafe extern "C" fn update_callback(state: DivisionEngineState) {
-    division_engine_vertex_buffer_draw_triangles(buffer_id, 0, 9);
+unsafe extern "C" fn update_callback(_: DivisionEngineState) {
+    division_engine_vertex_buffer_draw_triangles(BUFFER_ID, 0, 9);
 }
