@@ -22,7 +22,7 @@ bool division_engine_start_session(DivisionEngineErrorFunc error_callback) {
     error_callback_ = error_callback;
     glfwSetErrorCallback(error_callback_);
 
-    if (windows_.items != NULL) {
+    if (windows_.items) {
         error_callback_(0, "Previous division engine session was not finished");
         return false;
     }
@@ -37,7 +37,7 @@ bool division_engine_start_session(DivisionEngineErrorFunc error_callback) {
 }
 
 int32_t division_engine_window_create(const DivisionEngineSettings* settings) {
-    if (windows_.items == NULL) {
+    if (!windows_.items) {
         return -1;
     }
 
@@ -47,7 +47,7 @@ int32_t division_engine_window_create(const DivisionEngineSettings* settings) {
         settings->window_title, NULL, NULL
     );
     if (!window) {
-        if (error_callback_ != NULL) {
+        if (error_callback_) {
             error_callback_(0, "Can't create a new GLFW window");
         }
         return -1;
@@ -56,7 +56,7 @@ int32_t division_engine_window_create(const DivisionEngineSettings* settings) {
 
     int version = gladLoadGL(glfwGetProcAddress);
     if (version == 0) {
-        if (error_callback_ != NULL) {
+        if (error_callback_) {
             error_callback_(0, "Failed to load GLAD");
         }
         return -1;
@@ -105,7 +105,7 @@ void division_engine_finish_session() {
 
 bool check_window_id(int32_t window_id) {
     if (window_id < 0 || window_id >= windows_.length) {
-        if (error_callback_ != NULL) {
+        if (error_callback_) {
             error_callback_(0, "Incorrect instance id");
         }
 
