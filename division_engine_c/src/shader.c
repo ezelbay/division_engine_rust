@@ -9,7 +9,7 @@
 
 DIVISION_LIST_DEFINE(GLuint)
 
-static List_GLuint programs_;
+static List_GLuint shader_programs_;
 
 static int create_shader_from_source(const char* path, GLuint gl_shader_type);
 static bool check_program_status(GLuint programHandle);
@@ -19,12 +19,12 @@ static int shader_type_to_gl_type(DivisionEngineShaderType shaderType);
 int32_t division_engine_shader_create_program() {
     GLuint gl_program_handle = glCreateProgram();
 
-    if (programs_.items == NULL) {
-        programs_ = DIVISION_LIST_CREATE(GLuint, 10);
+    if (shader_programs_.items == NULL) {
+        shader_programs_ = DIVISION_LIST_CREATE(GLuint, 10);
     }
 
-    DIVISION_LIST_APPEND(programs_, gl_program_handle);
-    return (int) programs_.length - 1;
+    DIVISION_LIST_APPEND(shader_programs_, gl_program_handle);
+    return (int32_t) shader_programs_.length - 1;
 }
 
 bool division_engine_shader_attach_to_program(const char* path, DivisionEngineShaderType type, int32_t program_id) {
@@ -38,7 +38,7 @@ bool division_engine_shader_attach_to_program(const char* path, DivisionEngineSh
         return false;
     }
 
-    glAttachShader(programs_.items[program_id], shader_handle);
+    glAttachShader(shader_programs_.items[program_id], shader_handle);
     return true;
 }
 
@@ -90,8 +90,8 @@ int create_shader_from_source(const char* path, GLuint gl_shader_type) {
 }
 
 bool division_engine_shader_link_program(int32_t program_id) {
-    glLinkProgram(programs_.items[program_id]);
-    return check_program_status(programs_.items[program_id]);
+    glLinkProgram(shader_programs_.items[program_id]);
+    return check_program_status(shader_programs_.items[program_id]);
 }
 
 bool check_program_status(GLuint programHandle) {
@@ -143,5 +143,5 @@ int shader_type_to_gl_type(DivisionEngineShaderType shaderType) {
 }
 
 void division_engine_shader_use_program(int32_t program_id) {
-    glUseProgram(programs_.items[program_id]);
+    glUseProgram(shader_programs_.items[program_id]);
 }

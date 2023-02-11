@@ -20,16 +20,18 @@ fn main() {
 }
 
 unsafe fn init_engine() {
+    if division_engine_start_session(error_callback) == false {
+        return;
+    }
+
     let title = CString::new("Hey").unwrap();
     let settings = DivisionEngineSettings {
         window_width: 512,
         window_height: 512,
         title: title.as_ptr(),
-        error_callback,
     };
 
-    let mut handler = DivisionEngineBridgeHandler::new();
-    division_engine_window_create(&settings, &mut handler);
+    let window_id = division_engine_window_create(&settings);
     let shader_id = shader_program::ShaderProgramBuilder::new()
         .add_shader_source("resources/shaders/default_ui.vert", ShaderType::Vertex)
         .add_shader_source("resources/shaders/default_ui.frag", ShaderType::Fragment)
@@ -53,9 +55,11 @@ unsafe fn init_engine() {
         size_of_components: 3,
     });
 
-    division_engine_window_run_event_loop(handler.clone(), update_callback);
+    division_engine_window_run_event_loop(window_id, update_callback);
 
-    division_engine_window_destroy(handler);
+    division_engine_window_destroy(window_id);
+
+    division_engine_finish_session();
 }
 
 unsafe extern "C" fn error_callback(error_code: i32, message: *const c_char) {
