@@ -17,10 +17,8 @@ pub struct DivisionEngineState {
 }
 
 extern "C" {
-    pub fn division_engine_start_session(error_callback: DivisionEngineErrorFunc) -> bool;
-    pub fn division_engine_window_create(settings: *const DivisionEngineSettings) -> i32;
-    pub fn division_engine_window_run_event_loop(
-        window_id: i32, update_callback: DivisionEngineUpdateFunc);
-    pub fn division_engine_window_destroy(window_id: i32);
-    pub fn division_engine_finish_session();
+    pub fn division_engine_renderer_create(
+        settings: *const DivisionEngineSettings, error_callback: DivisionEngineErrorFunc) -> bool;
+    pub fn division_engine_renderer_run_loop(update_callback: DivisionEngineUpdateFunc);
+    pub fn division_engine_renderer_destroy();
 }

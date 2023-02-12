@@ -1,5 +1,6 @@
 use alloc::ffi::CString;
 use crate::division_engine::bridge::shader::*;
+pub use crate::division_engine::bridge::shader::ShaderType;
 
 pub struct ShaderProgramBuilder {
     _id: i32

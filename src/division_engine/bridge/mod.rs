@@ -1,3 +1,3 @@
 pub mod shader;
-pub mod window;
+pub mod renderer;
 pub mod vertex_buffer;
