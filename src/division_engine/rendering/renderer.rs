@@ -1,18 +1,23 @@
-use std::ffi::{c_char, CStr, CString};
+use alloc::ffi::CString;
+use std::ffi::{c_char, CStr};
 use crate::division_engine::bridge::renderer::*;
+
+static mut _INSTANCE: Option<fn(s: DivisionEngineState)> = None;
 
 pub struct Renderer;
 
 impl Renderer {
-    pub fn new(title: &str, width: i32, height: i32) -> Self {
-        let c_title = CString::new(title);
+    pub fn new(title: &str, width: i32, height: i32, update_callback: fn(s: DivisionEngineState)) -> Self {
+        let c_title = CString::new(title).unwrap();
         let settings = DivisionEngineSettings {
             window_width: width,
             window_height: height,
-            title: c_title.unwrap().as_ptr(),
+            title: c_title.as_ptr(),
         };
         unsafe {
             division_engine_renderer_create(&settings, error_callback);
+            _INSTANCE = Some(update_callback);
+
             return Renderer {};
         }
     }
@@ -28,6 +33,7 @@ impl Drop for Renderer {
     fn drop(&mut self) {
         unsafe {
             division_engine_renderer_destroy();
+            _INSTANCE = None;
         }
     }
 }
@@ -37,5 +43,6 @@ unsafe extern "C" fn error_callback(error_code: i32, message: *const c_char) {
     eprintln!("Error code:{}, error message: {}", error_code, c_message);
 }
 
-unsafe extern "C" fn update_callback(_: DivisionEngineState) {
+unsafe extern "C" fn update_callback(s: DivisionEngineState) {
+    (_INSTANCE.unwrap())(s);
 }

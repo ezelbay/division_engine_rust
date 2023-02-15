@@ -12,4 +12,5 @@ extern "C" {
         path: *const c_char, shader_type: ShaderType, program_id: i32) -> bool;
     pub fn division_engine_shader_link_program(program_id: i32) -> bool;
     pub fn division_engine_shader_use_program(program_id: i32);
+    pub fn division_engine_shader_destroy_program(program_id: i32);
 }

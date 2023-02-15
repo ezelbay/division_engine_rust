@@ -145,3 +145,7 @@ int shader_type_to_gl_type(DivisionEngineShaderType shaderType) {
 void division_engine_shader_use_program(int32_t program_id) {
     glUseProgram(shader_programs_.items[program_id]);
 }
+
+void division_engine_shader_destroy_program(int32_t program_id) {
+    glDeleteProgram(shader_programs_.items[program_id]);
+}
