@@ -39,6 +39,7 @@ bool division_engine_shader_attach_to_program(const char* path, DivisionEngineSh
     }
 
     glAttachShader(shader_programs_.items[program_id], shader_handle);
+    glDeleteShader(shader_handle);
     return true;
 }
 
