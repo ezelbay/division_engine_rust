@@ -19,8 +19,10 @@ pub struct VertexAttribute {
 
 extern "C" {
     pub fn division_engine_vertex_buffer_create(size: c_ulong) -> c_long;
-    pub fn division_engine_vertex_buffer_define_attribute(buffer_id: c_long, attribute: VertexAttribute);
+    pub fn division_engine_vertex_buffer_define_attribute(
+        buffer_id: c_long, attribute: VertexAttribute);
     pub fn division_engine_vertex_buffer_access_ptr_begin(buffer_id: c_long) -> *mut c_void;
     pub fn division_engine_vertex_buffer_access_ptr_end(buffer_id: c_long);
-    pub fn division_engine_vertex_buffer_draw_triangles(buffer_id: c_long, first_index: c_ulong, count: c_ulong);
+    pub fn division_engine_vertex_buffer_draw_triangles(
+        buffer_id: c_long, first_index: c_ulong, count: c_ulong);
 }
