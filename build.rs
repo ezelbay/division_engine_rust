@@ -9,7 +9,7 @@ fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
 
     Config::new(project_name)
-        .no_build_target(true)
+        .target(project_name)
         .out_dir(&out_dir)
         .build();
 
@@ -35,5 +35,4 @@ fn main() {
         build_path,
         &copy_options
     ).expect("Failed to copy resources folder");
-
 }

@@ -15,7 +15,7 @@ set(SOURCES
         src/renderer.c
     src/shader.c
     lib/glad/include/glad/gl.h
-    src/vertex_buffer.c)
+    src/vertex_buffer.c src/context.c)
 set(FILES_TO_COPY ${GLFW_BINARY_DIR}/src/libglfw3.a)
 
 add_library(division_engine_c STATIC ${SOURCES})
@@ -24,6 +24,10 @@ target_include_directories(division_engine_c PUBLIC
     ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/lib/glad/include
 )
 target_link_libraries(division_engine_c PUBLIC glfw ${GLFW_STATIC_LIBRARIES})
+
+add_executable(division_main_test tests/main.c)
+target_link_libraries(division_main_test PUBLIC division_engine_c)
+target_include_directories(division_main_test PUBLIC include)
 
 foreach(COPY_FILE ${FILES_TO_COPY})
     add_custom_command(TARGET division_engine_c POST_BUILD
