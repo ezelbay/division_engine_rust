@@ -12,7 +12,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glfw)
 
 set(SOURCES
-        src/renderer.c
+    src/renderer.c
     src/shader.c
     lib/glad/include/glad/gl.h
     src/vertex_buffer.c src/context.c)

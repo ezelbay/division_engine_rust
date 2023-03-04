@@ -1,11 +1,9 @@
-#include "shader.h"
+#include "division_engine/shader.h"
 
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <glad/gl.h>
-
-#include <list_utility.h>
 
 static int create_shader_from_source(const char* path, GLuint gl_shader_type);
 static bool check_program_status(GLuint programHandle);

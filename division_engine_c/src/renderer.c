@@ -3,10 +3,10 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
-#include "renderer.h"
+#include "division_engine/renderer.h"
 
-bool division_engine_internal_renderer_create(
-    DivisionContext* ctx,
+bool division_engine_internal_renderer_create_context(
+    DivisionContext* renderer_context,
     const DivisionEngineSettings* settings
 )
 {
@@ -39,7 +39,7 @@ bool division_engine_internal_renderer_create(
         return -1;
     }
 
-    ctx->renderer_context = (DivisionRendererContext) {
+    renderer_context->renderer_context = (DivisionRendererSystemContext) {
         .window_data = window,
         .clear_color = {0, 0, 0, 1}
     };
@@ -50,7 +50,7 @@ bool division_engine_internal_renderer_create(
 void division_engine_renderer_run_loop(
     DivisionContext* ctx, DivisionEngineUpdateFunc update_callback)
 {
-    DivisionRendererContext* renderer_context = &ctx->renderer_context;
+    DivisionRendererSystemContext* renderer_context = &ctx->renderer_context;
     GLFWwindow* window = (GLFWwindow*) renderer_context->window_data;
     DivisionEngineState state;
     double last_frame_time, current_time;
@@ -71,7 +71,7 @@ void division_engine_renderer_run_loop(
     }
 }
 
-void division_engine_renderer_destroy(DivisionContext* ctx)
+void division_engine_internal_renderer_destroy_context(DivisionContext* ctx)
 {
     glfwDestroyWindow((GLFWwindow*) ctx->renderer_context.window_data);
     glfwTerminate();

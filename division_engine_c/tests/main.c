@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-#include "context.h"
-#include "renderer.h"
+#include "division_engine/context.h"
+#include "division_engine/renderer.h"
 
 void error_callback(int error_code, const char *message);
 void update_callback(DivisionEngineState state);
