@@ -6,8 +6,8 @@
 #include "renderer.h"
 
 bool division_engine_internal_renderer_create(
-    DivisionRendererContext *renderer_context,
-    const DivisionEngineSettings *settings
+    DivisionContext* ctx,
+    const DivisionEngineSettings* settings
 )
 {
     glfwSetErrorCallback(settings->error_callback);
@@ -18,12 +18,11 @@ bool division_engine_internal_renderer_create(
         return false;
     }
 
-    GLFWwindow *window = glfwCreateWindow(
+    GLFWwindow* window = glfwCreateWindow(
         (int) settings->window_width,
         (int) settings->window_height,
         settings->window_title, NULL, NULL
     );
-    renderer_context->window_data = window;
 
     if (!window)
     {
@@ -40,21 +39,26 @@ bool division_engine_internal_renderer_create(
         return -1;
     }
 
+    ctx->renderer_context = (DivisionRendererContext) {
+        .window_data = window,
+        .clear_color = {0, 0, 0, 1}
+    };
+
     return true;
 }
 
 void division_engine_renderer_run_loop(
-    DivisionRendererContext *renderer_context, DivisionEngineUpdateFunc update_callback)
+    DivisionContext* ctx, DivisionEngineUpdateFunc update_callback)
 {
-    GLFWwindow *window = (GLFWwindow *) renderer_context->window_data;
+    DivisionRendererContext* renderer_context = &ctx->renderer_context;
+    GLFWwindow* window = (GLFWwindow*) renderer_context->window_data;
     DivisionEngineState state;
     double last_frame_time, current_time;
 
     last_frame_time = glfwGetTime();
     while (!glfwWindowShouldClose(window))
     {
-        glClearColor(0, 1, 0, 1);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClearBufferfv(GL_COLOR, 0, (const GLfloat*) &renderer_context->clear_color);
 
         current_time = glfwGetTime();
         state.delta_time = current_time - last_frame_time;
@@ -67,10 +71,10 @@ void division_engine_renderer_run_loop(
     }
 }
 
-void division_engine_renderer_destroy(DivisionRendererContext *renderer_context)
+void division_engine_renderer_destroy(DivisionContext* ctx)
 {
-    glfwDestroyWindow((GLFWwindow *) renderer_context->window_data);
+    glfwDestroyWindow((GLFWwindow*) ctx->renderer_context.window_data);
     glfwTerminate();
 
-    renderer_context->window_data = NULL;
+    ctx->renderer_context.window_data = NULL;
 }

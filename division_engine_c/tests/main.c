@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "context.h"
+#include "renderer.h"
 
 void error_callback(int error_code, const char *message);
 void update_callback(DivisionEngineState state);
@@ -16,7 +17,7 @@ int main()
 
     DivisionContext* context = NULL;
     division_engine_context_create(&settings, &context);
-    division_engine_renderer_run_loop(&context->renderer_context, update_callback);
+    division_engine_renderer_run_loop(context, update_callback);
     division_engine_context_destroy(context);
 }
 
