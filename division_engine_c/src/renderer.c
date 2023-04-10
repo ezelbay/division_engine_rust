@@ -53,7 +53,6 @@ void division_engine_renderer_run_loop(
 {
     DivisionRendererSystemContext* renderer_context = &ctx->renderer_context;
     GLFWwindow* window = (GLFWwindow*) renderer_context->window_data;
-    DivisionEngineState state;
     double last_frame_time, current_time, delta_time;
 
     last_frame_time = glfwGetTime();
@@ -66,9 +65,10 @@ void division_engine_renderer_run_loop(
         {
             glClearBufferfv(GL_COLOR, 0, (const GLfloat*) &renderer_context->clear_color);
 
-            state.delta_time = current_time - last_frame_time;
+            delta_time = current_time - last_frame_time;
             last_frame_time = current_time;
 
+            ctx->state.delta_time = delta_time;
             update_callback(ctx);
             division_engine_internal_vertex_buffer_draw(ctx);
             glfwSwapBuffers(window);

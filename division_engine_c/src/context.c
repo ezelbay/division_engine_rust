@@ -14,6 +14,7 @@ bool division_engine_context_alloc(const DivisionEngineSettings* settings, Divis
 {
     DivisionContext* ctx = (DivisionContext*) malloc(sizeof(DivisionContext));
     ctx->error_callback = settings->error_callback;
+    ctx->state.delta_time = 0;
     *output_context = ctx;
 
     if (!division_engine_internal_renderer_context_alloc(ctx, settings)) return false;

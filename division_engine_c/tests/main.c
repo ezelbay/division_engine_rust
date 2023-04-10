@@ -46,15 +46,16 @@ int main()
         1, 1, 1, 1
     };
 
-    division_engine_vertex_buffer_set_vertex_data_for_attribute(context, vertex_buffer, posLocation, positions, 0, 3);
-    division_engine_vertex_buffer_set_vertex_data_for_attribute(context, vertex_buffer, fColorLocation, colors, 0, 3);
+    int32_t objectIndex = 0;
+    division_engine_vertex_buffer_set_vertex_data_for_attribute(
+        context, vertex_buffer, objectIndex, posLocation, positions, 0, 3);
+    division_engine_vertex_buffer_set_vertex_data_for_attribute(
+        context, vertex_buffer, objectIndex, fColorLocation, colors, 0, 3);
 
     division_engine_render_pass_alloc(context, (DivisionRenderPass) {
         .vertex_buffer = vertex_buffer,
         .shader_program = shader_program,
         .topology = DIVISION_TOPOLOGY_TRIANGLES,
-        .first_vertex = 0,
-        .vertex_count = 3,
     });
 
     division_engine_renderer_run_loop(context, update_callback);

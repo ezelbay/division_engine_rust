@@ -29,6 +29,8 @@ typedef struct {
     DivisionRendererSystemContext renderer_context;
     DivisionVertexBufferSystemContext vertex_buffer_context;
     DivisionRenderPassSystemContext render_pass_context;
+    DivisionEngineState state;
+
     void* user_data;
 } DivisionContext;
 
