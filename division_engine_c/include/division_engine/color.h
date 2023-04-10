@@ -1,5 +1,5 @@
 #pragma once
 
-typedef struct {
+typedef struct DivisionColor {
     float r,g,b,a;
 } DivisionColor;

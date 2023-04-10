@@ -20,10 +20,17 @@ typedef struct {
 } DivisionVertexBufferSystemContext;
 
 typedef struct {
+    struct DivisionRenderPass* render_passes;
+    int32_t render_pass_count;
+} DivisionRenderPassSystemContext;
+
+typedef struct {
     DivisionEngineErrorFunc error_callback;
     DivisionRendererSystemContext renderer_context;
     DivisionVertexBufferSystemContext vertex_buffer_context;
+    DivisionRenderPassSystemContext render_pass_context;
+    void* user_data;
 } DivisionContext;
 
-bool division_engine_context_create(const DivisionEngineSettings* settings, DivisionContext** output_context);
-void division_engine_context_destroy(DivisionContext* ctx);
+bool division_engine_context_alloc(const DivisionEngineSettings* settings, DivisionContext** output_context);
+void division_engine_context_free(DivisionContext* ctx);

@@ -1,11 +1,12 @@
-#define GLFW_INCLUDE_NONE
-#define GLAD_GL_IMPLEMENTATION
-#include <glad/gl.h>
-#include <GLFW/glfw3.h>
-
+#include <stdio.h>
 #include "division_engine/renderer.h"
+#include "division_engine/render_pass.h"
+#include "division_engine/vertex_buffer.h"
 
-bool division_engine_internal_renderer_create_context(
+#include "glad/gl.h"
+#include "GLFW/glfw3.h"
+
+bool division_engine_internal_renderer_context_alloc(
     DivisionContext* renderer_context,
     const DivisionEngineSettings* settings
 )
@@ -53,25 +54,31 @@ void division_engine_renderer_run_loop(
     DivisionRendererSystemContext* renderer_context = &ctx->renderer_context;
     GLFWwindow* window = (GLFWwindow*) renderer_context->window_data;
     DivisionEngineState state;
-    double last_frame_time, current_time;
+    double last_frame_time, current_time, delta_time;
 
     last_frame_time = glfwGetTime();
     while (!glfwWindowShouldClose(window))
     {
-        glClearBufferfv(GL_COLOR, 0, (const GLfloat*) &renderer_context->clear_color);
-
         current_time = glfwGetTime();
-        state.delta_time = current_time - last_frame_time;
-        last_frame_time = current_time;
+        delta_time = current_time - last_frame_time;
 
-        update_callback(state);
+        if (delta_time >= 1 / 60.f)
+        {
+            glClearBufferfv(GL_COLOR, 0, (const GLfloat*) &renderer_context->clear_color);
+
+            state.delta_time = current_time - last_frame_time;
+            last_frame_time = current_time;
+
+            update_callback(ctx);
+            division_engine_internal_vertex_buffer_draw(ctx);
+            glfwSwapBuffers(window);
+        }
 
         glfwPollEvents();
-        glfwSwapBuffers(window);
     }
 }
 
-void division_engine_internal_renderer_destroy_context(DivisionContext* ctx)
+void division_engine_internal_renderer_context_free(DivisionContext* ctx)
 {
     glfwDestroyWindow((GLFWwindow*) ctx->renderer_context.window_data);
     glfwTerminate();

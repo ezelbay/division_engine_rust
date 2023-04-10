@@ -14,5 +14,7 @@ typedef enum {
 
 typedef struct {
     DivisionAttributeType type;
-    int32_t index;
+    int32_t location;
 } DivisionEngineVertexAttribute;
+
+int32_t division_engine_attribute_get_location(const char* name, int32_t shader_program);

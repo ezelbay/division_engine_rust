@@ -5,13 +5,13 @@ version = 3
 [[package]]
 name = "cc"
 version = "1.0.78"
-source = "registry+https://github.com/rust-lang/crates.io-index"
+source = "registry+https://github.com/rust-lang/crates.io-location"
 checksum = "a20104e2335ce8a659d6dd92a51a767a0c062599c73b343fd152cb401e828c3d"
 
 [[package]]
 name = "cmake"
 version = "0.1.49"
-source = "registry+https://github.com/rust-lang/crates.io-index"
+source = "registry+https://github.com/rust-lang/crates.io-location"
 checksum = "db34956e100b30725f2eb215f90d4871051239535632f84fea3bc92722c66b7c"
 dependencies = [
  "cc",
@@ -28,5 +28,5 @@ dependencies = [
 [[package]]
 name = "fs_extra"
 version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
+source = "registry+https://github.com/rust-lang/crates.io-location"
 checksum = "2022715d62ab30faffd124d40b76f4134a550a87792276512b18d63272333394"
