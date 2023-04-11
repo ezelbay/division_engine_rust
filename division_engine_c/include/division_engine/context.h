@@ -9,7 +9,6 @@
 struct DivisionVertexBuffer;
 struct DivisionRendererSystemContext;
 struct DivisionVertexBufferSystemContext;
-struct DivisionRenderPassSystemContext;
 
 typedef struct {
     DivisionState state;

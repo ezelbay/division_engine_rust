@@ -23,6 +23,13 @@ typedef struct AttrTraits_ {
 
 static inline AttrTraits_ division_attribute_get_traits(DivisionShaderVariableType attributeType);
 static inline GLenum topology_to_gl_type(DivisionRenderTopology t);
+static inline void gather_attributes_info(
+    DivisionVertexAttributeSettings* attrs,
+    int32_t attr_count,
+    DivisionVertexAttribute* attributes,
+    VertexAttributeInternalImpl_* attributes_impl,
+    int32_t* per_vertex_data_size
+);
 
 bool division_engine_internal_vertex_buffer_context_alloc(DivisionContext* ctx)
 {
@@ -67,8 +74,6 @@ int32_t division_engine_vertex_buffer_alloc(
     DivisionRenderTopology render_topology
 )
 {
-    int32_t per_vertex_data_size = 0;
-
     GLuint gl_buffer;
     glGenBuffers(1, &gl_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, gl_buffer);
@@ -89,43 +94,12 @@ int32_t division_engine_vertex_buffer_alloc(
     vertex_buffer_objects.objects_start_vertex[0] = 0;
     vertex_buffer_objects.objects_vertex_count[0] = vertex_count;
 
-    for (int32_t i = 0; i < attr_count; i++)
-    {
-        DivisionVertexAttributeSettings at = attrs[i];
-        AttrTraits_ attr_traits = division_attribute_get_traits(at.type);
+    int32_t per_vertex_data_size;
+    gather_attributes_info(
+        attrs, attr_count, vertex_buffer.attributes, vertex_buffer.attributes_impl, &per_vertex_data_size);
 
-        int32_t attr_size = attr_traits.base_size * attr_traits.component_count;
-        int32_t offset = per_vertex_data_size;
-        per_vertex_data_size += attr_size;
-
-        vertex_buffer.attributes_impl[i] = (VertexAttributeInternalImpl_) {
-            .gl_type = attr_traits.gl_type
-        };
-        vertex_buffer.attributes[i] = (DivisionVertexAttribute) {
-            .location = at.location,
-            .offset = offset,
-            .base_size = attr_traits.base_size,
-            .component_count = attr_traits.component_count,
-        };
-    }
-
-    for (int32_t i = 0; i < attr_count; i++)
-    {
-        DivisionVertexAttribute* at = &vertex_buffer.attributes[i];
-        VertexAttributeInternalImpl_* at_impl = &vertex_buffer.attributes_impl[i];
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wint-to-pointer-cast"
-        void* offset = (void*) at->offset;
-#pragma clang diagnostic pop
-
-        glVertexAttribPointer(
-            at->location, at->component_count, at_impl->gl_type, GL_FALSE, per_vertex_data_size, offset);
-        glEnableVertexAttribArray(at->location);
-    }
-
-    vertex_buffer.per_vertex_data_size = per_vertex_data_size;
     vertex_buffer.vertex_count = vertex_count;
+    vertex_buffer.per_vertex_data_size = per_vertex_data_size;
 
     int32_t buffers_count = vertex_ctx->buffers_count;
     int32_t new_buffers_count = buffers_count + 1;
@@ -141,12 +115,57 @@ int32_t division_engine_vertex_buffer_alloc(
         .gl_topology = topology_to_gl_type(render_topology)
     };
     vertex_ctx->buffers_objects[buffers_count] = vertex_buffer_objects;
-
     vertex_ctx->buffers_count++;
 
     glBufferData(GL_ARRAY_BUFFER, (GLsizei) (per_vertex_data_size * vertex_count), NULL, GL_STATIC_DRAW);
 
     return vertex_ctx->buffers_count - 1;
+}
+
+void gather_attributes_info(
+    DivisionVertexAttributeSettings* attrs,
+    int32_t attr_count,
+    DivisionVertexAttribute* attributes,
+    VertexAttributeInternalImpl_* attributes_impl,
+    int32_t* per_vertex_data_size
+)
+{
+    *per_vertex_data_size = 0;
+
+    for (int32_t i = 0; i < attr_count; i++)
+    {
+        DivisionVertexAttributeSettings at = attrs[i];
+        AttrTraits_ attr_traits = division_attribute_get_traits(at.type);
+
+        int32_t attr_size = attr_traits.base_size * attr_traits.component_count;
+        int32_t offset = *per_vertex_data_size;
+        *per_vertex_data_size += attr_size;
+
+        attributes_impl[i] = (VertexAttributeInternalImpl_) {
+            .gl_type = attr_traits.gl_type
+        };
+        attributes[i] = (DivisionVertexAttribute) {
+            .location = at.location,
+            .offset = offset,
+            .base_size = attr_traits.base_size,
+            .component_count = attr_traits.component_count,
+        };
+    }
+
+    for (int32_t i = 0; i < attr_count; i++)
+    {
+        DivisionVertexAttribute* at = &attributes[i];
+        VertexAttributeInternalImpl_* at_impl = &attributes_impl[i];
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wint-to-pointer-cast"
+        void* offset = (void*) at->offset;
+#pragma clang diagnostic pop
+
+        glVertexAttribPointer(
+            at->location, at->component_count, at_impl->gl_type, GL_FALSE, *per_vertex_data_size, offset);
+        glEnableVertexAttribArray(at->location);
+    }
 }
 
 void division_engine_vertex_buffer_set_vertex_data_for_attribute(
@@ -195,20 +214,13 @@ AttrTraits_ division_attribute_get_traits(DivisionShaderVariableType attributeTy
 {
     switch (attributeType)
     {
-        case DIVISION_FLOAT:
-            return (AttrTraits_) {GL_FLOAT, 4, 1};
-        case DIVISION_DOUBLE:
-            return (AttrTraits_) {GL_DOUBLE, 8, 1};
-        case DIVISION_INTEGER:
-            return (AttrTraits_) {GL_INT, 4, 1};
-        case DIVISION_FVEC2:
-            return (AttrTraits_) {GL_FLOAT, 4, 2};
-        case DIVISION_FVEC3:
-            return (AttrTraits_) {GL_FLOAT, 4, 3};
-        case DIVISION_FVEC4:
-            return (AttrTraits_) {GL_FLOAT, 4, 4};
-        case DIVISION_FMAT4X4:
-            return (AttrTraits_) {GL_FLOAT, 4, 16};
+        case DIVISION_FLOAT: return (AttrTraits_) {GL_FLOAT, 4, 1};
+        case DIVISION_DOUBLE: return (AttrTraits_) {GL_DOUBLE, 8, 1};
+        case DIVISION_INTEGER: return (AttrTraits_) {GL_INT, 4, 1};
+        case DIVISION_FVEC2: return (AttrTraits_) {GL_FLOAT, 4, 2};
+        case DIVISION_FVEC3: return (AttrTraits_) {GL_FLOAT, 4, 3};
+        case DIVISION_FVEC4: return (AttrTraits_) {GL_FLOAT, 4, 4};
+        case DIVISION_FMAT4X4: return (AttrTraits_) {GL_FLOAT, 4, 16};
         default:
         {
             fprintf(stderr, "Unknown attribute type");
