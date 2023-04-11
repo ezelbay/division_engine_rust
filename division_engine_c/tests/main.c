@@ -3,7 +3,6 @@
 #include "division_engine/renderer.h"
 #include "division_engine/shader.h"
 #include "division_engine/vertex_buffer.h"
-#include "division_engine/render_pass.h"
 
 void error_callback(int error_code, const char* message);
 void update_callback(DivisionContext* ctx);
@@ -36,7 +35,7 @@ int main()
         {.type = DIVISION_FVEC3, .location = posLocation},
         {.type = DIVISION_FVEC4, .location = fColorLocation}
     };
-    int32_t vertex_buffer = division_engine_vertex_buffer_alloc(context, attr, 2, 3);
+    int32_t vertex_buffer = division_engine_vertex_buffer_alloc(context, attr, 2, 3, DIVISION_TOPOLOGY_TRIANGLES);
 
     float positions[9] = {
         -1, -1, 0,
@@ -56,10 +55,9 @@ int main()
     division_engine_vertex_buffer_set_vertex_data_for_attribute(
         context, vertex_buffer, objectIndex, fColorLocation, colors, 0, 3);
 
-    division_engine_render_pass_alloc(context, (DivisionRenderPass) {
+    division_engine_vertex_buffer_render_pass_alloc(context, (DivisionRenderPass) {
         .vertex_buffer = vertex_buffer,
         .shader_program = shader_program,
-        .topology = DIVISION_TOPOLOGY_TRIANGLES,
     });
 
     int32_t uniform_id = division_engine_shader_program_get_uniform_location("TestColor", shader_program);

@@ -6,14 +6,13 @@
 
 #include "glad/gl.h"
 
-#include "division_engine/render_pass.h"
-
 typedef struct VertexAttributeInternalImpl_ {
     GLenum gl_type;
 } VertexAttributeInternalImpl_;
 
 typedef struct DivisionVertexBufferInternalImpl_ {
     GLuint gl_buffer;
+    GLenum gl_topology;
 } DivisionVertexBufferInternalImpl_;
 
 typedef struct AttrTraits_ {
@@ -31,7 +30,10 @@ bool division_engine_internal_vertex_buffer_context_alloc(DivisionContext* ctx)
     *ctx->vertex_buffer_context = (DivisionVertexBufferSystemContext) {
         .buffers = NULL,
         .buffers_impl = NULL,
-        .buffers_count = 0
+        .buffers_objects = NULL,
+        .buffers_count = 0,
+        .render_passes = NULL,
+        .render_pass_count = 0
     };
 
     return true;
@@ -43,20 +45,27 @@ void division_engine_internal_vertex_buffer_context_free(DivisionContext* ctx)
     for (int i = 0; i < vertex_buffer_ctx->buffers_count; i++)
     {
         DivisionVertexBuffer* buffer = &vertex_buffer_ctx->buffers[i];
+        DivisionVertexBufferObjects* buffer_objects = &vertex_buffer_ctx->buffers_objects[i];
 
         free(buffer->attributes);
         free(buffer->attributes_impl);
-        free(buffer->objects_start_vertex);
-        free(buffer->objects_vertex_count);
+        free(buffer_objects->objects_start_vertex);
+        free(buffer_objects->objects_vertex_count);
     }
 
     free(vertex_buffer_ctx->buffers);
     free(vertex_buffer_ctx->buffers_impl);
+    free(vertex_buffer_ctx->render_passes);
     free(vertex_buffer_ctx);
 }
 
 int32_t division_engine_vertex_buffer_alloc(
-    DivisionContext* ctx, DivisionVertexAttributeSettings* attrs, int32_t attr_count, int32_t vertex_count)
+    DivisionContext* ctx,
+    DivisionVertexAttributeSettings* attrs,
+    int32_t attr_count,
+    int32_t vertex_count,
+    DivisionRenderTopology render_topology
+)
 {
     int32_t per_vertex_data_size = 0;
 
@@ -70,13 +79,15 @@ int32_t division_engine_vertex_buffer_alloc(
         .attributes = malloc(sizeof(DivisionVertexAttribute) * attr_count),
         .attributes_impl = malloc(sizeof(VertexAttributeInternalImpl_) * attr_count),
         .attribute_count = attr_count,
+    };
+
+    DivisionVertexBufferObjects vertex_buffer_objects = {
         .objects_start_vertex = malloc(sizeof(int32_t)),
         .objects_vertex_count = malloc(sizeof(int32_t)),
         .objects_count = 1
     };
-
-    vertex_buffer.objects_start_vertex[0] = 0;
-    vertex_buffer.objects_vertex_count[0] = vertex_count;
+    vertex_buffer_objects.objects_start_vertex[0] = 0;
+    vertex_buffer_objects.objects_vertex_count[0] = vertex_count;
 
     for (int32_t i = 0; i < attr_count; i++)
     {
@@ -119,10 +130,18 @@ int32_t division_engine_vertex_buffer_alloc(
     int32_t buffers_count = vertex_ctx->buffers_count;
     int32_t new_buffers_count = buffers_count + 1;
     vertex_ctx->buffers = realloc(vertex_ctx->buffers, new_buffers_count * sizeof(DivisionVertexBuffer));
-    vertex_ctx->buffers[buffers_count] = vertex_buffer;
     vertex_ctx->buffers_impl = realloc(
         vertex_ctx->buffers_impl, new_buffers_count * sizeof(DivisionVertexBufferInternalImpl_));
-    vertex_ctx->buffers_impl[buffers_count] = (DivisionVertexBufferInternalImpl_) { .gl_buffer = gl_buffer };
+    vertex_ctx->buffers_objects = realloc(
+        vertex_ctx->buffers_objects, new_buffers_count * sizeof(DivisionVertexBufferObjects));
+
+    vertex_ctx->buffers[buffers_count] = vertex_buffer;
+    vertex_ctx->buffers_impl[buffers_count] = (DivisionVertexBufferInternalImpl_) {
+        .gl_buffer = gl_buffer,
+        .gl_topology = topology_to_gl_type(render_topology)
+    };
+    vertex_ctx->buffers_objects[buffers_count] = vertex_buffer_objects;
+
     vertex_ctx->buffers_count++;
 
     glBufferData(GL_ARRAY_BUFFER, (GLsizei) (per_vertex_data_size * vertex_count), NULL, GL_STATIC_DRAW);
@@ -142,7 +161,9 @@ void division_engine_vertex_buffer_set_vertex_data_for_attribute(
 {
     DivisionVertexBufferSystemContext* vertex_buffer_context = ctx->vertex_buffer_context;
     DivisionVertexBuffer vb = vertex_buffer_context->buffers[vertex_buffer];
-    size_t obj_vertex_count = vb.objects_vertex_count[object_index];
+    DivisionVertexBufferObjects vb_objs = vertex_buffer_context->buffers_objects[vertex_buffer];
+    GLuint gl_buffer = vertex_buffer_context->buffers_impl[vertex_buffer].gl_buffer;
+    size_t obj_vertex_count = vb_objs.objects_vertex_count[object_index];
 
     if (vertex_count > obj_vertex_count)
     {
@@ -150,10 +171,10 @@ void division_engine_vertex_buffer_set_vertex_data_for_attribute(
         fprintf(stderr, "Vertex count overflow. Available: %zu, but set: %zu", obj_vertex_count, vertex_count);
     }
 
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_context->buffers_impl[vertex_buffer].gl_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, gl_buffer);
     void* buffer_data_ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 
-    size_t obj_first_index = vb.objects_start_vertex[object_index] + first_vertex_index;
+    size_t obj_first_index = vb_objs.objects_start_vertex[object_index] + first_vertex_index;
     DivisionVertexAttribute attr = vb.attributes[attribute_index];
     int32_t attr_size = attr.base_size * attr.component_count;
 
@@ -174,13 +195,20 @@ AttrTraits_ division_attribute_get_traits(DivisionShaderVariableType attributeTy
 {
     switch (attributeType)
     {
-        case DIVISION_FLOAT: return (AttrTraits_) {GL_FLOAT, 4, 1};
-        case DIVISION_DOUBLE: return (AttrTraits_) {GL_DOUBLE, 8, 1};
-        case DIVISION_INTEGER: return (AttrTraits_) {GL_INT, 4, 1};
-        case DIVISION_FVEC2: return (AttrTraits_) {GL_FLOAT, 4, 2};
-        case DIVISION_FVEC3: return (AttrTraits_) {GL_FLOAT, 4, 3};
-        case DIVISION_FVEC4: return (AttrTraits_) {GL_FLOAT, 4, 4};
-        case DIVISION_FMAT4X4: return (AttrTraits_) {GL_FLOAT, 4, 16};
+        case DIVISION_FLOAT:
+            return (AttrTraits_) {GL_FLOAT, 4, 1};
+        case DIVISION_DOUBLE:
+            return (AttrTraits_) {GL_DOUBLE, 8, 1};
+        case DIVISION_INTEGER:
+            return (AttrTraits_) {GL_INT, 4, 1};
+        case DIVISION_FVEC2:
+            return (AttrTraits_) {GL_FLOAT, 4, 2};
+        case DIVISION_FVEC3:
+            return (AttrTraits_) {GL_FLOAT, 4, 3};
+        case DIVISION_FVEC4:
+            return (AttrTraits_) {GL_FLOAT, 4, 4};
+        case DIVISION_FMAT4X4:
+            return (AttrTraits_) {GL_FLOAT, 4, 16};
         default:
         {
             fprintf(stderr, "Unknown attribute type");
@@ -188,22 +216,37 @@ AttrTraits_ division_attribute_get_traits(DivisionShaderVariableType attributeTy
     }
 }
 
+int32_t division_engine_vertex_buffer_render_pass_alloc(DivisionContext* ctx, DivisionRenderPass render_pass)
+{
+    DivisionVertexBufferSystemContext* pass_ctx = ctx->vertex_buffer_context;
+
+    int32_t render_pass_count = pass_ctx->render_pass_count;
+    int32_t new_render_pass_count = render_pass_count + 1;
+    pass_ctx->render_passes = realloc(pass_ctx->render_passes, sizeof(DivisionRenderPass) * new_render_pass_count);
+    pass_ctx->render_passes[render_pass_count] = render_pass;
+    pass_ctx->render_pass_count++;
+
+    return pass_ctx->render_pass_count - 1;
+}
+
 void division_engine_internal_vertex_buffer_draw(DivisionContext* ctx)
 {
-    DivisionRenderPassSystemContext* pass_ctx = ctx->render_pass_context;
     DivisionVertexBufferSystemContext* vert_buff_ctx = ctx->vertex_buffer_context;
-    DivisionVertexBuffer* buffers = vert_buff_ctx->buffers;
+    DivisionVertexBufferObjects* buffers_objects = vert_buff_ctx->buffers_objects;
     DivisionVertexBufferInternalImpl_* buffers_impl = vert_buff_ctx->buffers_impl;
+    int32_t pass_count = vert_buff_ctx->render_pass_count;
 
-    for (int32_t i = 0; i < pass_ctx->render_pass_count; i++) {
-        DivisionRenderPass pass = pass_ctx->render_passes[i];
-        GLenum gl_draw_type = topology_to_gl_type(pass.topology);
-        DivisionVertexBuffer vb = buffers[pass.vertex_buffer];
+    for (int32_t i = 0; i < pass_count; i++)
+    {
+        DivisionRenderPass pass = vert_buff_ctx->render_passes[i];
+        DivisionVertexBufferObjects vb_objs = buffers_objects[pass.vertex_buffer];
         GLuint gl_buffer = buffers_impl[i].gl_buffer;
+        GLenum gl_draw_type = buffers_impl[i].gl_topology;
 
         glBindBuffer(GL_ARRAY_BUFFER, gl_buffer);
         glUseProgram(pass.shader_program);
-        glMultiDrawArrays(gl_draw_type, vb.objects_start_vertex, vb.objects_vertex_count, vb.objects_count);
+        glMultiDrawArrays(
+            gl_draw_type, vb_objs.objects_start_vertex, vb_objs.objects_vertex_count, vb_objs.objects_count);
     }
 }
 
@@ -211,9 +254,12 @@ GLenum topology_to_gl_type(DivisionRenderTopology t)
 {
     switch (t)
     {
-        case DIVISION_TOPOLOGY_TRIANGLES: return GL_TRIANGLES;
-        case DIVISION_TOPOLOGY_LINES: return GL_LINES;
-        case DIVISION_TOPOLOGY_POINTS: return GL_POINTS;
+        case DIVISION_TOPOLOGY_TRIANGLES:
+            return GL_TRIANGLES;
+        case DIVISION_TOPOLOGY_LINES:
+            return GL_LINES;
+        case DIVISION_TOPOLOGY_POINTS:
+            return GL_POINTS;
         default:
         {
             fprintf(stderr, "Unknown type of topology");

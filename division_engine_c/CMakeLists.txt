@@ -15,7 +15,6 @@ set(SOURCES
         lib/glad/include/glad/gl.h
         src/context.c
         src/renderer.c
-        src/render_pass.c
         src/shader.c
         src/vertex_buffer.c
 )

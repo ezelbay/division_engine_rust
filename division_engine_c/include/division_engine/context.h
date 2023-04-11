@@ -17,7 +17,6 @@ typedef struct {
     DivisionErrorFunc error_callback;
     struct DivisionRendererSystemContext* renderer_context;
     struct DivisionVertexBufferSystemContext* vertex_buffer_context;
-    struct DivisionRenderPassSystemContext* render_pass_context;
 
     void* user_data;
 } DivisionContext;
