@@ -5,31 +5,19 @@
 #include "color.h"
 #include "settings.h"
 #include "state.h"
-#include "vertex_attribute.h"
 
 struct DivisionVertexBufferInternal_;
+struct DivisionRendererSystemContext;
+struct DivisionVertexBufferSystemContext;
+struct DivisionRenderPassSystemContext;
 
 typedef struct {
-    DivisionColor clear_color;
-    void* window_data;
-} DivisionRendererSystemContext;
-
-typedef struct {
-    struct DivisionVertexBufferInternal_* buffers;
-    int32_t buffers_count;
-} DivisionVertexBufferSystemContext;
-
-typedef struct {
-    struct DivisionRenderPass* render_passes;
-    int32_t render_pass_count;
-} DivisionRenderPassSystemContext;
-
-typedef struct {
-    DivisionEngineErrorFunc error_callback;
-    DivisionRendererSystemContext renderer_context;
-    DivisionVertexBufferSystemContext vertex_buffer_context;
-    DivisionRenderPassSystemContext render_pass_context;
     DivisionEngineState state;
+
+    DivisionEngineErrorFunc error_callback;
+    struct DivisionRendererSystemContext* renderer_context;
+    struct DivisionVertexBufferSystemContext* vertex_buffer_context;
+    struct DivisionRenderPassSystemContext* render_pass_context;
 
     void* user_data;
 } DivisionContext;

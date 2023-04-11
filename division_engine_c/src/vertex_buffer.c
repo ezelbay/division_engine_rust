@@ -10,7 +10,7 @@
 #include "division_engine/render_pass.h"
 
 typedef struct {
-    DivisionEngineVertexAttribute attr;
+    int32_t location;
     GLenum gl_type;
     int32_t offset;
     int32_t base_size;
@@ -42,7 +42,8 @@ static inline GLenum topology_to_gl_type(DivisionRenderTopology t);
 
 bool division_engine_internal_vertex_buffer_context_alloc(DivisionContext* ctx)
 {
-    ctx->vertex_buffer_context = (DivisionVertexBufferSystemContext) {
+    ctx->vertex_buffer_context = malloc(sizeof(DivisionVertexBufferSystemContext));
+    *ctx->vertex_buffer_context = (DivisionVertexBufferSystemContext) {
         .buffers = NULL,
         .buffers_count = 0
     };
@@ -52,7 +53,7 @@ bool division_engine_internal_vertex_buffer_context_alloc(DivisionContext* ctx)
 
 void division_engine_internal_vertex_buffer_context_free(DivisionContext* ctx)
 {
-    DivisionVertexBufferSystemContext* vertex_buffer_ctx = &ctx->vertex_buffer_context;
+    DivisionVertexBufferSystemContext* vertex_buffer_ctx = ctx->vertex_buffer_context;
     for (int i = 0; i < vertex_buffer_ctx->buffers_count; i++)
     {
         free(vertex_buffer_ctx->buffers[i].attributes);
@@ -61,7 +62,7 @@ void division_engine_internal_vertex_buffer_context_free(DivisionContext* ctx)
     }
 
     free(vertex_buffer_ctx->buffers);
-    vertex_buffer_ctx->buffers = NULL;
+    free(vertex_buffer_ctx);
 }
 
 int32_t division_engine_vertex_buffer_alloc(
@@ -73,7 +74,7 @@ int32_t division_engine_vertex_buffer_alloc(
     glGenBuffers(1, &gl_handle);
     glBindBuffer(GL_ARRAY_BUFFER, gl_handle);
 
-    DivisionVertexBufferSystemContext* vertex_ctx = &ctx->vertex_buffer_context;
+    DivisionVertexBufferSystemContext* vertex_ctx = ctx->vertex_buffer_context;
     DivisionVertexBufferInternal_ vertex_buffer = {
         .attributes = malloc(sizeof(VertexAttributeInternal_) * attr_count),
         .gl_buffer = gl_handle,
@@ -96,7 +97,7 @@ int32_t division_engine_vertex_buffer_alloc(
         per_vertex_data_size += attr_size;
 
         vertex_buffer.attributes[i] = (VertexAttributeInternal_) {
-            .attr = at,
+            .location = at.location,
             .gl_type = attr_traits.gl_type,
             .offset = offset,
             .base_size = attr_traits.base_size,
@@ -108,9 +109,14 @@ int32_t division_engine_vertex_buffer_alloc(
     {
         VertexAttributeInternal_* at = &vertex_buffer.attributes[i];
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wint-to-pointer-cast"
+        void* offset = (void*) at->offset;
+#pragma clang diagnostic pop
+
         glVertexAttribPointer(
-            at->attr.location, at->component_count, at->gl_type, GL_FALSE, per_vertex_data_size, (void*) at->offset);
-        glEnableVertexAttribArray(at->attr.location);
+            at->location, at->component_count, at->gl_type, GL_FALSE, per_vertex_data_size, offset);
+        glEnableVertexAttribArray(at->location);
     }
 
     vertex_buffer.per_vertex_data_size = per_vertex_data_size;
@@ -136,7 +142,7 @@ void division_engine_vertex_buffer_set_vertex_data_for_attribute(
     size_t vertex_count
 )
 {
-    DivisionVertexBufferInternal_ vb = ctx->vertex_buffer_context.buffers[vertex_buffer];
+    DivisionVertexBufferInternal_ vb = ctx->vertex_buffer_context->buffers[vertex_buffer];
     size_t obj_vertex_count = vb.objects_vertex_count[object_index];
 
     if (vertex_count > obj_vertex_count)
@@ -180,17 +186,18 @@ DivisionAttributeTraitsInternal_ division_attribute_get_traits(DivisionVariableT
         {
             fprintf(stderr, "Unknown attribute type");
         }
-    };
+    }
 }
 
 void division_engine_internal_vertex_buffer_draw(DivisionContext* ctx)
 {
-    DivisionRenderPassSystemContext* pass_ctx = &ctx->render_pass_context;
+    DivisionRenderPassSystemContext* pass_ctx = ctx->render_pass_context;
+    DivisionVertexBufferSystemContext* vert_buff_ctx = ctx->vertex_buffer_context;
 
     for (int32_t i = 0; i < pass_ctx->render_pass_count; i++) {
         DivisionRenderPass pass = pass_ctx->render_passes[i];
         GLenum gl_draw_type = topology_to_gl_type(pass.topology);
-        DivisionVertexBufferInternal_ vb = ctx->vertex_buffer_context.buffers[pass.vertex_buffer];
+        DivisionVertexBufferInternal_ vb = vert_buff_ctx->buffers[pass.vertex_buffer];
 
         glBindBuffer(GL_ARRAY_BUFFER, vb.gl_buffer);
         glUseProgram(pass.shader_program);

@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "division_engine/renderer.h"
 #include "division_engine/render_pass.h"
 #include "division_engine/vertex_buffer.h"
@@ -7,7 +6,7 @@
 #include "GLFW/glfw3.h"
 
 bool division_engine_internal_renderer_context_alloc(
-    DivisionContext* renderer_context,
+    DivisionContext* ctx,
     const DivisionEngineSettings* settings
 )
 {
@@ -40,10 +39,12 @@ bool division_engine_internal_renderer_context_alloc(
         return -1;
     }
 
-    renderer_context->renderer_context = (DivisionRendererSystemContext) {
+    DivisionRendererSystemContext* ctx_ptr = malloc(sizeof(DivisionRendererSystemContext));
+    *ctx_ptr = (DivisionRendererSystemContext) {
         .window_data = window,
         .clear_color = {0, 0, 0, 1}
     };
+    ctx->renderer_context = ctx_ptr;
 
     return true;
 }
@@ -51,7 +52,7 @@ bool division_engine_internal_renderer_context_alloc(
 void division_engine_renderer_run_loop(
     DivisionContext* ctx, DivisionEngineUpdateFunc update_callback)
 {
-    DivisionRendererSystemContext* renderer_context = &ctx->renderer_context;
+    DivisionRendererSystemContext* renderer_context = ctx->renderer_context;
     GLFWwindow* window = (GLFWwindow*) renderer_context->window_data;
     double last_frame_time, current_time, delta_time;
 
@@ -80,8 +81,10 @@ void division_engine_renderer_run_loop(
 
 void division_engine_internal_renderer_context_free(DivisionContext* ctx)
 {
-    glfwDestroyWindow((GLFWwindow*) ctx->renderer_context.window_data);
+    DivisionRendererSystemContext* renderer_ctx = ctx->renderer_context;
+
+    glfwDestroyWindow((GLFWwindow*) renderer_ctx->window_data);
     glfwTerminate();
 
-    ctx->renderer_context.window_data = NULL;
+    free(renderer_ctx);
 }

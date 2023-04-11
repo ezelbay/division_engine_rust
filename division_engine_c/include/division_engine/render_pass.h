@@ -17,6 +17,11 @@ typedef struct DivisionRenderPass {
     DivisionRenderTopology topology;
 } DivisionRenderPass;
 
+typedef struct DivisionRenderPassSystemContext {
+    DivisionRenderPass* render_passes;
+    int32_t render_pass_count;
+} DivisionRenderPassSystemContext;
+
 int32_t division_engine_render_pass_alloc(DivisionContext* ctx, DivisionRenderPass pass);
 
 bool division_engine_internal_render_pass_context_alloc(DivisionContext* ctx);

@@ -6,6 +6,12 @@
 #include "context.h"
 #include "vertex_attribute.h"
 
+
+typedef struct DivisionVertexBufferSystemContext {
+    struct DivisionVertexBufferInternal_* buffers;
+    int32_t buffers_count;
+} DivisionVertexBufferSystemContext;
+
 bool division_engine_internal_vertex_buffer_context_alloc(DivisionContext* ctx);
 void division_engine_internal_vertex_buffer_context_free(DivisionContext* ctx);
 
