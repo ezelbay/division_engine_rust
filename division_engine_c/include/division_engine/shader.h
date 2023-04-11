@@ -30,3 +30,14 @@ bool division_engine_shader_from_source_attach_to_program(
 bool division_engine_shader_link_program(int32_t program_id);
 
 int32_t division_engine_shader_program_get_attribute_location(const char* name, int32_t program_id);
+int32_t division_engine_shader_program_get_uniform_location(const char* name, int32_t program_id);
+
+void division_engine_shader_program_get_uniform_float(int32_t program_id, int32_t location, float* output_value);
+void division_engine_shader_program_get_uniform_vec2(int32_t program_id, int32_t location, float output_values[2]);
+void division_engine_shader_program_get_uniform_vec3(int32_t program_id, int32_t location, float output_values[3]);
+void division_engine_shader_program_get_uniform_vec4(int32_t program_id, int32_t location, float output_values[4]);
+
+void division_engine_shader_program_set_uniform_float(int32_t program_id, int32_t location, float value);
+void division_engine_shader_program_set_uniform_vec2(int32_t program_id, int32_t location, const float values[2]);
+void division_engine_shader_program_set_uniform_vec3(int32_t program_id, int32_t location, const float values[3]);
+void division_engine_shader_program_set_uniform_vec4(int32_t program_id, int32_t location, const float values[4]);

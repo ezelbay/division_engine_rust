@@ -8,6 +8,10 @@
 void error_callback(int error_code, const char* message);
 void update_callback(DivisionContext* ctx);
 
+typedef struct UserData {
+    int32_t shader_id;
+} UserData;
+
 int main()
 {
     DivisionSettings settings = {
@@ -58,7 +62,18 @@ int main()
         .topology = DIVISION_TOPOLOGY_TRIANGLES,
     });
 
+    int32_t uniform_id = division_engine_shader_program_get_uniform_location("TestColor", shader_program);
+    float testVec[] = { 1, 0, 1, 1 };
+    division_engine_shader_program_set_uniform_vec4(shader_program, uniform_id, testVec);
+
+    float outputTestVec[4];
+    division_engine_shader_program_get_uniform_vec4(shader_program, uniform_id, outputTestVec);
+    printf("TestVec location: %d, Output values are: { %f, %f, %f, %f }",
+           uniform_id, outputTestVec[0], outputTestVec[1], outputTestVec[2], outputTestVec[3]
+    );
+
     division_engine_renderer_run_loop(context, update_callback);
+    division_engine_shader_program_free(shader_program);
     division_engine_context_free(context);
 }
 

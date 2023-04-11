@@ -179,3 +179,48 @@ int32_t division_engine_shader_program_get_attribute_location(const char* name, 
 {
     return glGetAttribLocation(program_id, name);
 }
+
+int32_t division_engine_shader_program_get_uniform_location(const char* name, int32_t program_id)
+{
+    return glGetUniformLocation(program_id, name);
+}
+
+void division_engine_shader_program_get_uniform_float(int32_t program_id, int32_t location, float* output_value)
+{
+    glGetUniformfv(program_id, location, output_value);
+}
+
+void division_engine_shader_program_get_uniform_vec2(int32_t program_id, int32_t location, float* output_values)
+{
+    glGetUniformfv(program_id, location, output_values);
+}
+
+void division_engine_shader_program_get_uniform_vec3(int32_t program_id, int32_t location, float* output_values)
+{
+    glGetUniformfv(program_id, location, output_values);
+}
+
+void division_engine_shader_program_get_uniform_vec4(int32_t program_id, int32_t location, float* output_values)
+{
+    glGetUniformfv(program_id, location, output_values);
+}
+
+void division_engine_shader_program_set_uniform_float(int32_t program_id, int32_t location, float value)
+{
+    glProgramUniform1f(program_id, location, value);
+}
+
+void division_engine_shader_program_set_uniform_vec2(int32_t program_id, int32_t location, const float* values)
+{
+    glProgramUniform2fv(program_id, location, 1, values);
+}
+
+void division_engine_shader_program_set_uniform_vec3(int32_t program_id, int32_t location, const float* values)
+{
+    glProgramUniform3fv(program_id, location, 1, values);
+}
+
+void division_engine_shader_program_set_uniform_vec4(int32_t program_id, int32_t location, const float* values)
+{
+    glProgramUniform4fv(program_id, location, 1, values);
+}
