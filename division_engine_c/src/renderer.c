@@ -39,12 +39,11 @@ bool division_engine_internal_renderer_context_alloc(
         return -1;
     }
 
-    DivisionRendererSystemContext* ctx_ptr = malloc(sizeof(DivisionRendererSystemContext));
-    *ctx_ptr = (DivisionRendererSystemContext) {
+    ctx->renderer_context = malloc(sizeof(DivisionRendererSystemContext));
+    *ctx->renderer_context = (DivisionRendererSystemContext) {
         .window_data = window,
         .clear_color = {0, 0, 0, 1}
     };
-    ctx->renderer_context = ctx_ptr;
 
     return true;
 }
