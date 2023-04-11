@@ -10,7 +10,7 @@ void update_callback(DivisionContext* ctx);
 
 int main()
 {
-    DivisionEngineSettings settings = {
+    DivisionSettings settings = {
         .error_callback = error_callback,
         .window_title = "New window",
         .window_width = 512,
@@ -25,10 +25,10 @@ int main()
     division_engine_shader_from_file_attach_to_program("test.frag", DIVISION_SHADER_FRAGMENT, shader_program);
     division_engine_shader_link_program(shader_program);
 
-    int32_t posLocation = division_engine_attribute_get_location("pos", shader_program);
-    int32_t fColorLocation = division_engine_attribute_get_location("fColor", shader_program);
+    int32_t posLocation = division_engine_shader_program_get_attribute_location("pos", shader_program);
+    int32_t fColorLocation = division_engine_shader_program_get_attribute_location("fColor", shader_program);
 
-    DivisionEngineVertexAttribute attr[2] = {
+    DivisionVertexAttributeSettings attr[2] = {
         {.type = DIVISION_FVEC3, .location = posLocation},
         {.type = DIVISION_FVEC4, .location = fColorLocation}
     };

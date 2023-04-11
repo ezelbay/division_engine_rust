@@ -9,7 +9,7 @@ static int create_shader_from_source(const char* source, size_t source_size, GLu
 static bool alloc_shader_source_from_file(const char* path, char** shader_data, size_t* data_size);
 static bool check_program_status(GLuint programHandle);
 static void get_program_info_log(GLuint program_handle, char** error_ptr);
-static int shader_type_to_gl_type(DivisionEngineShaderType shaderType);
+static int shader_type_to_gl_type(DivisionShaderType shaderType);
 
 int32_t division_engine_shader_program_alloc()
 {
@@ -17,7 +17,7 @@ int32_t division_engine_shader_program_alloc()
 }
 
 bool division_engine_shader_from_file_attach_to_program(
-    const char* path, DivisionEngineShaderType type, int32_t program_id)
+    const char* path, DivisionShaderType type, int32_t program_id)
 {
     char* shader_src;
     size_t shader_src_size;
@@ -34,7 +34,7 @@ bool division_engine_shader_from_file_attach_to_program(
 }
 
 bool division_engine_shader_from_source_attach_to_program(
-    const char* source, size_t source_size, DivisionEngineShaderType type, int32_t program_id)
+    const char* source, size_t source_size, DivisionShaderType type, int32_t program_id)
 {
     int gl_shader_type = shader_type_to_gl_type(type);
     if (gl_shader_type < 0)
@@ -156,7 +156,7 @@ void get_program_info_log(GLuint program_handle, char** error_ptr)
     *error_ptr = error;
 }
 
-int shader_type_to_gl_type(DivisionEngineShaderType shaderType)
+int shader_type_to_gl_type(DivisionShaderType shaderType)
 {
     switch (shaderType)
     {
@@ -173,4 +173,9 @@ int shader_type_to_gl_type(DivisionEngineShaderType shaderType)
 void division_engine_shader_program_free(int32_t program_id)
 {
     glDeleteProgram((GLuint) program_id);
+}
+
+int32_t division_engine_shader_program_get_attribute_location(const char* name, int32_t program_id)
+{
+    return glGetAttribLocation(program_id, name);
 }

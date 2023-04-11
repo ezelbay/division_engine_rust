@@ -10,7 +10,7 @@
 #include "division_engine/render_pass.h"
 #include "division_engine/vertex_buffer.h"
 
-bool division_engine_context_alloc(const DivisionEngineSettings* settings, DivisionContext** output_context)
+bool division_engine_context_alloc(const DivisionSettings* settings, DivisionContext** output_context)
 {
     DivisionContext* ctx = (DivisionContext*) malloc(sizeof(DivisionContext));
     ctx->error_callback = settings->error_callback;

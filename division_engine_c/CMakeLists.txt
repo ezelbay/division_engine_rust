@@ -17,7 +17,6 @@ set(SOURCES
         src/renderer.c
         src/render_pass.c
         src/shader.c
-        src/vertex_attribute.c
         src/vertex_buffer.c
 )
 set(FILES_TO_COPY ${GLFW_BINARY_DIR}/src/libglfw3.a)

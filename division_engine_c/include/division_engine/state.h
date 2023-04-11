@@ -2,4 +2,4 @@
 
 typedef struct {
     double delta_time;
-} DivisionEngineState;
+} DivisionState;

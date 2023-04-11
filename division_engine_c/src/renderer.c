@@ -7,7 +7,7 @@
 
 bool division_engine_internal_renderer_context_alloc(
     DivisionContext* ctx,
-    const DivisionEngineSettings* settings
+    const DivisionSettings* settings
 )
 {
     glfwSetErrorCallback(settings->error_callback);
