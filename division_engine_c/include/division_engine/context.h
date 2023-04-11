@@ -6,7 +6,6 @@
 #include "settings.h"
 #include "state.h"
 
-struct DivisionVertexBuffer;
 struct DivisionRendererSystemContext;
 struct DivisionVertexBufferSystemContext;
 
