@@ -1,12 +1,13 @@
-#include <division_engine/platform_renderer.h>
+#define GLFW_INCLUDE_NONE
+#define GLAD_GL_IMPLEMENTATION
+#include <glad/gl.h>
+#include <GLFW/glfw3.h>
+
 #include "division_engine/renderer.h"
-
-#include "glad/gl.h"
-#include "GLFW/glfw3.h"
-
 #include "division_engine/vertex_buffer.h"
 
-static void run_event_loop(DivisionContext* ctx, const DivisionSettings* settings);
+#include "division_engine/platform_internal/platform_renderer.h"
+#include "division_engine/platform_internal/platform_vertex_buffer.h"
 
 bool division_engine_internal_platform_renderer_alloc(DivisionContext* ctx, const DivisionSettings* settings)
 {
@@ -69,7 +70,7 @@ void division_engine_internal_platform_renderer_run_loop(DivisionContext* ctx, c
 
             ctx->state.delta_time = delta_time;
             settings->update_callback(ctx);
-            division_engine_internal_vertex_buffer_draw(ctx);
+            division_engine_internal_platform_vertex_buffer_draw(ctx);
             glfwSwapBuffers(window);
         }
 

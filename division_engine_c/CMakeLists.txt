@@ -13,14 +13,17 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glfw)
 
 set(SOURCES
-    lib/glad/include/glad/gl.h
     src/context.c
     src/renderer.c
     src/shader.c
     src/vertex_buffer.c
 )
 
-set(GLFW_SOURCES src/glfw_impl/glfw_renderer.c)
+set(GLFW_SOURCES
+    lib/glad/include/glad/gl.h
+    src/glfw_internal/glfw_renderer.c
+    src/glfw_internal/glfw_vertex_buffer.c
+)
 set(FILES_TO_COPY ${GLFW_BINARY_DIR}/src/libglfw3.a)
 
 add_library(division_engine_c STATIC ${SOURCES} ${GLFW_SOURCES})

@@ -40,7 +40,7 @@ int main()
     int32_t vertex_buffer = division_engine_vertex_buffer_alloc(context, attr, 2, 3, DIVISION_TOPOLOGY_TRIANGLES);
 
     float positions[9] = {
-        -1, -1, 0,
+        -0.5f, -0.5f, 0,
         -1, 0, 0,
          1, 1, 0
     };

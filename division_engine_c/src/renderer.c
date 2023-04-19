@@ -1,5 +1,5 @@
 #include "division_engine/renderer.h"
-#include "division_engine/platform_renderer.h"
+#include "division_engine/platform_internal/platform_renderer.h"
 
 #include <stdlib.h>
 

@@ -22,6 +22,7 @@ typedef struct DivisionVertexAttribute {
     int32_t offset;
     int32_t base_size;
     int32_t component_count;
+    DivisionShaderVariableType type;
 } DivisionVertexAttribute;
 
 typedef struct DivisionVertexBuffer {
@@ -29,8 +30,8 @@ typedef struct DivisionVertexBuffer {
     DivisionVertexAttribute* attributes;
     int32_t attribute_count;
     int32_t vertex_count;
-
     size_t per_vertex_data_size;
+    DivisionRenderTopology topology;
 } DivisionVertexBuffer;
 
 typedef struct DivisionVertexBufferObjects {
@@ -55,7 +56,7 @@ typedef struct DivisionVertexBufferSystemContext {
     int32_t render_pass_count;
 } DivisionVertexBufferSystemContext;
 
-bool division_engine_internal_vertex_buffer_context_alloc(DivisionContext* ctx);
+bool division_engine_internal_vertex_buffer_context_alloc(DivisionContext* ctx, const DivisionSettings* settings);
 void division_engine_internal_vertex_buffer_context_free(DivisionContext* ctx);
 
 int32_t division_engine_vertex_buffer_alloc(
@@ -76,5 +77,3 @@ void division_engine_vertex_buffer_set_vertex_data_for_attribute(
 );
 
 int32_t division_engine_vertex_buffer_render_pass_alloc(DivisionContext* ctx, DivisionRenderPass render_pass);
-
-void division_engine_internal_vertex_buffer_draw(DivisionContext* ctx);
