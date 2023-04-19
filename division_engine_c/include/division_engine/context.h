@@ -9,7 +9,7 @@
 struct DivisionRendererSystemContext;
 struct DivisionVertexBufferSystemContext;
 
-typedef struct {
+typedef struct DivisionContext {
     DivisionState state;
 
     DivisionErrorFunc error_callback;

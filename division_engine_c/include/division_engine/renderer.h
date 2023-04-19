@@ -13,9 +13,7 @@ typedef struct DivisionRendererSystemContext {
     void* window_data;
 } DivisionRendererSystemContext;
 
-typedef void(*DivisionEngineUpdateFunc)(DivisionContext* ctx);
-
-void division_engine_renderer_run_loop(DivisionContext* ctx, DivisionEngineUpdateFunc update_callback);
-
 bool division_engine_internal_renderer_context_alloc(DivisionContext* ctx, const DivisionSettings* settings);
 void division_engine_internal_renderer_context_free(DivisionContext* ctx);
+
+void division_engine_renderer_run_loop(DivisionContext* ctx, const DivisionSettings* settings);

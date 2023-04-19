@@ -1,10 +1,10 @@
 #include <stdio.h>
-#include <string.h>
 #include "division_engine/renderer.h"
 #include "division_engine/shader.h"
 #include "division_engine/vertex_buffer.h"
 
 void error_callback(int error_code, const char* message);
+void init_callback(DivisionContext* ctx);
 void update_callback(DivisionContext* ctx);
 
 typedef struct UserData {
@@ -14,10 +14,12 @@ typedef struct UserData {
 int main()
 {
     DivisionSettings settings = {
-        .error_callback = error_callback,
         .window_title = "New window",
         .window_width = 512,
-        .window_height = 512
+        .window_height = 512,
+        .init_callback = init_callback,
+        .update_callback = update_callback,
+        .error_callback = error_callback,
     };
 
     DivisionContext* context = NULL;
@@ -70,16 +72,20 @@ int main()
            uniform_id, outputTestVec[0], outputTestVec[1], outputTestVec[2], outputTestVec[3]
     );
 
-    division_engine_renderer_run_loop(context, update_callback);
+    division_engine_renderer_run_loop(context, &settings);
     division_engine_shader_program_free(shader_program);
     division_engine_context_free(context);
+}
+
+void init_callback(DivisionContext* ctx)
+{
+}
+
+void update_callback(DivisionContext* ctx)
+{
 }
 
 void error_callback(int error_code, const char* message)
 {
     fprintf(stderr, "Error code: %d, error message: %s", error_code, message);
-}
-
-void update_callback(DivisionContext* ctx)
-{
 }

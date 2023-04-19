@@ -3,6 +3,7 @@ project(division_engine_c)
 set(CMAKE_C_STANDARD 11)
 
 include(FetchContent)
+include(GenerateExportHeader)
 
 FetchContent_Declare(
         glfw
@@ -12,20 +13,21 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glfw)
 
 set(SOURCES
-        lib/glad/include/glad/gl.h
-        src/context.c
-        src/renderer.c
-        src/shader.c
-        src/vertex_buffer.c
+    lib/glad/include/glad/gl.h
+    src/context.c
+    src/renderer.c
+    src/shader.c
+    src/vertex_buffer.c
 )
+
+set(GLFW_SOURCES src/glfw_impl/glfw_renderer.c)
 set(FILES_TO_COPY ${GLFW_BINARY_DIR}/src/libglfw3.a)
 
-add_library(division_engine_c STATIC ${SOURCES})
+add_library(division_engine_c STATIC ${SOURCES} ${GLFW_SOURCES})
 
-target_include_directories(division_engine_c PUBLIC
-        ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/lib/glad/include
-        )
+target_include_directories(division_engine_c PUBLIC ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/lib/glad/include)
 target_link_libraries(division_engine_c PUBLIC glfw ${GLFW_STATIC_LIBRARIES})
+GENERATE_EXPORT_HEADER(division_engine_c EXPORT_MACRO_NAME DIVISION_EXPORT)
 
 add_executable(division_main_test tests/main.c)
 target_link_libraries(division_main_test PUBLIC division_engine_c)
