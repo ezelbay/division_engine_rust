@@ -2,6 +2,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct DivisionContext;
 
 typedef void (*DivisionErrorFunc) (int, const char*);
@@ -15,3 +19,7 @@ typedef struct {
     DivisionLifecycleFunc init_callback;
     DivisionLifecycleFunc update_callback;
 } DivisionSettings;
+
+#ifdef __cplusplus
+}
+#endif

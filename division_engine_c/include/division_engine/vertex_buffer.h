@@ -6,6 +6,12 @@
 #include "context.h"
 #include "shader.h"
 
+#include <division_engine_c_export.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
     DIVISION_TOPOLOGY_TRIANGLES = 0,
     DIVISION_TOPOLOGY_POINTS = 1,
@@ -56,17 +62,18 @@ typedef struct DivisionVertexBufferSystemContext {
     int32_t render_pass_count;
 } DivisionVertexBufferSystemContext;
 
-bool division_engine_internal_vertex_buffer_context_alloc(DivisionContext* ctx, const DivisionSettings* settings);
-void division_engine_internal_vertex_buffer_context_free(DivisionContext* ctx);
+DIVISION_EXPORT bool division_engine_internal_vertex_buffer_context_alloc(
+    DivisionContext* ctx, const DivisionSettings* settings);
+DIVISION_EXPORT void division_engine_internal_vertex_buffer_context_free(DivisionContext* ctx);
 
-int32_t division_engine_vertex_buffer_alloc(
+DIVISION_EXPORT int32_t division_engine_vertex_buffer_alloc(
     DivisionContext* ctx,
     DivisionVertexAttributeSettings* attrs,
     int32_t attr_count,
     int32_t vertex_count,
     DivisionRenderTopology render_topology);
 
-void division_engine_vertex_buffer_set_vertex_data_for_attribute(
+DIVISION_EXPORT void division_engine_vertex_buffer_set_vertex_data_for_attribute(
     DivisionContext* ctx,
     int32_t vertex_buffer,
     int32_t object_index,
@@ -76,4 +83,9 @@ void division_engine_vertex_buffer_set_vertex_data_for_attribute(
     size_t vertex_count
 );
 
-int32_t division_engine_vertex_buffer_render_pass_alloc(DivisionContext* ctx, DivisionRenderPass render_pass);
+DIVISION_EXPORT int32_t division_engine_vertex_buffer_render_pass_alloc(
+    DivisionContext* ctx, DivisionRenderPass render_pass);
+
+#ifdef __cplusplus
+}
+#endif

@@ -14,7 +14,8 @@ set(SOURCES
 
 add_library(division_engine_c STATIC ${SOURCES})
 
-target_include_directories(division_engine_c PUBLIC ${CMAKE_SOURCE_DIR}/include )
+target_include_directories(division_engine_c PUBLIC
+        ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR})
 target_link_libraries(division_engine_c PUBLIC glfw_internal)
 GENERATE_EXPORT_HEADER(division_engine_c EXPORT_MACRO_NAME DIVISION_EXPORT)
 

@@ -6,9 +6,15 @@
 #include "settings.h"
 #include "state.h"
 
+#include <division_engine_c_export.h>
+
 struct DivisionRendererSystemContext;
 struct DivisionShaderSystemContext;
 struct DivisionVertexBufferSystemContext;
+
+#ifdef __cpluspus
+extern "C" {
+#endif
 
 typedef struct DivisionContext {
     DivisionState state;
@@ -21,5 +27,9 @@ typedef struct DivisionContext {
     void* user_data;
 } DivisionContext;
 
-bool division_engine_context_alloc(const DivisionSettings* settings, DivisionContext** output_context);
-void division_engine_context_free(DivisionContext* ctx);
+DIVISION_EXPORT bool division_engine_context_alloc(const DivisionSettings* settings, DivisionContext** output_context);
+DIVISION_EXPORT void division_engine_context_free(DivisionContext* ctx);
+
+#ifdef __cpluspus
+}
+#endif

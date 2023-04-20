@@ -18,5 +18,7 @@ set(GLFW_SOURCES
 add_library(glfw_internal STATIC ${GLFW_SOURCES})
 
 target_include_directories(glfw_internal PRIVATE ${CMAKE_SOURCE_DIR}/include lib/glad/include)
+target_include_directories(glfw_internal PRIVATE ${CMAKE_BINARY_DIR})
+
 target_link_libraries(glfw_internal PRIVATE glfw ${GLFW_STATIC_LIBRARIES})
 set(FILES_TO_COPY ${GLFW_BINARY_DIR}/src/libglfw3.a)
