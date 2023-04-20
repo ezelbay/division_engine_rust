@@ -26,7 +26,7 @@ typedef struct DivisionVertexAttribute {
 } DivisionVertexAttribute;
 
 typedef struct DivisionVertexBuffer {
-    struct VertexAttributeInternalImpl_* attributes_impl;
+    struct VertexAttributeInternalPlatform_* attributes_impl;
     DivisionVertexAttribute* attributes;
     int32_t attribute_count;
     int32_t vertex_count;
@@ -50,7 +50,7 @@ typedef struct DivisionVertexBufferSystemContext {
     DivisionVertexBufferObjects* buffers_objects;
     DivisionRenderPass* render_passes;
 
-    struct DivisionVertexBufferInternalImpl_* buffers_impl;
+    struct DivisionVertexBufferInternalPlatform_* buffers_impl;
 
     int32_t buffers_count;
     int32_t render_pass_count;

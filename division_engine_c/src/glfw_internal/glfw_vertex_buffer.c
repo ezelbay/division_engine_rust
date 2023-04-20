@@ -6,14 +6,14 @@
 #include <stdio.h>
 #include <string.h>
 
-typedef struct VertexAttributeInternalImpl_ {
+typedef struct VertexAttributeInternalPlatform_ {
     GLenum gl_type;
-} VertexAttributeInternalImpl_;
+} VertexAttributeInternalPlatform_;
 
-typedef struct DivisionVertexBufferInternalImpl_ {
+typedef struct DivisionVertexBufferInternalPlatform_ {
     GLuint gl_buffer;
     GLenum gl_topology;
-} DivisionVertexBufferInternalImpl_;
+} DivisionVertexBufferInternalPlatform_;
 
 static inline GLenum division_attribute_to_gl_type(DivisionShaderVariableType attributeType);
 static inline GLenum topology_to_gl_type(DivisionRenderTopology t);
@@ -48,11 +48,11 @@ void division_engine_internal_platform_vertex_buffer_alloc(DivisionContext* ctx)
     struct DivisionVertexBuffer* vertex_buffer = &vertex_ctx->buffers[vertex_ctx->buffers_count - 1];
     int attr_count = vertex_buffer->attribute_count;
 
-    vertex_buffer->attributes_impl = malloc(sizeof(VertexAttributeInternalImpl_) * attr_count);
+    vertex_buffer->attributes_impl = malloc(sizeof(VertexAttributeInternalPlatform_) * attr_count);
 
     vertex_ctx->buffers_impl = realloc(
-        vertex_ctx->buffers_impl, vertex_ctx->buffers_count * sizeof(DivisionVertexBufferInternalImpl_));
-    vertex_ctx->buffers_impl[vertex_ctx->buffers_count - 1] = (DivisionVertexBufferInternalImpl_) {
+        vertex_ctx->buffers_impl, vertex_ctx->buffers_count * sizeof(DivisionVertexBufferInternalPlatform_));
+    vertex_ctx->buffers_impl[vertex_ctx->buffers_count - 1] = (DivisionVertexBufferInternalPlatform_) {
         .gl_buffer = gl_buffer,
         .gl_topology = topology_to_gl_type(vertex_buffer->topology)
     };
@@ -62,7 +62,7 @@ void division_engine_internal_platform_vertex_buffer_alloc(DivisionContext* ctx)
     for (int32_t i = 0; i < attr_count; i++)
     {
         DivisionVertexAttribute* at = &vertex_buffer->attributes[i];
-        VertexAttributeInternalImpl_ at_impl = {
+        VertexAttributeInternalPlatform_ at_impl = {
             .gl_type = division_attribute_to_gl_type(vertex_buffer->attributes[i].type)
         };
         vertex_buffer->attributes_impl[i] = at_impl;
@@ -168,7 +168,7 @@ void division_engine_internal_platform_vertex_buffer_draw(DivisionContext* ctx)
 {
     DivisionVertexBufferSystemContext* vert_buff_ctx = ctx->vertex_buffer_context;
     DivisionVertexBufferObjects* buffers_objects = vert_buff_ctx->buffers_objects;
-    DivisionVertexBufferInternalImpl_* buffers_impl = vert_buff_ctx->buffers_impl;
+    DivisionVertexBufferInternalPlatform_ * buffers_impl = vert_buff_ctx->buffers_impl;
     int32_t pass_count = vert_buff_ctx->render_pass_count;
 
     for (int32_t i = 0; i < pass_count; i++)
