@@ -2,7 +2,7 @@
 #include "division_engine/vertex_buffer.h"
 
 #include <stdlib.h>
-#include <glad/gl.h>
+#include "glad/gl.h"
 #include <stdio.h>
 #include <string.h>
 
