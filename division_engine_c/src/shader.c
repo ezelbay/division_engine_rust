@@ -1,226 +1,102 @@
 #include "division_engine/shader.h"
+#include "division_engine/platform_internal/platfrom_shader.h"
 
 #include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <glad/gl.h>
 
-static int create_shader_from_source(const char* source, size_t source_size, GLuint gl_shader_type);
-static bool alloc_shader_source_from_file(const char* path, char** shader_data, size_t* data_size);
-static bool check_program_status(GLuint programHandle);
-static void get_program_info_log(GLuint program_handle, char** error_ptr);
-static int shader_type_to_gl_type(DivisionShaderType shaderType);
-
-int32_t division_engine_shader_program_alloc()
+bool division_engine_shader_system_context_alloc(DivisionContext* ctx, const DivisionSettings* settings)
 {
-    return glCreateProgram();
+    return division_engine_internal_platform_shader_system_context_alloc(ctx, settings);
+}
+
+void division_engine_shader_system_context_free(DivisionContext* ctx)
+{
+    division_engine_internal_platform_shader_system_context_free(ctx);
+}
+
+int32_t division_engine_shader_program_alloc(DivisionContext* ctx)
+{
+    return division_engine_internal_platform_shader_program_alloc(ctx);
 }
 
 bool division_engine_shader_from_file_attach_to_program(
-    const char* path, DivisionShaderType type, int32_t program_id)
+    DivisionContext* ctx, const char* path, DivisionShaderType type, int32_t program_id)
 {
-    char* shader_src;
-    size_t shader_src_size;
-
-    if (!alloc_shader_source_from_file(path, &shader_src, &shader_src_size))
-    {
-        return false;
-    }
-
-    bool ok = division_engine_shader_from_source_attach_to_program(shader_src, shader_src_size, type, program_id);
-    free(shader_src);
-
-    return ok;
+    return division_engine_internal_platform_shader_from_file_attach_to_program(ctx, path, type, program_id);
 }
 
 bool division_engine_shader_from_source_attach_to_program(
-    const char* source, size_t source_size, DivisionShaderType type, int32_t program_id)
+    DivisionContext* ctx, const char* source, size_t source_size, DivisionShaderType type, int32_t program_id)
 {
-    int gl_shader_type = shader_type_to_gl_type(type);
-    if (gl_shader_type < 0)
-    {
-        return false;
-    }
-
-    int shader_handle = create_shader_from_source(source, source_size, gl_shader_type);
-    if (shader_handle < 0)
-    {
-        return false;
-    }
-
-    glAttachShader((GLuint) program_id, shader_handle);
-    glDeleteShader(shader_handle);
-    return true;
+    return division_engine_internal_platform_shader_from_source_attach_to_program(
+        ctx, source, source_size, type, program_id);
 }
 
-int create_shader_from_source(const char* source, size_t source_size, GLuint gl_shader_type)
+bool division_engine_shader_link_program(DivisionContext* ctx, int32_t program_id)
 {
-    GLuint shader_handle = glCreateShader(gl_shader_type);
-    if (!shader_handle)
-    {
-        fprintf(stderr, "Failed to create a shader");
-        return -1;
-    }
-
-    glShaderSource(shader_handle, 1, (const GLchar* const*) &source, (GLint*) &source_size);
-    glCompileShader(shader_handle);
-
-    GLint compile_result = 0;
-    glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &compile_result);
-    if (compile_result == GL_TRUE)
-    {
-        return (int) shader_handle;
-    }
-
-    GLint error_length = 0;
-    glGetShaderiv(shader_handle, GL_INFO_LOG_LENGTH, &error_length);
-    char* error_log_data = malloc(error_length);
-    glGetShaderInfoLog(shader_handle, error_length, &error_length, error_log_data);
-
-    fprintf(stderr, "Failed to compile shader source. Info log: \n%s\n", error_log_data);
-    free(error_log_data);
-    return -1;
+    return division_engine_internal_platform_shader_link_program(ctx, program_id);
 }
 
-bool alloc_shader_source_from_file(const char* path, char** shader_data, size_t* data_size)
+void division_engine_shader_program_free(DivisionContext* ctx, int32_t program_id)
 {
-    FILE* shader_file_ptr = fopen(path, "rt");
-    if (shader_file_ptr == NULL)
-    {
-        fprintf(stderr, "Failed to open file by path %s", path);
-        return false;
-    }
-
-    fseek(shader_file_ptr, 0, SEEK_END);
-    size_t file_size = (int) ftell(shader_file_ptr);
-    rewind(shader_file_ptr);
-
-    *shader_data = (char*) malloc(file_size);
-    *data_size = file_size;
-
-    fread(*shader_data, 1, file_size, shader_file_ptr);
-    if (ferror(shader_file_ptr))
-    {
-        fprintf(stderr, "Failed to read file by path: %s", path);
-        fclose(shader_file_ptr);
-        free(*shader_data);
-        return false;
-    }
-
-    fclose(shader_file_ptr);
-    return true;
+    division_engine_internal_platform_shader_program_free(ctx, program_id);
 }
 
-bool division_engine_shader_link_program(int32_t program_id)
+int32_t division_engine_shader_program_get_attribute_location(
+    DivisionContext* ctx, const char* name, int32_t program_id)
 {
-    GLuint gl_program = (GLuint) program_id;
-    glLinkProgram(gl_program);
-    return check_program_status(gl_program);
+    return division_engine_internal_platform_shader_program_get_attribute_location(ctx, name, program_id);
 }
 
-bool check_program_status(GLuint programHandle)
+int32_t division_engine_shader_program_get_uniform_location(
+    DivisionContext* ctx, const char* name, int32_t program_id)
 {
-    GLint linkStatus;
-    glGetProgramiv(programHandle, GL_LINK_STATUS, &linkStatus);
-    if (linkStatus == GL_FALSE)
-    {
-        char* error;
-        get_program_info_log(programHandle, &error);
-        fprintf(stderr, "Failed to link a shader program. Info log: \n%s", error);
-        free(error);
-        return false;
-    }
-
-    glValidateProgram(programHandle);
-    GLint validateStatus;
-    glGetProgramiv(programHandle, GL_VALIDATE_STATUS, &validateStatus);
-    if (validateStatus == GL_FALSE)
-    {
-        char* error;
-        get_program_info_log(programHandle, &error);
-        fprintf(stderr, "Failed to validate a shader program. Info log: \n%s", error);
-        free(error);
-        return false;
-    }
-
-    return true;
+    return division_engine_internal_platform_shader_program_get_uniform_location(ctx, name, program_id);
 }
 
-void get_program_info_log(GLuint program_handle, char** error_ptr)
+void division_engine_shader_program_get_uniform_float(
+    DivisionContext* ctx, int32_t program_id, int32_t location, float* output_value)
 {
-    GLint error_length;
-    glGetProgramiv(program_handle, GL_INFO_LOG_LENGTH, &error_length);
-    char* error = malloc(error_length);
-    glGetProgramInfoLog(program_handle, error_length, &error_length, error);
-
-    *error_ptr = error;
+    division_engine_internal_platform_shader_program_get_uniform_float(ctx, program_id, location, output_value);
 }
 
-int shader_type_to_gl_type(DivisionShaderType shaderType)
+void division_engine_shader_program_get_uniform_vec2(
+    DivisionContext* ctx, int32_t program_id, int32_t location, float output_values[2])
 {
-    switch (shaderType)
-    {
-        case DIVISION_SHADER_VERTEX:
-            return GL_VERTEX_SHADER;
-        case DIVISION_SHADER_FRAGMENT:
-            return GL_FRAGMENT_SHADER;
-        default:
-            fprintf(stderr, "Unknown type of shader");
-            return -1;
-    }
+    division_engine_internal_platform_shader_program_get_uniform_vec2(ctx, program_id, location, output_values);
 }
 
-void division_engine_shader_program_free(int32_t program_id)
+void division_engine_shader_program_get_uniform_vec3(
+    DivisionContext* ctx, int32_t program_id, int32_t location, float output_values[3])
 {
-    glDeleteProgram((GLuint) program_id);
+    division_engine_internal_platform_shader_program_get_uniform_vec3(ctx, program_id, location, output_values);
 }
 
-int32_t division_engine_shader_program_get_attribute_location(const char* name, int32_t program_id)
+void division_engine_shader_program_get_uniform_vec4(
+    DivisionContext* ctx, int32_t program_id, int32_t location, float output_values[4])
 {
-    return glGetAttribLocation(program_id, name);
+    division_engine_internal_platform_shader_program_get_uniform_vec4(ctx, program_id, location, output_values);
 }
 
-int32_t division_engine_shader_program_get_uniform_location(const char* name, int32_t program_id)
+void division_engine_shader_program_set_uniform_float(
+    DivisionContext* ctx, int32_t program_id, int32_t location, float value)
 {
-    return glGetUniformLocation(program_id, name);
+    division_engine_internal_platform_shader_program_set_uniform_float(ctx, program_id, location, value);
 }
 
-void division_engine_shader_program_get_uniform_float(int32_t program_id, int32_t location, float* output_value)
+void division_engine_shader_program_set_uniform_vec2(
+    DivisionContext* ctx, int32_t program_id, int32_t location, const float values[2])
 {
-    glGetUniformfv(program_id, location, output_value);
+    division_engine_internal_platform_shader_program_set_uniform_vec2(ctx, program_id, location, values);
 }
 
-void division_engine_shader_program_get_uniform_vec2(int32_t program_id, int32_t location, float* output_values)
+void division_engine_shader_program_set_uniform_vec3(
+    DivisionContext* ctx, int32_t program_id, int32_t location, const float values[3])
 {
-    glGetUniformfv(program_id, location, output_values);
+    division_engine_internal_platform_shader_program_set_uniform_vec3(ctx, program_id, location, values);
 }
 
-void division_engine_shader_program_get_uniform_vec3(int32_t program_id, int32_t location, float* output_values)
+void division_engine_shader_program_set_uniform_vec4(
+    DivisionContext* ctx, int32_t program_id, int32_t location, const float values[4])
 {
-    glGetUniformfv(program_id, location, output_values);
-}
-
-void division_engine_shader_program_get_uniform_vec4(int32_t program_id, int32_t location, float* output_values)
-{
-    glGetUniformfv(program_id, location, output_values);
-}
-
-void division_engine_shader_program_set_uniform_float(int32_t program_id, int32_t location, float value)
-{
-    glProgramUniform1f(program_id, location, value);
-}
-
-void division_engine_shader_program_set_uniform_vec2(int32_t program_id, int32_t location, const float* values)
-{
-    glProgramUniform2fv(program_id, location, 1, values);
-}
-
-void division_engine_shader_program_set_uniform_vec3(int32_t program_id, int32_t location, const float* values)
-{
-    glProgramUniform3fv(program_id, location, 1, values);
-}
-
-void division_engine_shader_program_set_uniform_vec4(int32_t program_id, int32_t location, const float* values)
-{
-    glProgramUniform4fv(program_id, location, 1, values);
+    division_engine_internal_platform_shader_program_set_uniform_vec4(ctx, program_id, location, values);
 }

@@ -23,6 +23,7 @@ set(GLFW_SOURCES
     lib/glad/include/glad/gl.h
     src/glfw_internal/glfw_renderer.c
     src/glfw_internal/glfw_vertex_buffer.c
+    src/glfw_internal/glfw_shader.c
 )
 set(FILES_TO_COPY ${GLFW_BINARY_DIR}/src/libglfw3.a)
 

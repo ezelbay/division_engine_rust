@@ -7,6 +7,7 @@
 #include "state.h"
 
 struct DivisionRendererSystemContext;
+struct DivisionShaderSystemContext;
 struct DivisionVertexBufferSystemContext;
 
 typedef struct DivisionContext {
@@ -14,6 +15,7 @@ typedef struct DivisionContext {
 
     DivisionErrorFunc error_callback;
     struct DivisionRendererSystemContext* renderer_context;
+    struct DivisionShaderSystemContext* shader_context;
     struct DivisionVertexBufferSystemContext* vertex_buffer_context;
 
     void* user_data;
