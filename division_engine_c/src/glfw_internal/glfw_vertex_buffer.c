@@ -57,10 +57,6 @@ void division_engine_internal_platform_vertex_buffer_alloc(DivisionContext* ctx)
         .gl_topology = topology_to_gl_type(vertex_buffer->topology)
     };
 
-    for (int32_t i = 0; i < attr_count; i++)
-    {
-    }
-
     int per_vertex_data_size = (int) vertex_buffer->per_vertex_data_size;
 
     for (int32_t i = 0; i < attr_count; i++)
