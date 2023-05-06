@@ -12,6 +12,7 @@ struct DivisionRendererSystemContext;
 struct DivisionShaderSystemContext;
 struct DivisionVertexBufferSystemContext;
 struct DivisionUniformBufferSystemContext;
+struct DivisionRenderPassSystemContext;
 
 typedef struct DivisionContext {
     DivisionState state;
@@ -21,6 +22,7 @@ typedef struct DivisionContext {
     struct DivisionShaderSystemContext* shader_context;
     struct DivisionVertexBufferSystemContext* vertex_buffer_context;
     struct DivisionUniformBufferSystemContext* uniform_buffer_context;
+    struct DivisionRenderPassSystemContext* render_pass_context;
 
     void* user_data;
 } DivisionContext;

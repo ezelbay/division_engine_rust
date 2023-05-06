@@ -3,6 +3,7 @@
 
 #include <NSUtils.h>
 
+#include "division_engine/render_pass.h"
 #include "division_engine/renderer.h"
 #include "division_engine/uniform_buffer.h"
 #include "division_engine/vertex_buffer.h"
@@ -48,13 +49,14 @@ void DivisionOSXViewDelegate::drawInMTKView(MTK::View* pView)
     MTL::RenderPassDescriptor* renderPassDesc = pView->currentRenderPassDescriptor();
     MTL::RenderCommandEncoder* renderEnc = cmdBuffer->renderCommandEncoder(renderPassDesc);
 
+    DivisionRenderPassSystemContext* render_pass_ctx = context->render_pass_context;
     DivisionVertexBufferSystemContext* vert_buff_ctx = context->vertex_buffer_context;
     DivisionUniformBufferSystemContext* uniform_buff_ctx = context->uniform_buffer_context;
     DivisionShaderSystemContext* shader_ctx = context->shader_context;
 
-    for (int32_t i = 0; i < vert_buff_ctx->render_pass_count; i++)
+    for (int32_t i = 0; i < render_pass_ctx->render_pass_count; i++)
     {
-        DivisionRenderPass* pass = &vert_buff_ctx->render_passes[i];
+        DivisionRenderPass* pass = &render_pass_ctx->render_passes[i];
         MTL::RenderPipelineState* pipelineState = shader_ctx->shader_programs[pass->shader_program].pipeline_state;
         MTL::Buffer* mtlBuffer = vert_buff_ctx->buffers_impl[pass->vertex_buffer].metal_buffer;
 

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <memory.h>
 #include "division_engine/color.h"
+#include "division_engine/render_pass.h"
 #include "division_engine/renderer.h"
 #include "division_engine/shader.h"
 #include "division_engine/uniform_buffer.h"
@@ -77,7 +78,7 @@ void init_callback(DivisionContext* ctx)
     DivisionUniformBuffer buff = {
         .data_bytes = sizeof(float[4]),
         .location = 1,
-        .shaderType =DIVISION_SHADER_FRAGMENT
+        .shaderType = DIVISION_SHADER_FRAGMENT
     };
     int32_t buff_id = division_engine_uniform_buffer_alloc(ctx, buff);
     float testVec[] = {0, 1, 0, 1};
@@ -85,7 +86,7 @@ void init_callback(DivisionContext* ctx)
     memcpy(uniform_ptr, testVec, sizeof(float[4]));
     division_engine_uniform_buffer_return_data_pointer(ctx, buff_id, uniform_ptr);
 
-    division_engine_vertex_buffer_render_pass_alloc(ctx, (DivisionRenderPass) {
+    division_engine_render_pass_alloc(ctx, (DivisionRenderPass) {
         .vertex_buffer = vertex_buffer,
         .shader_program = shader_program,
         .uniform_buffers = &buff_id,
