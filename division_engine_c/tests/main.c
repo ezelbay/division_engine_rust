@@ -1,7 +1,9 @@
 #include <stdio.h>
+#include <memory.h>
 #include "division_engine/color.h"
 #include "division_engine/renderer.h"
 #include "division_engine/shader.h"
+#include "division_engine/uniform_buffer.h"
 #include "division_engine/vertex_buffer.h"
 
 void error_callback(int error_code, const char* message);
@@ -83,20 +85,19 @@ void init_callback(DivisionContext* ctx)
     division_engine_vertex_buffer_set_vertex_data_for_attribute(
         ctx, vertex_buffer, objectIndex, 1, colors, 0, 3);
 
+    DivisionUniformBuffer buff = { .data_bytes = 32, .location = 1, .shaderType = DIVISION_SHADER_FRAGMENT };
+    int32_t buff_id = division_engine_uniform_buffer_alloc(ctx, buff);
+    float testVec[] = { 0, 1, 0, 1 };
+    float* uniform_ptr = division_engine_uniform_buffer_borrow_data_pointer(ctx, buff_id);
+    memcpy(uniform_ptr, testVec, sizeof(float) * 4);
+    division_engine_uniform_buffer_return_data_pointer(ctx, buff_id, uniform_ptr);
+
     division_engine_vertex_buffer_render_pass_alloc(ctx, (DivisionRenderPass) {
         .vertex_buffer = vertex_buffer,
         .shader_program = shader_program,
+        .uniform_buffers = &buff_id,
+        .uniform_buffer_count = 1
     });
-
-    int32_t uniform_id = division_engine_shader_program_get_uniform_location(ctx, "TestColor", shader_program);
-    float testVec[] = { 1, 0, 1, 1 };
-    division_engine_shader_program_set_uniform_vec4(ctx, shader_program, uniform_id, testVec);
-
-    float outputTestVec[4];
-    division_engine_shader_program_get_uniform_vec4(ctx, shader_program, uniform_id, outputTestVec);
-    printf("TestVec location: %d, Output values are: { %f, %f, %f, %f }",
-        uniform_id, outputTestVec[0], outputTestVec[1], outputTestVec[2], outputTestVec[3]
-    );
 }
 
 void update_callback(DivisionContext* ctx)

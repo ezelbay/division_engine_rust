@@ -9,7 +9,7 @@ set(SOURCES
     src/renderer.c
     src/shader.c
     src/vertex_buffer.c
-)
+    src/uniform_buffer.c)
 
 add_library(division_engine_c STATIC ${SOURCES})
 

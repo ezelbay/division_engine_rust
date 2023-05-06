@@ -5,18 +5,20 @@
 #include <stdlib.h>
 #include <memory.h>
 
-typedef struct AttrTraits_ {
+typedef struct AttrTraits_
+{
     int32_t base_size;
     int32_t component_count;
 } AttrTraits_;
 
 static inline AttrTraits_ division_attribute_get_traits(DivisionShaderVariableType attributeType);
+
 static inline void gather_attributes_info(
     DivisionVertexAttributeSettings* attrs,
     int32_t attr_count,
     DivisionVertexAttribute* attributes,
     int32_t* per_vertex_data_size
-);
+                                         );
 
 bool division_engine_internal_vertex_buffer_context_alloc(DivisionContext* ctx, const DivisionSettings* settings)
 {
@@ -49,6 +51,11 @@ void division_engine_internal_vertex_buffer_context_free(DivisionContext* ctx)
         free(buffer_objects->objects_vertex_count);
     }
 
+    for (int i = 0; i < vertex_buffer_ctx->render_pass_count; i++)
+    {
+        free(vertex_buffer_ctx->render_passes[i].uniform_buffers);
+    }
+
     free(vertex_buffer_ctx->buffers);
     free(vertex_buffer_ctx->render_passes);
     free(vertex_buffer_ctx);
@@ -60,7 +67,7 @@ int32_t division_engine_vertex_buffer_alloc(
     int32_t attr_count,
     int32_t vertex_count,
     DivisionRenderTopology render_topology
-)
+                                           )
 {
     DivisionVertexBufferSystemContext* vertex_ctx = ctx->vertex_buffer_context;
 
@@ -105,7 +112,7 @@ void gather_attributes_info(
     int32_t attr_count,
     DivisionVertexAttribute* attributes,
     int32_t* per_vertex_data_size
-)
+                           )
 {
     *per_vertex_data_size = 0;
 
@@ -136,7 +143,7 @@ void division_engine_vertex_buffer_set_vertex_data_for_attribute(
     const void* data_ptr,
     size_t first_vertex_index,
     size_t vertex_count
-)
+                                                                )
 {
     DivisionVertexBufferSystemContext* vertex_buffer_context = ctx->vertex_buffer_context;
     DivisionVertexBufferObjects vb_objs = vertex_buffer_context->buffers_objects[vertex_buffer];
@@ -181,10 +188,16 @@ int32_t division_engine_vertex_buffer_render_pass_alloc(DivisionContext* ctx, Di
 {
     DivisionVertexBufferSystemContext* pass_ctx = ctx->vertex_buffer_context;
 
+    DivisionRenderPass render_pass_copy = render_pass;
+    size_t uniform_buffers_size = sizeof(int32_t) * render_pass.uniform_buffer_count;
+    render_pass_copy.uniform_buffers = malloc(uniform_buffers_size);
+    render_pass_copy.uniform_buffer_count = render_pass.uniform_buffer_count;
+    memcpy(render_pass_copy.uniform_buffers, render_pass.uniform_buffers, uniform_buffers_size);
+
     int32_t render_pass_count = pass_ctx->render_pass_count;
     int32_t new_render_pass_count = render_pass_count + 1;
     pass_ctx->render_passes = realloc(pass_ctx->render_passes, sizeof(DivisionRenderPass) * new_render_pass_count);
-    pass_ctx->render_passes[render_pass_count] = render_pass;
+    pass_ctx->render_passes[render_pass_count] = render_pass_copy;
     pass_ctx->render_pass_count++;
 
     return pass_ctx->render_pass_count - 1;

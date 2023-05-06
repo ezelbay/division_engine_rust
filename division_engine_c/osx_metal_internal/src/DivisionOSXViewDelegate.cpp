@@ -4,7 +4,9 @@
 #include <NSUtils.h>
 
 #include "division_engine/renderer.h"
+#include "division_engine/uniform_buffer.h"
 #include "division_engine/vertex_buffer.h"
+#include "osx_uniform_buffer.h"
 #include "osx_shader_context.h"
 #include "osx_vertex_buffer.h"
 
@@ -22,13 +24,13 @@ DivisionOSXViewDelegate::~DivisionOSXViewDelegate()
     _commandQueue->release();
 }
 
-MTL::Buffer* DivisionOSXViewDelegate::createVertexBuffer(size_t dataSize)
+MTL::Buffer* DivisionOSXViewDelegate::createBuffer(size_t dataSize)
 {
     MTL::Buffer* buff = _device->newBuffer(dataSize, MTL::ResourceStorageModeManaged);
     return buff;
 }
 
-void DivisionOSXViewDelegate::deleteVertexBuffer(MTL::Buffer* buffer)
+void DivisionOSXViewDelegate::deleteBuffer(MTL::Buffer* buffer)
 {
     buffer->release();
 }
@@ -47,6 +49,7 @@ void DivisionOSXViewDelegate::drawInMTKView(MTK::View* pView)
     MTL::RenderCommandEncoder* renderEnc = cmdBuffer->renderCommandEncoder(renderPassDesc);
 
     DivisionVertexBufferSystemContext* vert_buff_ctx = context->vertex_buffer_context;
+    DivisionUniformBufferSystemContext* uniform_buff_ctx = context->uniform_buffer_context;
     DivisionShaderSystemContext* shader_ctx = context->shader_context;
 
     for (int32_t i = 0; i < vert_buff_ctx->render_pass_count; i++)
@@ -58,6 +61,25 @@ void DivisionOSXViewDelegate::drawInMTKView(MTK::View* pView)
 
         renderEnc->setRenderPipelineState(pipelineState);
         renderEnc->setVertexBuffer(mtlBuffer, 0, 0);
+        
+        for (int ubIdx = 0; ubIdx < pass->uniform_buffer_count; ubIdx++)
+        {
+            int32_t buff_id = pass->uniform_buffers[ubIdx];
+            MTL::Buffer* uniformMtlBuffer = uniform_buff_ctx->uniform_buffers_impl[buff_id].mtl_buffer;
+            DivisionUniformBuffer buffDesc = uniform_buff_ctx->uniform_buffers[buff_id];
+            switch (buffDesc.shaderType)
+            {
+                case DIVISION_SHADER_VERTEX:
+                    renderEnc->setVertexBuffer(uniformMtlBuffer, 0, buffDesc.location);
+                    break;
+                case DIVISION_SHADER_FRAGMENT:
+                    renderEnc->setFragmentBuffer(uniformMtlBuffer, 0, buffDesc.location);
+                    break;
+                default:
+                    fprintf(stderr, "Unknown shader type in the pass");
+                    break;
+            }
+        }
 
         for (int32_t objIdx = 0; objIdx < vb_objs->objects_count; objIdx++)
         {

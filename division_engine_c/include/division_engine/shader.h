@@ -7,10 +7,6 @@
 #include "division_engine/context.h"
 #include <division_engine_c_export.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef enum {
     DIVISION_SHADER_VERTEX = 0,
     DIVISION_SHADER_FRAGMENT = 1
@@ -32,9 +28,12 @@ typedef struct DivisionShaderSettings {
     const char* entry_point_name;
 } DivisionShaderSettings;
 
-DIVISION_EXPORT bool division_engine_shader_system_context_alloc(DivisionContext* ctx, const DivisionSettings* settings);
+bool division_engine_internal_shader_system_context_alloc(DivisionContext* ctx, const DivisionSettings* settings);
+void division_engine_internal_shader_system_context_free(DivisionContext* ctx);
 
-DIVISION_EXPORT void division_engine_shader_system_context_free(DivisionContext* ctx);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 DIVISION_EXPORT int32_t division_engine_shader_program_create(
     DivisionContext* ctx, const DivisionShaderSettings* settings, int32_t source_count);

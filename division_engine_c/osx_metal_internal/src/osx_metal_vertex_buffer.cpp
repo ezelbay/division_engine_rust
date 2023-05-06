@@ -27,7 +27,7 @@ void division_engine_internal_platform_vertex_buffer_alloc(DivisionContext* ctx)
     DivisionVertexBuffer* d_buffer = &vert_buffer_ctx->buffers[buff_id];
     DivisionVertexBufferInternalPlatform_* impl_buffer = &vert_buffer_ctx->buffers_impl[buff_id];
 
-    MTL::Buffer* buffer = window_context->app_delegate->viewDelegate->createVertexBuffer(
+    MTL::Buffer* buffer = window_context->app_delegate->viewDelegate->createBuffer(
         d_buffer->per_vertex_data_size * d_buffer->vertex_count);
     impl_buffer->metal_buffer = buffer;
 }
@@ -38,7 +38,7 @@ void division_engine_internal_platform_vertex_buffer_context_free(DivisionContex
     auto* window_ctx = static_cast<DivisionOSXWindowContext*>(ctx->renderer_context->window_data);
     for (int i = 0; i < vert_buffer_ctx->buffers_count; i++)
     {
-        window_ctx->app_delegate->viewDelegate->deleteVertexBuffer(vert_buffer_ctx->buffers_impl[i].metal_buffer);
+        window_ctx->app_delegate->viewDelegate->deleteBuffer(vert_buffer_ctx->buffers_impl[i].metal_buffer);
     }
     free(vert_buffer_ctx->buffers_impl);
 }

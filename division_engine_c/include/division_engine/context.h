@@ -11,10 +11,7 @@
 struct DivisionRendererSystemContext;
 struct DivisionShaderSystemContext;
 struct DivisionVertexBufferSystemContext;
-
-#ifdef __cpluspus
-extern "C" {
-#endif
+struct DivisionUniformBufferSystemContext;
 
 typedef struct DivisionContext {
     DivisionState state;
@@ -23,9 +20,14 @@ typedef struct DivisionContext {
     struct DivisionRendererSystemContext* renderer_context;
     struct DivisionShaderSystemContext* shader_context;
     struct DivisionVertexBufferSystemContext* vertex_buffer_context;
+    struct DivisionUniformBufferSystemContext* uniform_buffer_context;
 
     void* user_data;
 } DivisionContext;
+
+#ifdef __cpluspus
+extern "C" {
+#endif
 
 DIVISION_EXPORT bool division_engine_context_alloc(const DivisionSettings* settings, DivisionContext** output_context);
 DIVISION_EXPORT void division_engine_context_free(DivisionContext* ctx);

@@ -8,10 +8,6 @@
 
 #include <division_engine_c_export.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef enum {
     DIVISION_TOPOLOGY_TRIANGLES = 0,
     DIVISION_TOPOLOGY_POINTS = 1,
@@ -47,24 +43,30 @@ typedef struct DivisionVertexBufferObjects {
 } DivisionVertexBufferObjects;
 
 typedef struct DivisionRenderPass {
+    int32_t* uniform_buffers;
+    int32_t uniform_buffer_count;
     int32_t vertex_buffer;
     int32_t shader_program;
 } DivisionRenderPass;
 
 typedef struct DivisionVertexBufferSystemContext {
     DivisionVertexBuffer* buffers;
+    struct DivisionVertexBufferInternalPlatform_* buffers_impl;
     DivisionVertexBufferObjects* buffers_objects;
     DivisionRenderPass* render_passes;
-
-    struct DivisionVertexBufferInternalPlatform_* buffers_impl;
 
     int32_t buffers_count;
     int32_t render_pass_count;
 } DivisionVertexBufferSystemContext;
 
-DIVISION_EXPORT bool division_engine_internal_vertex_buffer_context_alloc(
-    DivisionContext* ctx, const DivisionSettings* settings);
-DIVISION_EXPORT void division_engine_internal_vertex_buffer_context_free(DivisionContext* ctx);
+
+bool division_engine_internal_vertex_buffer_context_alloc(DivisionContext* ctx, const DivisionSettings* settings);
+void division_engine_internal_vertex_buffer_context_free(DivisionContext* ctx);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 DIVISION_EXPORT int32_t division_engine_vertex_buffer_alloc(
     DivisionContext* ctx,

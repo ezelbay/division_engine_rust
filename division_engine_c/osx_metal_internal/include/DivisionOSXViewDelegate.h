@@ -18,8 +18,8 @@ public:
     const DivisionSettings* settings;
     DivisionContext* context;
 
-    MTL::Buffer* createVertexBuffer(size_t dataSize);
-    void deleteVertexBuffer(MTL::Buffer* buffer);
+    MTL::Buffer* createBuffer(size_t dataSize);
+    void deleteBuffer(MTL::Buffer* buffer);
 
     bool createShaderProgram(
         const DivisionShaderSettings* shaderSettings, int32_t source_count, DivisionMetalShaderProgram* out_program);

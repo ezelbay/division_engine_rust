@@ -23,7 +23,9 @@ v2f vertex vertexMain(uint vertexId [[vertex_id]],
     return o;
 }
 
-half4 fragment fragmentMain(v2f in [[stage_in]])
+half4 fragment fragmentMain(v2f in [[stage_in]],
+                            constant float4& testColor [[buffer(1)]]
+)
 {
-    return in.color;
+    return in.color * (half4) testColor;
 }
