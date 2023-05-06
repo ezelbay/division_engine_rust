@@ -71,7 +71,7 @@ int32_t division_engine_vertex_buffer_alloc(
     DivisionVertexBufferSystemContext* vertex_ctx = ctx->vertex_buffer_context;
 
     DivisionVertexBuffer vertex_buffer = {
-        .attributes = malloc(sizeof(DivisionVertexAttribute) * attr_count),
+        .attributes = malloc(sizeof(DivisionVertexAttribute[attr_count])),
         .attribute_count = attr_count,
     };
 
@@ -93,9 +93,9 @@ int32_t division_engine_vertex_buffer_alloc(
 
     int32_t buffers_count = vertex_ctx->buffers_count;
     int32_t new_buffers_count = buffers_count + 1;
-    vertex_ctx->buffers = realloc(vertex_ctx->buffers, new_buffers_count * sizeof(DivisionVertexBuffer));
+    vertex_ctx->buffers = realloc(vertex_ctx->buffers, sizeof(DivisionVertexBuffer[new_buffers_count]));
     vertex_ctx->buffers_objects = realloc(
-        vertex_ctx->buffers_objects, new_buffers_count * sizeof(DivisionVertexBufferObjects));
+        vertex_ctx->buffers_objects, sizeof(DivisionVertexBufferObjects[new_buffers_count]));
 
     vertex_ctx->buffers[buffers_count] = vertex_buffer;
     vertex_ctx->buffers_objects[buffers_count] = vertex_buffer_objects;
