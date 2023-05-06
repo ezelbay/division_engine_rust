@@ -43,42 +43,6 @@ void division_engine_internal_platform_vertex_buffer_context_free(DivisionContex
     free(vert_buffer_ctx->buffers_impl);
 }
 
-void division_engine_internal_platform_vertex_buffer_set_vertex_data(
-    DivisionContext* ctx,
-    int32_t vertex_buffer,
-    int32_t object_index,
-    int32_t attribute_index,
-    const void* data_ptr,
-    size_t first_vertex_index,
-    size_t vertex_count
-)
-{
-    DivisionVertexBufferSystemContext* vertex_buffer_context = ctx->vertex_buffer_context;
-    DivisionVertexBuffer vb = vertex_buffer_context->buffers[vertex_buffer];
-    MTL::Buffer* metal_buffer = vertex_buffer_context->buffers_impl[vertex_buffer].metal_buffer;
-    DivisionVertexBufferObjects vb_objs = vertex_buffer_context->buffers_objects[vertex_buffer];
-
-    size_t obj_first_index = vb_objs.objects_start_vertex[object_index] + first_vertex_index;
-    DivisionVertexAttribute attr = vb.attributes[attribute_index];
-    int32_t attr_size = attr.base_size * attr.component_count;
-
-    void* buffer_data_ptr = metal_buffer->contents();
-
-    for (size_t i = 0; i < vertex_count; i++)
-    {
-        size_t src_vi = first_vertex_index + i;
-        size_t obj_vi = obj_first_index + i;
-
-        const void* src_data_ptr = static_cast<const int8_t*>(data_ptr) + attr_size * src_vi;
-
-        size_t dst_offset = vb.per_vertex_data_size * obj_vi + attr.offset;
-        void* dst_data_ptr = static_cast<int8_t*>(buffer_data_ptr) + dst_offset;
-        memcpy(dst_data_ptr, src_data_ptr, attr_size);
-
-        metal_buffer->didModifyRange(NS::Range::Make(dst_offset, attr_size));
-    }
-}
-
 void* division_engine_internal_platform_vertex_buffer_borrow_data_pointer(DivisionContext* ctx, int32_t vertex_buffer)
 {
     return ctx->vertex_buffer_context->buffers_impl[vertex_buffer].metal_buffer->contents();

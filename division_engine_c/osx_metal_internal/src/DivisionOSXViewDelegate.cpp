@@ -57,7 +57,6 @@ void DivisionOSXViewDelegate::drawInMTKView(MTK::View* pView)
         DivisionRenderPass* pass = &vert_buff_ctx->render_passes[i];
         MTL::RenderPipelineState* pipelineState = shader_ctx->shader_programs[pass->shader_program].pipeline_state;
         MTL::Buffer* mtlBuffer = vert_buff_ctx->buffers_impl[pass->vertex_buffer].metal_buffer;
-        DivisionVertexBufferObjects* vb_objs = &vert_buff_ctx->buffers_objects[pass->vertex_buffer];
 
         renderEnc->setRenderPipelineState(pipelineState);
         renderEnc->setVertexBuffer(mtlBuffer, 0, 0);
@@ -81,14 +80,11 @@ void DivisionOSXViewDelegate::drawInMTKView(MTK::View* pView)
             }
         }
 
-        for (int32_t objIdx = 0; objIdx < vb_objs->objects_count; objIdx++)
-        {
-            renderEnc->drawPrimitives(
-                MTL::PrimitiveType::PrimitiveTypeTriangle,
-                NS::UInteger(vb_objs->objects_start_vertex[objIdx]),
-                NS::UInteger(vb_objs->objects_vertex_count[objIdx])
-            );
-        }
+        renderEnc->drawPrimitives(
+            MTL::PrimitiveType::PrimitiveTypeTriangle,
+            NS::UInteger(pass->first_vertex),
+            NS::UInteger(pass->vertex_count)
+        );
     }
 
     renderEnc->endEncoding();

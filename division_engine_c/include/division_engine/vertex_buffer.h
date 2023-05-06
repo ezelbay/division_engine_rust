@@ -36,23 +36,18 @@ typedef struct DivisionVertexBuffer {
     DivisionRenderTopology topology;
 } DivisionVertexBuffer;
 
-typedef struct DivisionVertexBufferObjects {
-    int32_t* objects_start_vertex;
-    int32_t* objects_vertex_count;
-    int32_t objects_count;
-} DivisionVertexBufferObjects;
-
 typedef struct DivisionRenderPass {
     int32_t* uniform_buffers;
     int32_t uniform_buffer_count;
     int32_t vertex_buffer;
+    int32_t first_vertex;
+    int32_t vertex_count;
     int32_t shader_program;
 } DivisionRenderPass;
 
 typedef struct DivisionVertexBufferSystemContext {
     DivisionVertexBuffer* buffers;
     struct DivisionVertexBufferInternalPlatform_* buffers_impl;
-    DivisionVertexBufferObjects* buffers_objects;
     DivisionRenderPass* render_passes;
 
     int32_t buffers_count;
@@ -74,16 +69,6 @@ DIVISION_EXPORT int32_t division_engine_vertex_buffer_alloc(
     int32_t attr_count,
     int32_t vertex_count,
     DivisionRenderTopology render_topology);
-
-DIVISION_EXPORT void division_engine_vertex_buffer_set_vertex_data_for_attribute(
-    DivisionContext* ctx,
-    int32_t vertex_buffer,
-    int32_t object_index,
-    int32_t attribute_index,
-    const void* data_ptr,
-    size_t first_vertex_index,
-    size_t vertex_count
-);
 
 DIVISION_EXPORT void* division_engine_vertex_buffer_borrow_data_pointer(DivisionContext* ctx, int32_t vertex_buffer);
 DIVISION_EXPORT void division_engine_vertex_buffer_return_data_pointer(

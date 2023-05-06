@@ -89,7 +89,9 @@ void init_callback(DivisionContext* ctx)
         .vertex_buffer = vertex_buffer,
         .shader_program = shader_program,
         .uniform_buffers = &buff_id,
-        .uniform_buffer_count = 1
+        .uniform_buffer_count = 1,
+        .first_vertex = 0,
+        .vertex_count = 3
     });
 }
 
