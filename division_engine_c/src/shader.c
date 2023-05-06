@@ -18,6 +18,15 @@ int32_t division_engine_shader_program_alloc(DivisionContext* ctx)
     return division_engine_internal_platform_shader_program_alloc(ctx);
 }
 
+
+int32_t division_engine_shader_program_create(
+    DivisionContext* ctx, const DivisionShaderSettings* settings, int32_t source_count)
+{
+    return division_engine_internal_platform_shader_program_create(ctx, settings, source_count);
+}
+
+// TODO: For the Metal API there is a need to set an entry point for the shader function.
+// May be it's better to pass the shader func name as an additional argument?
 bool division_engine_shader_from_file_attach_to_program(
     DivisionContext* ctx, const char* path, DivisionShaderType type, int32_t program_id)
 {

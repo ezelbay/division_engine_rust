@@ -26,17 +26,33 @@ typedef enum {
     DIVISION_FMAT4X4 = 6
 } DivisionShaderVariableType;
 
+typedef struct DivisionShaderSettings {
+    DivisionShaderType type;
+    const char* file_path;
+    const char* entry_point_name;
+} DivisionShaderSettings;
+
 DIVISION_EXPORT bool division_engine_shader_system_context_alloc(DivisionContext* ctx, const DivisionSettings* settings);
+
 DIVISION_EXPORT void division_engine_shader_system_context_free(DivisionContext* ctx);
 
+DIVISION_EXPORT int32_t division_engine_shader_program_create(
+    DivisionContext* ctx, const DivisionShaderSettings* settings, int32_t source_count);
+
+/// TODO: Remove
 DIVISION_EXPORT int32_t division_engine_shader_program_alloc(DivisionContext* ctx);
+
 DIVISION_EXPORT void division_engine_shader_program_free(DivisionContext* ctx, int32_t program_id);
 
+/// TODO: Remove
 DIVISION_EXPORT bool division_engine_shader_from_file_attach_to_program(
     DivisionContext* ctx, const char* path, DivisionShaderType type, int32_t program_id);
+
+/// TODO: Remove
 DIVISION_EXPORT bool division_engine_shader_from_source_attach_to_program(
     DivisionContext* ctx, const char* source, size_t source_size, DivisionShaderType type, int32_t program_id);
 
+/// TODO: Remove
 DIVISION_EXPORT bool division_engine_shader_link_program(DivisionContext* ctx, int32_t program_id);
 
 DIVISION_EXPORT int32_t division_engine_shader_program_get_attribute_location(
