@@ -48,7 +48,7 @@ void* division_engine_internal_platform_uniform_buffer_borrow_data_pointer(Divis
 }
 
 void division_engine_internal_platform_uniform_buffer_return_data_pointer(
-    DivisionContext* ctx, int32_t buffer, void* pointer)
+    DivisionContext* ctx, int32_t buffer, void* data_pointer)
 {
     DivisionUniformBufferSystemContext* uniform_buffer_ctx = ctx->uniform_buffer_context;
     MTL::Buffer* mtl_buffer = uniform_buffer_ctx->uniform_buffers_impl[buffer].mtl_buffer;

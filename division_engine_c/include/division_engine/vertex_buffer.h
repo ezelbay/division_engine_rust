@@ -85,6 +85,10 @@ DIVISION_EXPORT void division_engine_vertex_buffer_set_vertex_data_for_attribute
     size_t vertex_count
 );
 
+DIVISION_EXPORT void* division_engine_vertex_buffer_borrow_data_pointer(DivisionContext* ctx, int32_t vertex_buffer);
+DIVISION_EXPORT void division_engine_vertex_buffer_return_data_pointer(
+    DivisionContext* ctx, int32_t vertex_buffer, void* data_pointer);
+
 DIVISION_EXPORT int32_t division_engine_vertex_buffer_render_pass_alloc(
     DivisionContext* ctx, DivisionRenderPass render_pass);
 

@@ -43,7 +43,7 @@ void* division_engine_uniform_buffer_borrow_data_pointer(DivisionContext* ctx, i
     return division_engine_internal_platform_uniform_buffer_borrow_data_pointer(ctx, buffer);
 }
 
-void division_engine_uniform_buffer_return_data_pointer(DivisionContext* ctx, int32_t buffer, void* pointer)
+void division_engine_uniform_buffer_return_data_pointer(DivisionContext* ctx, int32_t buffer, void* data_pointer)
 {
-    division_engine_internal_platform_uniform_buffer_return_data_pointer(ctx, buffer, pointer);
+    division_engine_internal_platform_uniform_buffer_return_data_pointer(ctx, buffer, data_pointer);
 }

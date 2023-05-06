@@ -19,7 +19,7 @@ DIVISION_EXPORT void division_engine_internal_platform_uniform_buffer_alloc(
 DIVISION_EXPORT void* division_engine_internal_platform_uniform_buffer_borrow_data_pointer(
     DivisionContext* ctx, int32_t buffer);
 DIVISION_EXPORT void division_engine_internal_platform_uniform_buffer_return_data_pointer(
-    DivisionContext* ctx, int32_t buffer, void* pointer);
+    DivisionContext* ctx, int32_t buffer, void* data_pointer);
 
 #ifdef __cplusplus
 }

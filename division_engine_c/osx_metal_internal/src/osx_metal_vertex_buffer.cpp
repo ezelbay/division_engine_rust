@@ -79,6 +79,17 @@ void division_engine_internal_platform_vertex_buffer_set_vertex_data(
     }
 }
 
+void* division_engine_internal_platform_vertex_buffer_borrow_data_pointer(DivisionContext* ctx, int32_t vertex_buffer)
+{
+    return ctx->vertex_buffer_context->buffers_impl[vertex_buffer].metal_buffer->contents();
+}
+
+void division_engine_internal_platform_vertex_buffer_return_data_pointer(
+    DivisionContext* ctx, int32_t vertex_buffer, void* data_pointer)
+{
+    MTL::Buffer* mtl_buffer = ctx->vertex_buffer_context->buffers_impl[vertex_buffer].metal_buffer;
+    mtl_buffer->didModifyRange(NS::Range::Make(0, mtl_buffer->length()));
+}
 
 // TODO: This is works only for GLFW. Remove it
 void division_engine_internal_platform_vertex_buffer_draw(DivisionContext* ctx)

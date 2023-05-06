@@ -14,6 +14,11 @@ typedef struct UserData {
     int32_t shader_id;
 } UserData;
 
+typedef struct VertexData {
+    float position[3];
+    float color[4];
+} VertexData;
+
 int main()
 {
     DivisionSettings settings = {
@@ -67,23 +72,15 @@ void init_callback(DivisionContext* ctx)
     };
     int32_t vertex_buffer = division_engine_vertex_buffer_alloc(ctx, attr, 2, 3, DIVISION_TOPOLOGY_TRIANGLES);
 
-    float positions[9] = {
-        -0.5f, -0.5f, 0,
-        -1, 0, 0,
-        1, 1, 0
+    VertexData vd[3] = {
+        { .position = { -0.5f, -0.5f, 0 }, .color = { 1,1,1,1 }  },
+        { .position = { -1, 0, 0 }, .color = { 1,1,1,1 } },
+        { .position = { 1, 1, 0 }, .color = { 1,1,1,1 } }
     };
 
-    float colors[12] = {
-        1, 1, 1, 1,
-        1, 1, 1, 1,
-        1, 1, 1, 1
-    };
-
-    int32_t objectIndex = 0;
-    division_engine_vertex_buffer_set_vertex_data_for_attribute(
-        ctx, vertex_buffer, objectIndex, 0, positions, 0, 3);
-    division_engine_vertex_buffer_set_vertex_data_for_attribute(
-        ctx, vertex_buffer, objectIndex, 1, colors, 0, 3);
+    VertexData* vert_buff_ptr = division_engine_vertex_buffer_borrow_data_pointer(ctx, vertex_buffer);
+    memcpy(vert_buff_ptr, vd, sizeof(VertexData) * 3);
+    division_engine_vertex_buffer_return_data_pointer(ctx, vertex_buffer, vert_buff_ptr);
 
     DivisionUniformBuffer buff = { .data_bytes = 32, .location = 1, .shaderType = DIVISION_SHADER_FRAGMENT };
     int32_t buff_id = division_engine_uniform_buffer_alloc(ctx, buff);

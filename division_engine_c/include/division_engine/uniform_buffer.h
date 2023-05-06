@@ -31,7 +31,7 @@ extern "C" {
 DIVISION_EXPORT int32_t division_engine_uniform_buffer_alloc(DivisionContext* ctx, DivisionUniformBuffer buffer);
 DIVISION_EXPORT void* division_engine_uniform_buffer_borrow_data_pointer(DivisionContext* ctx, int32_t buffer);
 DIVISION_EXPORT void
-division_engine_uniform_buffer_return_data_pointer(DivisionContext* ctx, int32_t buffer, void* pointer);
+division_engine_uniform_buffer_return_data_pointer(DivisionContext* ctx, int32_t buffer, void* data_pointer);
 
 #ifdef __cplusplus
 }

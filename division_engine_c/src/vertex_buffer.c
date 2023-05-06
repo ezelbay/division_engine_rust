@@ -17,8 +17,7 @@ static inline void gather_attributes_info(
     DivisionVertexAttributeSettings* attrs,
     int32_t attr_count,
     DivisionVertexAttribute* attributes,
-    int32_t* per_vertex_data_size
-                                         );
+    int32_t* per_vertex_data_size);
 
 bool division_engine_internal_vertex_buffer_context_alloc(DivisionContext* ctx, const DivisionSettings* settings)
 {
@@ -182,6 +181,16 @@ AttrTraits_ division_attribute_get_traits(DivisionShaderVariableType attributeTy
             fprintf(stderr, "Unknown attribute type");
         }
     }
+}
+
+void* division_engine_vertex_buffer_borrow_data_pointer(DivisionContext* ctx, int32_t vertex_buffer)
+{
+    return division_engine_internal_platform_vertex_buffer_borrow_data_pointer(ctx, vertex_buffer);
+}
+
+void division_engine_vertex_buffer_return_data_pointer(DivisionContext* ctx, int32_t vertex_buffer, void* data_pointer)
+{
+    division_engine_internal_platform_vertex_buffer_return_data_pointer(ctx, vertex_buffer, data_pointer);
 }
 
 int32_t division_engine_vertex_buffer_render_pass_alloc(DivisionContext* ctx, DivisionRenderPass render_pass)
