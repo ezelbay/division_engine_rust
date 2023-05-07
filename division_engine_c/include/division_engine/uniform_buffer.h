@@ -11,7 +11,7 @@ struct DivisionUniformBufferInternal_;
 
 typedef struct DivisionUniformBuffer {
     size_t data_bytes;
-    int32_t location;
+    int32_t binding;
     DivisionShaderType  shaderType;
 } DivisionUniformBuffer;
 

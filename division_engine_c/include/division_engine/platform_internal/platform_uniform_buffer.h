@@ -23,5 +23,4 @@ DIVISION_EXPORT void division_engine_internal_platform_uniform_buffer_return_dat
 
 #ifdef __cplusplus
 }
-
 #endif

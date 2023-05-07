@@ -4,11 +4,17 @@
 #include "glad/gl.h"
 #include <stdio.h>
 
+#include "division_engine/shader.h"
+
 static int create_shader_from_source(const char* source, size_t source_size, GLuint gl_shader_type);
 static bool alloc_shader_source_from_file(const char* path, char** shader_data, size_t* data_size);
 static bool check_program_status(GLuint programHandle);
 static void get_program_info_log(GLuint program_handle, char** error_ptr);
 static int shader_type_to_gl_type(DivisionShaderType shaderType);
+
+static inline bool attach_shader_to_program_from_file(const char* path, DivisionShaderType type, int32_t program_id);
+static inline bool attach_shader_to_program_from_source(
+    const char* source, size_t source_size, DivisionShaderType type, int32_t program_id);
 
 bool division_engine_internal_platform_shader_system_context_alloc(
     DivisionContext* ctx, const DivisionSettings* settings
@@ -19,12 +25,20 @@ bool division_engine_internal_platform_shader_system_context_alloc(
 
 void division_engine_internal_platform_shader_system_context_free(DivisionContext* ctx)
 {
-
 }
 
-int32_t division_engine_internal_platform_shader_program_alloc(DivisionContext* ctx)
+int32_t division_engine_internal_platform_shader_program_create(
+    DivisionContext* ctx, const DivisionShaderSettings* settings, int32_t source_count)
 {
-    return glCreateProgram();
+    int32_t gl_program = glCreateProgram();
+    for (int i = 0; i < source_count; i++)
+    {
+        const DivisionShaderSettings* s = &settings[i];
+        attach_shader_to_program_from_file(s->file_path, s->type, gl_program);
+    }
+    glLinkProgram(gl_program);
+
+    return check_program_status(gl_program) ? gl_program : -1;
 }
 
 void division_engine_internal_platform_shader_program_free(DivisionContext* ctx, int32_t program_id)
@@ -32,8 +46,7 @@ void division_engine_internal_platform_shader_program_free(DivisionContext* ctx,
     glDeleteProgram((GLuint) program_id);
 }
 
-bool division_engine_internal_platform_shader_from_file_attach_to_program(
-    DivisionContext* ctx, const char* path, DivisionShaderType type, int32_t program_id)
+bool attach_shader_to_program_from_file(const char* path, DivisionShaderType type, int32_t program_id)
 {
     char* shader_src;
     size_t shader_src_size;
@@ -43,14 +56,14 @@ bool division_engine_internal_platform_shader_from_file_attach_to_program(
         return false;
     }
 
-    bool ok = division_engine_shader_from_source_attach_to_program(ctx, shader_src, shader_src_size, type, program_id);
+    bool ok = attach_shader_to_program_from_source(shader_src, shader_src_size, type, program_id);
     free(shader_src);
 
     return ok;
 }
 
-bool division_engine_internal_platform_shader_from_source_attach_to_program(
-    DivisionContext* ctx, const char* source, size_t source_size, DivisionShaderType type, int32_t program_id)
+bool attach_shader_to_program_from_source(
+    const char* source, size_t source_size, DivisionShaderType type, int32_t program_id)
 {
     int gl_shader_type = shader_type_to_gl_type(type);
     if (gl_shader_type < 0)
@@ -66,9 +79,8 @@ bool division_engine_internal_platform_shader_from_source_attach_to_program(
 
     glAttachShader((GLuint) program_id, shader_handle);
     glDeleteShader(shader_handle);
-    return true;;
+    return true;
 }
-
 
 int create_shader_from_source(const char* source, size_t source_size, GLuint gl_shader_type)
 {
@@ -128,74 +140,6 @@ bool alloc_shader_source_from_file(const char* path, char** shader_data, size_t*
     return true;
 }
 
-bool division_engine_internal_platform_shader_link_program(DivisionContext* ctx, int32_t program_id)
-{
-    GLuint gl_program = (GLuint) program_id;
-    glLinkProgram(gl_program);
-    return check_program_status(gl_program);
-}
-
-int32_t division_engine_internal_platform_shader_program_get_attribute_location(
-    DivisionContext* ctx, const char* name, int32_t program_id)
-{
-    return glGetAttribLocation(program_id, name);
-}
-
-int32_t division_engine_internal_platform_shader_program_get_uniform_location(
-    DivisionContext* ctx, const char* name, int32_t program_id)
-{
-    return glGetUniformLocation(program_id, name);
-}
-
-void division_engine_internal_platform_shader_program_get_uniform_float(
-    DivisionContext* ctx, int32_t program_id, int32_t location, float* output_value)
-{
-    glGetUniformfv(program_id, location, output_value);
-}
-
-void division_engine_internal_platform_shader_program_get_uniform_vec2(
-    DivisionContext* ctx, int32_t program_id, int32_t location, float* output_values)
-{
-    glGetUniformfv(program_id, location, output_values);
-}
-
-void division_engine_internal_platform_shader_program_get_uniform_vec3(
-    DivisionContext* ctx, int32_t program_id, int32_t location, float* output_values)
-{
-    glGetUniformfv(program_id, location, output_values);
-}
-
-void division_engine_internal_platform_shader_program_get_uniform_vec4(
-    DivisionContext* ctx, int32_t program_id, int32_t location, float* output_values)
-{
-    glGetUniformfv(program_id, location, output_values);
-}
-
-void division_engine_internal_platform_shader_program_set_uniform_float(
-    DivisionContext* ctx, int32_t program_id, int32_t location, float value)
-{
-    glProgramUniform1f(program_id, location, value);
-}
-
-void division_engine_internal_platform_shader_program_set_uniform_vec2(
-    DivisionContext* ctx, int32_t program_id, int32_t location, const float* values)
-{
-    glProgramUniform2fv(program_id, location, 1, values);
-}
-
-void division_engine_internal_platform_shader_program_set_uniform_vec3(
-    DivisionContext* ctx, int32_t program_id, int32_t location, const float* values)
-{
-    glProgramUniform3fv(program_id, location, 1, values);
-}
-
-void division_engine_internal_platform_shader_program_set_uniform_vec4(
-    DivisionContext* ctx, int32_t program_id, int32_t location, const float* values)
-{
-    glProgramUniform4fv(program_id, location, 1, values);
-}
-
-
 bool check_program_status(GLuint programHandle)
 {
     GLint linkStatus;
@@ -204,7 +148,7 @@ bool check_program_status(GLuint programHandle)
     {
         char* error;
         get_program_info_log(programHandle, &error);
-        fprintf(stderr, "Failed to link a shader program. Info log: \n%s", error);
+        fprintf(stderr, "Failed to link a shader program. Info log: \n%s\n", error);
         free(error);
         return false;
     }
@@ -216,7 +160,7 @@ bool check_program_status(GLuint programHandle)
     {
         char* error;
         get_program_info_log(programHandle, &error);
-        fprintf(stderr, "Failed to validate a shader program. Info log: \n%s", error);
+        fprintf(stderr, "Failed to validate a shader program. Info log: \n%s\n", error);
         free(error);
         return false;
     }

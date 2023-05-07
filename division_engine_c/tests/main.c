@@ -41,6 +41,7 @@ int main()
 
 void init_callback(DivisionContext* ctx)
 {
+#if __APPLE__
     DivisionShaderSettings settings[] = {
         (DivisionShaderSettings) {
             .type = DIVISION_SHADER_VERTEX,
@@ -53,9 +54,23 @@ void init_callback(DivisionContext* ctx)
             .file_path = "test.metal"
         }
     };
-    int32_t source_count = sizeof(settings) / sizeof(DivisionShaderSettings);
+#else
+    DivisionShaderSettings shader_settings[] = {
+        (DivisionShaderSettings) {
+            .type = DIVISION_SHADER_VERTEX,
+            .entry_point_name = "main",
+            .file_path = "test.vert"
+        },
+        (DivisionShaderSettings) {
+            .type = DIVISION_SHADER_FRAGMENT,
+            .entry_point_name = "main",
+            .file_path = "test.frag"
+        }
+    };
+#endif
+    int32_t source_count = sizeof(shader_settings) / sizeof(DivisionShaderSettings);
 
-    int32_t shader_program = division_engine_shader_program_create(ctx, settings, source_count);
+    int32_t shader_program = division_engine_shader_program_create(ctx, shader_settings, source_count);
 
     VertexData vd[] = {
         { .position = {-0.5f, -0.5f, 0}, .color = {1, 1, 1, 1} },
@@ -67,10 +82,17 @@ void init_callback(DivisionContext* ctx)
     };
     int32_t vertex_count = sizeof(vd) / sizeof(VertexData);
 
+#if __APPLE__
     DivisionVertexAttributeSettings attr[] = {
         {.type = DIVISION_FVEC3, .location = 0},
         {.type = DIVISION_FVEC4, .location = 0}
     };
+#else
+    DivisionVertexAttributeSettings attr[] = {
+        {.type = DIVISION_FVEC3, .location = 0},
+        {.type = DIVISION_FVEC4, .location = 1}
+    };
+#endif
     int32_t attr_count = sizeof(attr) / sizeof(DivisionVertexAttributeSettings);
 
     int32_t vertex_buffer = division_engine_vertex_buffer_alloc(
@@ -83,18 +105,18 @@ void init_callback(DivisionContext* ctx)
 
     DivisionUniformBuffer buff = {
         .data_bytes = sizeof(testVec),
-        .location = 1,
+        .binding = 1,
         .shaderType = DIVISION_SHADER_FRAGMENT
     };
-    int32_t buff_id = division_engine_uniform_buffer_alloc(ctx, buff);
-    float* uniform_ptr = division_engine_uniform_buffer_borrow_data_pointer(ctx, buff_id);
+    int32_t uniform_buffer = division_engine_uniform_buffer_alloc(ctx, buff);
+    float* uniform_ptr = division_engine_uniform_buffer_borrow_data_pointer(ctx, uniform_buffer);
     memcpy(uniform_ptr, testVec, sizeof(testVec));
-    division_engine_uniform_buffer_return_data_pointer(ctx, buff_id, uniform_ptr);
+    division_engine_uniform_buffer_return_data_pointer(ctx, uniform_buffer, uniform_ptr);
 
     division_engine_render_pass_alloc(ctx, (DivisionRenderPass) {
         .vertex_buffer = vertex_buffer,
         .shader_program = shader_program,
-        .uniform_buffers = &buff_id,
+        .uniform_buffers = &uniform_buffer,
         .uniform_buffer_count = 1,
         .first_vertex = 0,
         .vertex_count = vertex_count

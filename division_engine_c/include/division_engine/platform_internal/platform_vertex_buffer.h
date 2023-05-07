@@ -22,8 +22,6 @@ DIVISION_EXPORT void* division_engine_internal_platform_vertex_buffer_borrow_dat
 DIVISION_EXPORT void division_engine_internal_platform_vertex_buffer_return_data_pointer(
     DivisionContext* ctx, int32_t vertex_buffer, void* data_pointer);
 
-DIVISION_EXPORT void division_engine_internal_platform_vertex_buffer_draw(DivisionContext* ctx);
-
 #ifdef __cplusplus
 }
 #endif
