@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <memory.h>
-#include "division_engine/color.h"
 #include "division_engine/render_pass.h"
 #include "division_engine/renderer.h"
 #include "division_engine/shader.h"
@@ -8,9 +7,7 @@
 #include "division_engine/vertex_buffer.h"
 
 void error_callback(int error_code, const char* message);
-
 void init_callback(DivisionContext* ctx);
-
 void update_callback(DivisionContext* ctx);
 
 typedef struct UserData
@@ -56,34 +53,42 @@ void init_callback(DivisionContext* ctx)
             .file_path = "test.metal"
         }
     };
+    int32_t source_count = sizeof(settings) / sizeof(DivisionShaderSettings);
 
-    int32_t shader_program = division_engine_shader_program_create(ctx, settings, 2);
+    int32_t shader_program = division_engine_shader_program_create(ctx, settings, source_count);
 
-    DivisionVertexAttributeSettings attr[2] = {
+    VertexData vd[] = {
+        { .position = {-0.5f, -0.5f, 0}, .color = {1, 1, 1, 1} },
+        { .position = {0, 0, 0}, .color = {1, 1, 1, 1} },
+        { .position = {-0.5f, 0, 0}, .color = {1, 1, 1, 1} },
+        { .position = {0, 0, 0}, .color = {1, 1, 1, 1} },
+        { .position = {-0.5f, -0.5f, 0}, .color = {1, 1, 1, 1} },
+        { .position = {0, -0.5f, 0}, .color = {1, 1, 1, 1} },
+    };
+    int32_t vertex_count = sizeof(vd) / sizeof(VertexData);
+
+    DivisionVertexAttributeSettings attr[] = {
         {.type = DIVISION_FVEC3, .location = 0},
         {.type = DIVISION_FVEC4, .location = 0}
     };
-    int32_t vertex_buffer = division_engine_vertex_buffer_alloc(ctx, attr, 2, 3, DIVISION_TOPOLOGY_TRIANGLES);
+    int32_t attr_count = sizeof(attr) / sizeof(DivisionVertexAttributeSettings);
 
-    VertexData vd[3] = {
-        {.position = {-0.5f, -0.5f, 0}, .color = {1, 1, 1, 1}},
-        {.position = {-1, 0, 0}, .color = {1, 1, 1, 1}},
-        {.position = {1, 1, 0}, .color = {1, 1, 1, 1}}
-    };
-
+    int32_t vertex_buffer = division_engine_vertex_buffer_alloc(
+        ctx, attr, attr_count, vertex_count, DIVISION_TOPOLOGY_TRIANGLES);
     VertexData* vert_buff_ptr = division_engine_vertex_buffer_borrow_data_pointer(ctx, vertex_buffer);
-    memcpy(vert_buff_ptr, vd, sizeof(VertexData[3]));
+    memcpy(vert_buff_ptr, vd, sizeof(vd));
     division_engine_vertex_buffer_return_data_pointer(ctx, vertex_buffer, vert_buff_ptr);
 
+    float testVec[] = { 0, 1, 0, 1 };
+
     DivisionUniformBuffer buff = {
-        .data_bytes = sizeof(float[4]),
+        .data_bytes = sizeof(testVec),
         .location = 1,
         .shaderType = DIVISION_SHADER_FRAGMENT
     };
     int32_t buff_id = division_engine_uniform_buffer_alloc(ctx, buff);
-    float testVec[] = {0, 1, 0, 1};
     float* uniform_ptr = division_engine_uniform_buffer_borrow_data_pointer(ctx, buff_id);
-    memcpy(uniform_ptr, testVec, sizeof(float[4]));
+    memcpy(uniform_ptr, testVec, sizeof(testVec));
     division_engine_uniform_buffer_return_data_pointer(ctx, buff_id, uniform_ptr);
 
     division_engine_render_pass_alloc(ctx, (DivisionRenderPass) {
@@ -92,7 +97,7 @@ void init_callback(DivisionContext* ctx)
         .uniform_buffers = &buff_id,
         .uniform_buffer_count = 1,
         .first_vertex = 0,
-        .vertex_count = 3
+        .vertex_count = vertex_count
     });
 }
 
