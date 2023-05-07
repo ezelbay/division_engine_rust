@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <memory.h>
+#include <assert.h>
+
 #include "division_engine/render_pass.h"
 #include "division_engine/renderer.h"
 #include "division_engine/shader.h"
@@ -71,6 +73,7 @@ void init_callback(DivisionContext* ctx)
     int32_t source_count = sizeof(shader_settings) / sizeof(DivisionShaderSettings);
 
     int32_t shader_program = division_engine_shader_program_create(ctx, shader_settings, source_count);
+    assert(shader_program >= 0);
 
     VertexData vd[] = {
         { .position = {-0.5f, -0.5f, 0}, .color = {1, 1, 1, 1} },
@@ -82,17 +85,11 @@ void init_callback(DivisionContext* ctx)
     };
     int32_t vertex_count = sizeof(vd) / sizeof(VertexData);
 
-#if __APPLE__
-    DivisionVertexAttributeSettings attr[] = {
-        {.type = DIVISION_FVEC3, .location = 0},
-        {.type = DIVISION_FVEC4, .location = 0}
-    };
-#else
     DivisionVertexAttributeSettings attr[] = {
         {.type = DIVISION_FVEC3, .location = 0},
         {.type = DIVISION_FVEC4, .location = 1}
     };
-#endif
+
     int32_t attr_count = sizeof(attr) / sizeof(DivisionVertexAttributeSettings);
 
     int32_t vertex_buffer = division_engine_vertex_buffer_alloc(

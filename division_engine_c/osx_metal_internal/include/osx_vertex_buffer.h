@@ -4,5 +4,6 @@
 
 struct DivisionVertexBufferInternalPlatform_
 {
-    MTL::Buffer* metal_buffer;
+    MTL::Buffer* mtl_buffer;
+    MTL::VertexDescriptor* mtl_vertex_descriptor;
 };

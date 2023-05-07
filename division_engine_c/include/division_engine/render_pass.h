@@ -16,6 +16,7 @@ typedef struct DivisionRenderPass {
 
 typedef struct DivisionRenderPassSystemContext {
     DivisionRenderPass* render_passes;
+    struct DivisionRenderPassInternalPlatform_* render_passes_impl;
     int32_t render_pass_count;
 } DivisionRenderPassSystemContext;
 

@@ -7,12 +7,15 @@
 #include "division_engine/renderer.h"
 #include "division_engine/uniform_buffer.h"
 #include "division_engine/vertex_buffer.h"
-#include "osx_uniform_buffer.h"
+#include "osx_render_pass.h"
 #include "osx_shader_context.h"
+#include "osx_uniform_buffer.h"
 #include "osx_vertex_buffer.h"
 
+#define MTL_VERTEX_DATA_BUFFER_INDEX 0
+
 static char* readFromFile(const char* path);
-static void fillFunctionAttributes(MTL::Function* func, DivisionMetalAttribute** attributes, int32_t* attributes_count);
+static inline MTL::VertexFormat division_attribute_type_to_mtl_format(DivisionShaderVariableType attrType);
 
 DivisionOSXViewDelegate::DivisionOSXViewDelegate(
     MTL::Device* device, const DivisionSettings* settings, DivisionContext* context)
@@ -52,17 +55,18 @@ void DivisionOSXViewDelegate::drawInMTKView(MTK::View* pView)
     DivisionRenderPassSystemContext* render_pass_ctx = context->render_pass_context;
     DivisionVertexBufferSystemContext* vert_buff_ctx = context->vertex_buffer_context;
     DivisionUniformBufferSystemContext* uniform_buff_ctx = context->uniform_buffer_context;
-    DivisionShaderSystemContext* shader_ctx = context->shader_context;
 
     for (int32_t i = 0; i < render_pass_ctx->render_pass_count; i++)
     {
         DivisionRenderPass* pass = &render_pass_ctx->render_passes[i];
-        MTL::RenderPipelineState* pipelineState = shader_ctx->shader_programs[pass->shader_program].pipeline_state;
-        MTL::Buffer* mtlBuffer = vert_buff_ctx->buffers_impl[pass->vertex_buffer].metal_buffer;
+        DivisionRenderPassInternalPlatform_* pass_impl = &render_pass_ctx->render_passes_impl[i];
+
+        MTL::RenderPipelineState* pipelineState = pass_impl->mtl_pipeline_state;
+        MTL::Buffer* vertDataMtlBuffer = vert_buff_ctx->buffers_impl[pass->vertex_buffer].mtl_buffer;
 
         renderEnc->setRenderPipelineState(pipelineState);
-        renderEnc->setVertexBuffer(mtlBuffer, 0, 0);
-        
+        renderEnc->setVertexBuffer(vertDataMtlBuffer, 0, MTL_VERTEX_DATA_BUFFER_INDEX);
+
         for (int ubIdx = 0; ubIdx < pass->uniform_buffer_count; ubIdx++)
         {
             int32_t buff_id = pass->uniform_buffers[ubIdx];
@@ -82,11 +86,7 @@ void DivisionOSXViewDelegate::drawInMTKView(MTK::View* pView)
             }
         }
 
-        renderEnc->drawPrimitives(
-            MTL::PrimitiveType::PrimitiveTypeTriangle,
-            NS::UInteger(pass->first_vertex),
-            NS::UInteger(pass->vertex_count)
-        );
+        renderEnc->drawPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, pass->first_vertex, pass->vertex_count);
     }
 
     renderEnc->endEncoding();
@@ -105,9 +105,6 @@ bool DivisionOSXViewDelegate::createShaderProgram(
     const DivisionShaderSettings* shaderSettings, int32_t source_count, DivisionMetalShaderProgram* out_program)
 {
     NS::Error* err = nullptr;
-    out_program->attributes = nullptr;
-
-    auto* pipeline_descriptor = MTL::RenderPipelineDescriptor::alloc()->init();
 
     for (int32_t i = 0; i < source_count; i++)
     {
@@ -119,14 +116,14 @@ bool DivisionOSXViewDelegate::createShaderProgram(
 
         if (err)
         {
-            fprintf(stderr, "%s", err->debugDescription()->utf8String());
-            continue;
+            fprintf(stderr, "%s\n", err->debugDescription()->utf8String());
+            return false;
         }
 
         if (!library)
         {
-            fprintf(stderr, "Created shader library is null");
-            continue;
+            fprintf(stderr, "Created shader library is null\n");
+            return false;
         }
 
         auto* func = library->newFunction(NSUtils::createUtf8String(shader.entry_point_name));
@@ -134,76 +131,92 @@ bool DivisionOSXViewDelegate::createShaderProgram(
         switch (shader.type)
         {
             case DIVISION_SHADER_VERTEX:
-                pipeline_descriptor->setVertexFunction(func);
                 out_program->vertex_function = func;
                 break;
             case DIVISION_SHADER_FRAGMENT:
-                pipeline_descriptor->setFragmentFunction(func);
                 out_program->fragment_function = func;
                 break;
             default:
-                fprintf(stderr, "Unknown shader function type `%d`", shader.type);
+                fprintf(stderr, "Unknown shader function type `%d`\n", shader.type);
                 break;
         }
 
         library->release();
-        fillFunctionAttributes(func, &out_program->attributes, &out_program->attribute_count);
     }
-    pipeline_descriptor->colorAttachments()->object(0)->setPixelFormat(MTL::PixelFormat::PixelFormatBGRA8Unorm_sRGB);
-
-    err = nullptr;
-    auto* renderPipelineState = _device->newRenderPipelineState(pipeline_descriptor, &err);
-    if (err)
-    {
-        fprintf(stderr, "%s", err->debugDescription()->utf8String());
-        return false;
-    }
-
-    if (!renderPipelineState)
-    {
-        fprintf(stderr, "Render pipeline state is null");
-        return false;
-    }
-
-    pipeline_descriptor->release();
-
-    out_program->pipeline_state = renderPipelineState;
 
     return out_program;
 }
 
-void fillFunctionAttributes(MTL::Function* func, DivisionMetalAttribute** attributes, int32_t* attributes_count)
-{
-    int32_t origin_attr_count = *attributes_count;
-    NS::Array* attrs = func->stageInputAttributes();
-    *attributes_count = origin_attr_count + static_cast<int32_t>(attrs->count());
-    *attributes = static_cast<DivisionMetalAttribute*>(realloc(
-        *attributes,
-        sizeof(DivisionMetalAttribute) * (*attributes_count)
-    ));
-
-    for (int32_t i = 0; i < attrs->count(); i++)
-    {
-        auto* at = attrs->object<MTL::Attribute>(i);
-        const char* at_name = at->name()->utf8String();
-
-        DivisionMetalAttribute* attr_info = &(*attributes[origin_attr_count + i]);
-        attr_info->index = static_cast<uint32_t>(at->attributeIndex());
-        attr_info->name = static_cast<char*>(malloc((sizeof(char) * strlen(at_name) + 1)));
-        strcpy(attr_info->name, at_name);
-    }
-}
-
 void DivisionOSXViewDelegate::deleteShaderProgram(DivisionMetalShaderProgram* program)
 {
-    program->pipeline_state->release();
     program->fragment_function->release();
     program->vertex_function->release();
+}
 
-    for (int32_t i = 0; i < program->attribute_count; i++)
+MTL::VertexDescriptor* DivisionOSXViewDelegate::createVertexDescriptor(const DivisionVertexBuffer* vertexBuffer)
+{
+    MTL::VertexDescriptor* descriptor = MTL::VertexDescriptor::alloc()->init();
+    MTL::VertexAttributeDescriptorArray* attrDescArray = descriptor->attributes();
+    for (int i = 0; i < vertexBuffer->attribute_count; i++)
     {
-        free(static_cast<void*>(program->attributes[i].name));
+        const DivisionVertexAttribute* attr = &vertexBuffer->attributes[i];
+        MTL::VertexAttributeDescriptor* attrDesc = attrDescArray->object(attr->location);
+        attrDesc->setOffset(attr->offset);
+        attrDesc->setBufferIndex(MTL_VERTEX_DATA_BUFFER_INDEX);
+        attrDesc->setFormat(division_attribute_type_to_mtl_format(attr->type));
     }
+
+    descriptor->layouts()->object(MTL_VERTEX_DATA_BUFFER_INDEX)->setStride(vertexBuffer->per_vertex_data_size);
+
+    return descriptor;
+}
+
+void DivisionOSXViewDelegate::deleteVertexDescriptor(MTL::VertexDescriptor* vertexDescriptor)
+{
+    vertexDescriptor->release();
+}
+
+MTL::RenderPipelineState* DivisionOSXViewDelegate::createRenderPipelineState(
+    const DivisionMetalShaderProgram* program, MTL::VertexDescriptor* vertexDescriptor)
+{
+    auto* pipeline_descriptor = MTL::RenderPipelineDescriptor::alloc()->init();
+    if (program->vertex_function != NULL)
+    {
+        pipeline_descriptor->setVertexFunction(program->vertex_function);
+        pipeline_descriptor->setVertexDescriptor(vertexDescriptor);
+    }
+
+    if (program->fragment_function != NULL)
+    {
+        pipeline_descriptor->setFragmentFunction(program->fragment_function);
+    }
+
+    pipeline_descriptor->colorAttachments()->object(0)->setPixelFormat(MTL::PixelFormat::PixelFormatBGRA8Unorm_sRGB);
+
+    NS::Error* err = nullptr;
+    auto* renderPipelineState = _device->newRenderPipelineState(pipeline_descriptor, &err);
+    if (err)
+    {
+        fprintf(stderr, "%s\n", err->debugDescription()->utf8String());
+        pipeline_descriptor->release();
+        return NULL;
+    }
+
+    if (!renderPipelineState)
+    {
+        fprintf(stderr, "Render pipeline state is null\n");
+        pipeline_descriptor->release();
+        return NULL;
+    }
+
+    pipeline_descriptor->release();
+
+    return renderPipelineState;
+}
+
+void DivisionOSXViewDelegate::deleteRenderPipelineState(MTL::RenderPipelineState* pipelineState)
+{
+    pipelineState->release();
 }
 
 char* readFromFile(const char* path)
@@ -230,4 +243,26 @@ char* readFromFile(const char* path)
     }
 
     return shaderSrc;
+}
+
+MTL::VertexFormat division_attribute_type_to_mtl_format(DivisionShaderVariableType attrType)
+{
+    switch (attrType)
+    {
+        case DIVISION_FLOAT:
+            return MTL::VertexFormatFloat;
+        case DIVISION_INTEGER:
+            return MTL::VertexFormatInt;
+        case DIVISION_FVEC2:
+            return MTL::VertexFormatFloat2;
+        case DIVISION_FVEC3:
+            return MTL::VertexFormatFloat3;
+        case DIVISION_FVEC4:
+            return MTL::VertexFormatFloat4;
+        case DIVISION_DOUBLE:
+        case DIVISION_FMAT4X4:
+        default:
+            fprintf(stderr, "Unsupported attribute format");
+            return (MTL::VertexFormat) 0;
+    }
 }

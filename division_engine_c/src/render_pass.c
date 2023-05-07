@@ -3,6 +3,32 @@
 #include <stdlib.h>
 #include <memory.h>
 
+#include "division_engine/platform_internal/platform_render_pass.h"
+
+bool division_engine_internal_render_pass_context_alloc(DivisionContext* ctx, const DivisionSettings* settings)
+{
+    ctx->render_pass_context = malloc(sizeof(DivisionRenderPassSystemContext));
+    *ctx->render_pass_context = (DivisionRenderPassSystemContext) {
+        .render_passes = NULL,
+        .render_pass_count = 0
+    };
+
+    return division_engine_internal_platform_render_pass_context_alloc(ctx, settings);
+}
+
+void division_engine_internal_render_pass_context_free(DivisionContext* ctx)
+{
+    division_engine_internal_platform_render_pass_context_free(ctx);
+
+    DivisionRenderPassSystemContext* render_pass_ctx = ctx->render_pass_context;
+    for (int i = 0; i < render_pass_ctx->render_pass_count; i++)
+    {
+        free(render_pass_ctx->render_passes[i].uniform_buffers);
+    }
+    free(render_pass_ctx->render_passes);
+    free(render_pass_ctx);
+}
+
 int32_t division_engine_render_pass_alloc(DivisionContext* ctx, DivisionRenderPass render_pass)
 {
     DivisionRenderPassSystemContext * pass_ctx = ctx->render_pass_context;
@@ -19,27 +45,7 @@ int32_t division_engine_render_pass_alloc(DivisionContext* ctx, DivisionRenderPa
     pass_ctx->render_passes[render_pass_count] = render_pass_copy;
     pass_ctx->render_pass_count++;
 
-    return pass_ctx->render_pass_count - 1;
-}
-
-bool division_engine_internal_render_pass_context_alloc(DivisionContext* ctx, const DivisionSettings* settings)
-{
-    ctx->render_pass_context = malloc(sizeof(DivisionRenderPassSystemContext));
-    *ctx->render_pass_context = (DivisionRenderPassSystemContext) {
-        .render_passes = NULL,
-        .render_pass_count = 0
-    };
-
-    return true;
-}
-
-void division_engine_internal_render_pass_context_free(DivisionContext* ctx)
-{
-    DivisionRenderPassSystemContext* render_pass_ctx = ctx->render_pass_context;
-    for (int i = 0; i < render_pass_ctx->render_pass_count; i++)
-    {
-        free(render_pass_ctx->render_passes[i].uniform_buffers);
-    }
-    free(render_pass_ctx->render_passes);
-    free(render_pass_ctx);
+    return division_engine_internal_platform_render_pass_alloc(ctx, &render_pass)
+        ? pass_ctx->render_pass_count - 1
+        : -1;
 }

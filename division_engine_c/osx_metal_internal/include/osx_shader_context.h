@@ -4,17 +4,11 @@
 #include <unordered_map>
 #include <string>
 
-typedef struct DivisionMetalAttribute {
-    char* name;
-    uint32_t index;
-} DivisionMetalAttribute;
+typedef struct DivisionMetalAttribute DivisionMetalAttribute;
 
 typedef struct DivisionMetalShaderProgram {
-    MTL::RenderPipelineState* pipeline_state;
     MTL::Function* vertex_function;
     MTL::Function* fragment_function;
-    DivisionMetalAttribute* attributes;
-    int32_t attribute_count;
 } DivisionMetalShaderProgram;
 
 typedef struct DivisionShaderSystemContext {

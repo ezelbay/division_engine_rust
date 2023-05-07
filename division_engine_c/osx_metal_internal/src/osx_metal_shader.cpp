@@ -40,15 +40,24 @@ int32_t division_engine_internal_platform_shader_program_create(
     auto* shader_ctx = ctx->shader_context;
     auto pipeline_state_count = shader_ctx->shader_program_count;
 
-    shader_ctx->shader_programs = static_cast<DivisionMetalShaderProgram*>(realloc(
-        shader_ctx->shader_programs,
-        sizeof(DivisionMetalShaderProgram) * (pipeline_state_count + 1)
-    ));
+    DivisionMetalShaderProgram shader_program = {
+        .vertex_function = NULL,
+        .fragment_function = NULL,
+    };
+    if (window_ctx->app_delegate->viewDelegate->createShaderProgram(settings, source_count, &shader_program))
+    {
+        size_t new_count = pipeline_state_count + 1;
+        shader_ctx->shader_programs = static_cast<DivisionMetalShaderProgram*>(realloc(
+            shader_ctx->shader_programs,
+            sizeof(DivisionMetalShaderProgram[new_count])
+        ));
+        shader_ctx->shader_programs[pipeline_state_count] = shader_program;
+        shader_ctx->shader_program_count = new_count;
 
-    window_ctx->app_delegate->viewDelegate->createShaderProgram(
-        settings, source_count, &shader_ctx->shader_programs[pipeline_state_count]);
+        return static_cast<int32_t>(pipeline_state_count);
+    }
 
-    return static_cast<int32_t>(pipeline_state_count);
+    return -1;
 }
 
 void division_engine_internal_platform_shader_program_free(DivisionContext* ctx, int32_t program_id)

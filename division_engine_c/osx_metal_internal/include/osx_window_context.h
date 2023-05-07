@@ -4,7 +4,7 @@
 
 #include "DivisionOSXAppDelegate.h"
 
-typedef struct DivisionOSXWindowContext {
+typedef struct DivisionWindowContextPlatformInternal_ {
     NS::AutoreleasePool* autorelease_pool;
     NS::Application* app;
     DivisionOSXAppDelegate* app_delegate;

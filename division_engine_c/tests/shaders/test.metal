@@ -8,17 +8,17 @@ struct v2f {
 
 #pragma pack(1)
 struct vert {
-    packed_float3 position;
-    float4 color;
+    float3 position [[attribute(0)]];
+    float4 color [[attribute(1)]];
 };
 
 
 v2f vertex vertexMain(uint vertexId [[vertex_id]],
-                      device const vert* vd [[buffer(0)]]
+                      const vert vd [[stage_in]]
 ) {
     v2f o;
-    o.position = float4(vd[vertexId].position, 1.0);
-    o.color = half4(vd[vertexId].color);
+    o.position = float4(vd.position, 1.0);
+    o.color = half4(vd.color);
 
     return o;
 }

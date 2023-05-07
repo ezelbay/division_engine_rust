@@ -10,7 +10,7 @@
 
 typedef struct DivisionRendererSystemContext {
     DivisionColor clear_color;
-    void* window_data;
+    struct DivisionWindowContextPlatformInternal_* window_data;
 } DivisionRendererSystemContext;
 
 bool division_engine_internal_renderer_context_alloc(
