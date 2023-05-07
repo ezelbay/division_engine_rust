@@ -42,7 +42,7 @@ int main()
 void init_callback(DivisionContext* ctx)
 {
 #if __APPLE__
-    DivisionShaderSettings settings[] = {
+    DivisionShaderSettings shader_settings[] = {
         (DivisionShaderSettings) {
             .type = DIVISION_SHADER_VERTEX,
             .entry_point_name = "vertexMain",

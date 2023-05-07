@@ -71,10 +71,10 @@ void DivisionOSXViewDelegate::drawInMTKView(MTK::View* pView)
             switch (buffDesc.shaderType)
             {
                 case DIVISION_SHADER_VERTEX:
-                    renderEnc->setVertexBuffer(uniformMtlBuffer, 0, buffDesc.location);
+                    renderEnc->setVertexBuffer(uniformMtlBuffer, 0, buffDesc.binding);
                     break;
                 case DIVISION_SHADER_FRAGMENT:
-                    renderEnc->setFragmentBuffer(uniformMtlBuffer, 0, buffDesc.location);
+                    renderEnc->setFragmentBuffer(uniformMtlBuffer, 0, buffDesc.binding);
                     break;
                 default:
                     fprintf(stderr, "Unknown shader type in the pass");
