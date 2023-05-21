@@ -12,17 +12,17 @@ struct DivisionBuildOptions {
 fn main() {
     let build_options = get_build_options();
     let out_dir = env::var("OUT_DIR").unwrap();
+    let division_core_lib = "division_engine_core";
 
-    Config::new("division_engine_core")
-        .target("division_engine_core")
-        .build_target("division_engine_core")
+    Config::new(division_core_lib)
+        .target(division_core_lib)
         .out_dir(&out_dir)
         .build();
 
     let build_path = Path::new(&out_dir).join("build");
     println!("cargo:rustc-link-search=native={}", build_path.to_str().unwrap());
 
-    println!("cargo:rustc-link-lib=static={}", "division_engine_core");
+    println!("cargo:rustc-link-lib=static={}", division_core_lib);
     for lib_name in build_options.static_libs {
         println!("cargo:rustc-link-lib=static={}", lib_name);
     }
