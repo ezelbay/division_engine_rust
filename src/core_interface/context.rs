@@ -1,5 +1,5 @@
 use std::ffi::c_void;
-use crate::division_engine::core_interface::settings::DivisionEngineErrorFunc;
+use super::settings::DivisionEngineErrorFunc;
 use super::settings::DivisionSettings;
 use super::state::DivisionState;
 

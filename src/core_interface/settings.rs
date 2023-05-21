@@ -1,6 +1,6 @@
 use std::ffi::{c_char, c_void};
 
-use crate::division_engine::core_interface::context::DivisionContext;
+use super::context::DivisionContext;
 
 pub type DivisionEngineErrorFunc = unsafe extern "C" fn(i32, *const c_char);
 pub type DivisionLifecycleFunc = unsafe extern "C" fn(*const DivisionContext);

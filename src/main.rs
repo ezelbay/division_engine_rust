@@ -1,8 +1,8 @@
 use std::ffi::{c_ulong, c_long, c_float, CString, CStr, c_char};
 use std::ptr::null_mut;
-use division_engine_rust::division_engine::core_interface::context::*;
-use division_engine_rust::division_engine::core_interface::renderer::division_engine_renderer_run_loop;
-use division_engine_rust::division_engine::core_interface::settings::DivisionSettings;
+use division_engine_rust::core_interface::context::*;
+use division_engine_rust::core_interface::renderer::division_engine_renderer_run_loop;
+use division_engine_rust::core_interface::settings::DivisionSettings;
 
 static VERTICES: [f32; 9] = [
     -0.9, -0.9, 0.,
