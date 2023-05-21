@@ -15,6 +15,7 @@ fn main() {
 
     Config::new("division_engine_core")
         .target("division_engine_core")
+        .build_target("division_engine_core")
         .out_dir(&out_dir)
         .build();
 
