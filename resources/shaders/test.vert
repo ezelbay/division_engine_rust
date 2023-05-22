@@ -8,6 +8,7 @@ layout (location = 3) in mat4 localToWorld;
 layout (location = 0) out vec4 VertexColor;
 layout (location = 1) out vec2 outUV;
 
+
 void main() {
     VertexColor = fColor;
     outUV = inUV;

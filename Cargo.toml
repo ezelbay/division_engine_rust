@@ -11,3 +11,6 @@ fs_extra = "1.2.0"
 
 [dependencies]
 division_math = { git = "https://github.com/Den163/division_math", branch = "master", feature = "enable_simd" }
+
+[dev-dependencies]
+walkdir="2.3.3"
