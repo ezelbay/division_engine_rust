@@ -12,17 +12,24 @@ struct DivisionBuildOptions {
 fn main() {
     let build_options = get_build_options();
     let out_dir = env::var("OUT_DIR").unwrap();
-    let division_core_lib = "division_engine_core";
-
-    Config::new(division_core_lib)
-        .target(division_core_lib)
-        .out_dir(&out_dir)
-        .build();
+    let curr_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
+    let division_engine_core = "division_engine_core";
+    env::set_var("DIVISION_ENGINE_USE_SHADER_COMPILER", "1");
 
     let build_path = Path::new(&out_dir).join("build");
-    println!("cargo:rustc-link-search=native={}", build_path.to_str().unwrap());
+    let cmake_build_path = Path::new(&curr_dir)
+        .join("division_engine_core")
+        .join("cmake-build");
 
-    println!("cargo:rustc-link-lib=static={}", division_core_lib);
+    Config::new(division_engine_core)
+        .target(division_engine_core)
+        .out_dir(&out_dir)
+        .define("CMAKE_CXX_COMPILER", "clang++")
+        .build();
+
+    println!("cargo:rustc-link-search=native={}", build_path.to_str().unwrap());
+    println!("cargo:rustc-link-search=native={}", Path::new(&out_dir).join("lib").to_str().unwrap());
+
     for lib_name in build_options.static_libs {
         println!("cargo:rustc-link-lib=static={}", lib_name);
     }
@@ -35,6 +42,9 @@ fn main() {
         println!("cargo:rustc-link-lib=framework={}", framework_name);
     }
 
+    println!("cargo:rustc-link-lib=static={}", division_engine_core);
+    println!("cargo:rustc-link-lib=static={}", "division_engine_shader_compiler");
+
     fs_extra::dir::remove(build_path.join("resources"))
         .expect("Failed to delete resources folder");
 
@@ -45,6 +55,8 @@ fn main() {
         build_path,
         &copy_options,
     ).expect("Failed to copy resources folder");
+
+    println!("cargo:rerun-if-changed=build.rs");
 }
 
 fn get_build_options() -> DivisionBuildOptions {
@@ -58,24 +70,42 @@ fn get_build_options() -> DivisionBuildOptions {
 
 fn build_with_osx_metal() -> DivisionBuildOptions {
     DivisionBuildOptions {
-        dynamic_libs: vec![],
-        static_libs: vec![ "osx_metal_internal".to_string() ],
-        frameworks: vec![
-            "Metal".to_string(),
-            "MetalKit".to_string(),
-            "AppKit".to_string()
-        ]
+        dynamic_libs: make_strings_vec(vec![
+            "c++"
+        ]),
+        static_libs: make_strings_vec(vec![
+            "osx_metal_internal",
+            "MachineIndependent",
+            "OSDependent",
+            "OGLCompiler",
+            "GenericCodeGen",
+            "glslang-default-resource-limits",
+            "glslang",
+            "SPIRV",
+            "spirv-cross-cpp",
+            "spirv-cross-msl",
+        ]),
+        frameworks: make_strings_vec(vec![
+            "Metal",
+            "MetalKit",
+            "AppKit"
+        ])
     }
 }
 
 fn build_with_glfw() -> DivisionBuildOptions {
     DivisionBuildOptions {
-        dynamic_libs: vec!["X11".to_string()],
-        static_libs: vec![
-            "glfw3".to_string(),
-            "glfw_internal".to_string()
-        ],
+        dynamic_libs: make_strings_vec(vec![
+            "X11"
+        ]),
+        static_libs: make_strings_vec(vec![
+            "glfw3",
+            "glfw_internal"
+        ]),
         frameworks: vec![]
     }
 }
 
+fn make_strings_vec(strings: Vec<&str>) -> Vec<String> {
+    strings.into_iter().map(|m| { m.to_string() }).collect()
+}

@@ -1,1 +1,2 @@
-pub mod core_interface;
+pub mod core;
+pub mod shader_compiler;
