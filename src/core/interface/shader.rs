@@ -7,6 +7,17 @@ pub enum ShaderType {
     Fragment = 2,
 }
 
+#[repr(i32)]
+pub enum ShaderVariableType {
+    Float = 1,
+    Double = 2,
+    Integer = 3,
+    FVec2 = 4,
+    FVec3 = 5,
+    FVec4 = 6,
+    FMat4x4 = 7
+}
+
 #[repr(C)]
 pub struct DivisionShaderFileDescriptor {
     pub shader_type: ShaderType,
