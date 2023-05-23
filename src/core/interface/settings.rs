@@ -3,7 +3,7 @@ use std::ffi::{c_char};
 use super::context::DivisionContext;
 
 pub type DivisionEngineErrorFunc = unsafe extern "C" fn(i32, *const c_char);
-pub type DivisionLifecycleFunc = unsafe extern "C" fn(*const DivisionContext);
+pub type DivisionLifecycleFunc = unsafe extern "C" fn(*mut DivisionContext);
 
 #[repr(C)]
 pub struct DivisionSettings {

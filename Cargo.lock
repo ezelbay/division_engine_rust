@@ -23,6 +23,7 @@ version = "0.1.0"
 dependencies = [
  "cmake",
  "division_math",
+ "division_shader_compiler_rust",
  "fs_extra",
  "walkdir",
 ]
@@ -33,6 +34,14 @@ version = "0.1.0"
 source = "git+https://github.com/Den163/division_math?branch=master#a4babeb26fdb102a246f75ab719de57147d18c32"
 dependencies = [
  "itertools",
+]
+
+[[package]]
+name = "division_shader_compiler_rust"
+version = "0.1.0"
+source = "git+https://github.com/Den163/division_shader_compiler_rust?tag=v0.1.0#b7fba4f20e7c1801fdec6662df7e6498257e63b9"
+dependencies = [
+ "cmake",
 ]
 
 [[package]]

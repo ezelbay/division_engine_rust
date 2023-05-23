@@ -12,19 +12,12 @@ struct DivisionBuildOptions {
 fn main() {
     let build_options = get_build_options();
     let out_dir = env::var("OUT_DIR").unwrap();
-    let curr_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     let division_engine_core = "division_engine_core";
-    env::set_var("DIVISION_ENGINE_USE_SHADER_COMPILER", "1");
 
     let build_path = Path::new(&out_dir).join("build");
-    let cmake_build_path = Path::new(&curr_dir)
-        .join("division_engine_core")
-        .join("cmake-build");
-
     Config::new(division_engine_core)
         .target(division_engine_core)
         .out_dir(&out_dir)
-        .define("CMAKE_CXX_COMPILER", "clang++")
         .build();
 
     println!(
@@ -49,7 +42,6 @@ fn main() {
     }
 
     println!("cargo:rustc-link-lib=static={}", division_engine_core);
-    println!("cargo:rustc-link-lib=static={}", "division_engine_shader_compiler");
 
     fs_extra::dir::remove(build_path.join("resources")).expect("Failed to delete resources folder");
 
@@ -73,21 +65,8 @@ fn get_build_options() -> DivisionBuildOptions {
 
 fn build_with_osx_metal() -> DivisionBuildOptions {
     DivisionBuildOptions {
-        dynamic_libs: make_strings_vec(vec!["c++"]),
-        static_libs: make_strings_vec(vec![
-            "osx_metal_internal",
-            "MachineIndependent",
-            "OSDependent",
-            "OGLCompiler",
-            "GenericCodeGen",
-            "glslang-default-resource-limits",
-            "glslang",
-            "SPIRV",
-            "spirv-cross-core",
-            "spirv-cross-cpp",
-            "spirv-cross-glsl",
-            "spirv-cross-msl"
-        ]),
+        dynamic_libs: Vec::new(),
+        static_libs: make_strings_vec(vec![ "osx_metal_internal", ]),
         frameworks: make_strings_vec(vec!["Metal", "MetalKit", "AppKit"]),
     }
 }
