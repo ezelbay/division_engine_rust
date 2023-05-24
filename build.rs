@@ -1,5 +1,7 @@
 use cmake::Config;
-use std::env;
+use division_shader_compiler_rust::{ShaderCompiler, ShaderType};
+use std::{env, fs, fmt};
+use std::ffi::OsStr;
 use std::path::Path;
 use std::vec;
 
@@ -10,6 +12,10 @@ struct DivisionBuildOptions {
 }
 
 fn main() {
+    println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rerun-if-changed=resources");
+    println!("cargo:rerun-if-changed=division_engine_core");
+
     let build_options = get_build_options();
     let out_dir = env::var("OUT_DIR").unwrap();
     let division_engine_core = "division_engine_core";
@@ -43,16 +49,14 @@ fn main() {
 
     println!("cargo:rustc-link-lib=static={}", division_engine_core);
 
+    compile_shaders_to_msl();
+
     fs_extra::dir::remove(build_path.join("resources")).expect("Failed to delete resources folder");
 
     let mut copy_options = fs_extra::dir::CopyOptions::new();
     copy_options.copy_inside = true;
     fs_extra::dir::copy(Path::new("resources"), build_path, &copy_options)
         .expect("Failed to copy resources folder");
-
-    println!("cargo:rerun-if-changed=build.rs");
-    println!("cargo:rerun-if-changed=resources");
-    println!("cargo:rerun-if-changed=division_engine_core");
 }
 
 fn get_build_options() -> DivisionBuildOptions {
@@ -81,4 +85,61 @@ fn build_with_glfw() -> DivisionBuildOptions {
 
 fn make_strings_vec(strings: Vec<&str>) -> Vec<String> {
     strings.into_iter().map(|m| m.to_string()).collect()
+}
+
+fn compile_shaders_to_msl() {
+    let shader_compiler = ShaderCompiler::new();
+    for dir in walkdir::WalkDir::new("resources/shaders")
+    {
+        let dir = match dir {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+
+        if !dir.file_type().is_file() {
+            continue;
+        }
+
+        let path = dir.path();
+
+        let path_extension = match path.extension() {
+            Some(e) => e,
+            None => continue,
+        };
+
+        let entry_point;
+        let shader_type;
+        match path_extension.to_str() {
+            Some("vert") => {
+                entry_point = "vert";
+                shader_type = ShaderType::Vertex
+            },
+            Some("frag") => {
+                entry_point = "frag";
+                shader_type = ShaderType::Fragment
+            },
+            _ => continue,
+        }
+        
+        let glsl_src = std::fs::read_to_string(path);
+        let glsl_src = match glsl_src {
+            Ok(v) => v,
+            Err(e) => {
+                eprintln!("Failed to read a shader file by path: `{:?}` with error: `{}` ", path, e);
+                continue;
+            }
+        };
+
+        let msl_src = match shader_compiler.compile_glsl_to_metal(&glsl_src, entry_point, shader_type) {
+            Ok(v) => v,
+            Err(_) => { 
+                eprint!("Failed to compile the shader by path: {:?}", path);
+                continue;
+            }
+        };
+
+        if fs::write(format!("{}.metal", path.to_string_lossy()), msl_src).is_err() {
+            eprint!("Failed to write msl output by path: {:?}", path);
+        }
+    }
 }
