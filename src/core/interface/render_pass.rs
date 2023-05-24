@@ -4,8 +4,8 @@ use super::context::DivisionContext;
 
 #[repr(C)]
 pub struct IdWithBinding {
-    id: u32,
-    shader_location: u32,
+    pub id: u32,
+    pub shader_location: u32,
 }
 
 #[repr(i32)]

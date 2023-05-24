@@ -1,15 +1,20 @@
 use division_engine_rust::core::interface::context::*;
+use division_engine_rust::core::interface::render_pass::division_engine_render_pass_alloc;
 use division_engine_rust::core::interface::render_pass::AlphaBlend;
 use division_engine_rust::core::interface::render_pass::AlphaBlendOperation;
 use division_engine_rust::core::interface::render_pass::AlphaBlendingOptions;
 use division_engine_rust::core::interface::render_pass::ColorMask;
+use division_engine_rust::core::interface::render_pass::IdWithBinding;
 use division_engine_rust::core::interface::render_pass::RenderPassCapabilityMask;
 use division_engine_rust::core::interface::render_pass::RenderPassDescriptor;
-use division_engine_rust::core::interface::render_pass::division_engine_render_pass_alloc;
 use division_engine_rust::core::interface::renderer::*;
 use division_engine_rust::core::interface::settings::*;
 use division_engine_rust::core::interface::shader;
 use division_engine_rust::core::interface::shader::*;
+use division_engine_rust::core::interface::texture::division_engine_texture_alloc;
+use division_engine_rust::core::interface::texture::division_engine_texture_set_data;
+use division_engine_rust::core::interface::texture::TextureDescriptor;
+use division_engine_rust::core::interface::texture::TextureFormat;
 use division_engine_rust::core::interface::vertex_buffer::division_engine_vertex_buffer_alloc;
 use division_engine_rust::core::interface::vertex_buffer::division_engine_vertex_buffer_borrow_data_pointer;
 use division_engine_rust::core::interface::vertex_buffer::division_engine_vertex_buffer_return_data_pointer;
@@ -21,6 +26,7 @@ use division_math::Vector2;
 use division_math::Vector3;
 use division_math::Vector4;
 use std::ffi::{c_char, c_float, c_long, c_ulong, c_void, CStr, CString};
+use std::fs;
 use std::mem::size_of;
 use std::ptr::null_mut;
 
@@ -141,13 +147,13 @@ unsafe extern "C" fn init_func(ctx: *mut DivisionContext) {
     ];
 
     let local_to_world_matrices = [
-        Matrix4x4::identity(), 
+        Matrix4x4::identity(),
         Matrix4x4::from_columns(
-            Vector4::new(1., 0., 0., 0.5), 
-            Vector4::new(0., 1., 0., 0.5), 
+            Vector4::new(1., 0., 0., 0.5),
+            Vector4::new(0., 1., 0., 0.5),
             Vector4::new(0., 0., 1., 0.),
-            Vector4::new(0., 0., 0., 1.)
-        )
+            Vector4::new(0., 0., 0., 1.),
+        ),
     ];
 
     let vertex_attr = [
@@ -183,11 +189,11 @@ unsafe extern "C" fn init_func(ctx: *mut DivisionContext) {
     let mut vert_buffer_id = 0;
     division_engine_vertex_buffer_alloc(ctx, &vertex_buffer_desc, &mut vert_buffer_id);
 
-    let vert_buff_ptr =
-        division_engine_vertex_buffer_borrow_data_pointer(ctx, vert_buffer_id);
+    let vert_buff_ptr = division_engine_vertex_buffer_borrow_data_pointer(ctx, vert_buffer_id);
 
     let vert_buffer_per_vertex_ptr = vert_buff_ptr as *mut VertexData;
-    let vert_buffer_per_instance_ptr = vert_buff_ptr.add(vertices.len() * size_of::<VertexData>()) as *mut Matrix4x4;
+    let vert_buffer_per_instance_ptr =
+        vert_buff_ptr.add(vertices.len() * size_of::<VertexData>()) as *mut Matrix4x4;
 
     vert_buffer_per_vertex_ptr.copy_from_nonoverlapping(vertices.as_ptr(), vertices.len());
     division_engine_vertex_buffer_return_data_pointer(
@@ -196,8 +202,35 @@ unsafe extern "C" fn init_func(ctx: *mut DivisionContext) {
         vert_buff_ptr as *mut c_void,
     );
 
-    vert_buffer_per_instance_ptr.copy_from_nonoverlapping(local_to_world_matrices.as_ptr(), local_to_world_matrices.len());
+    vert_buffer_per_instance_ptr.copy_from_nonoverlapping(
+        local_to_world_matrices.as_ptr(),
+        local_to_world_matrices.len(),
+    );
 
+    let img = fs::read("resources/images/nevsky.jpg").expect("Failed to load nevsky");
+    let (mut width, mut height) = (0, 0);
+    let img = stb_image_rust::stbi_load_from_memory(
+        img.as_ptr(),
+        img.len() as i32,
+        &mut width,
+        &mut height,
+        null_mut(),
+        stb_image_rust::STBI_rgb,
+    );
+
+    let texture_descriptor = TextureDescriptor {
+        texture_format: TextureFormat::RGB24Uint,
+        width: width as u32,
+        height: height as u32,
+    };
+    let mut texture_id = 0;
+    division_engine_texture_alloc(ctx, &texture_descriptor, &mut texture_id);
+    division_engine_texture_set_data(ctx, texture_id, img as *mut c_void);
+
+    let textures = [IdWithBinding {
+        id: texture_id,
+        shader_location: 0,
+    }];
     let render_pass_desc = RenderPassDescriptor {
         shader_program: shader_id,
         vertex_buffer: vert_buffer_id,
@@ -205,9 +238,9 @@ unsafe extern "C" fn init_func(ctx: *mut DivisionContext) {
         uniform_vertex_buffer_count: 0,
         uniform_fragment_buffers: null_mut(),
         uniform_fragment_buffer_count: 0,
-        fragment_textures: null_mut(),
-        fragment_texture_count: 0,
-        
+        fragment_textures: textures.as_ptr(),
+        fragment_texture_count: 1,
+
         first_vertex: 0,
         vertex_count: vertex_buffer_desc.vertex_count as u64,
         instance_count: vertex_buffer_desc.instance_count as u64,
@@ -217,12 +250,11 @@ unsafe extern "C" fn init_func(ctx: *mut DivisionContext) {
             src: AlphaBlend::Zero,
             dst: AlphaBlend::Zero,
             operation: AlphaBlendOperation::Add,
-            constant_blend_color: [0.,0.,0.,0.]
-        }
+            constant_blend_color: [0., 0., 0., 0.],
+        },
     };
     let mut render_pass_id = 0;
     division_engine_render_pass_alloc(ctx, render_pass_desc, &mut render_pass_id);
-    
 }
 
 unsafe extern "C" fn update_func(ctx: *mut DivisionContext) {}
