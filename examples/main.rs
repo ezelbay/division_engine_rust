@@ -15,12 +15,13 @@ use division_engine_rust::core::interface::texture::division_engine_texture_allo
 use division_engine_rust::core::interface::texture::division_engine_texture_set_data;
 use division_engine_rust::core::interface::texture::TextureDescriptor;
 use division_engine_rust::core::interface::texture::TextureFormat;
+use division_engine_rust::core::interface::uniform_buffer::UniformBufferDescriptor;
 use division_engine_rust::core::interface::vertex_buffer::division_engine_vertex_buffer_alloc;
 use division_engine_rust::core::interface::vertex_buffer::division_engine_vertex_buffer_borrow_data_pointer;
 use division_engine_rust::core::interface::vertex_buffer::division_engine_vertex_buffer_return_data_pointer;
 use division_engine_rust::core::interface::vertex_buffer::RenderTopology;
-use division_engine_rust::core::interface::vertex_buffer::VertexAttributeInputDescriptor;
-use division_engine_rust::core::interface::vertex_buffer::VertexBufferInputDescriptor;
+use division_engine_rust::core::interface::vertex_buffer::VertexAttributeDescriptor;
+use division_engine_rust::core::interface::vertex_buffer::VertexBufferDescriptor;
 use division_math::Matrix4x4;
 use division_math::Vector2;
 use division_math::Vector3;
@@ -75,33 +76,41 @@ unsafe extern "C" fn error_func(error_code: i32, error_msg: *const c_char) {
 }
 
 unsafe extern "C" fn init_func(ctx: *mut DivisionContext) {
-    let vert_path: CString;
-    let frag_path: CString;
+    let vert_source: CString;
+    let frag_source: CString;
     let vert_entry_point: CString;
     let frag_entry_point: CString;
 
     if cfg!(target_os = "macos") {
-        vert_path = CString::new("resources/shaders/test.vert.metal").unwrap_unchecked();
-        frag_path = CString::new("resources/shaders/test.frag.metal").unwrap_unchecked();
+        vert_source = CString::new(
+            fs::read_to_string("resources/shaders/test.vert.metal").unwrap()).unwrap();
+        frag_source = CString::new(
+            fs::read_to_string("resources/shaders/test.frag.metal").unwrap()).unwrap();
+
         vert_entry_point = CString::new("vert").unwrap_unchecked();
         frag_entry_point = CString::new("frag").unwrap_unchecked();
     } else {
-        vert_path = CString::new("resources/shaders/test.vert").unwrap_unchecked();
-        frag_path = CString::new("resources/shaders/test.frag").unwrap_unchecked();
+        vert_source = CString::new(
+            fs::read_to_string("resources/shaders/test.vert").unwrap()).unwrap();
+        frag_source = CString::new(
+            fs::read_to_string("resources/shaders/test.frag").unwrap()).unwrap();
+
         vert_entry_point = CString::new("main").unwrap_unchecked();
         frag_entry_point = CString::new("main").unwrap_unchecked();
     }
 
     let shader_settings = [
-        DivisionShaderFileDescriptor {
+        DivisionShaderSourceDescriptor {
             shader_type: shader::ShaderType::Vertex,
-            file_path: vert_path.as_ptr(),
             entry_point_name: vert_entry_point.as_ptr(),
+            source: vert_source.as_ptr(),
+            source_size: vert_source.as_bytes().len() as i32
         },
-        DivisionShaderFileDescriptor {
+        DivisionShaderSourceDescriptor {
             shader_type: shader::ShaderType::Fragment,
-            file_path: frag_path.as_ptr(),
             entry_point_name: frag_entry_point.as_ptr(),
+            source: frag_source.as_ptr(),
+            source_size: frag_source.as_bytes().len() as i32
         },
     ];
 
@@ -115,7 +124,7 @@ unsafe extern "C" fn init_func(ctx: *mut DivisionContext) {
 
     let vertices = [
         VertexData {
-            position: Vector3::new(-0.5, -0.5, 0.),
+            position: Vector3::new(-50., -50., 0.),
             color: Vector4::one(),
             uv: Vector2::new(0., 1.),
         },
@@ -125,7 +134,7 @@ unsafe extern "C" fn init_func(ctx: *mut DivisionContext) {
             uv: Vector2::new(1., 0.),
         },
         VertexData {
-            position: Vector3::new(-0.5, 0., 0.),
+            position: Vector3::new(-50., 0., 0.),
             color: Vector4::one(),
             uv: Vector2::new(0., 0.),
         },
@@ -135,48 +144,43 @@ unsafe extern "C" fn init_func(ctx: *mut DivisionContext) {
             uv: Vector2::new(1., 0.),
         },
         VertexData {
-            position: Vector3::new(-0.5, -0.5, 0.),
+            position: Vector3::new(-50., -50., 0.),
             color: Vector4::one(),
             uv: Vector2::new(0., 1.),
         },
         VertexData {
-            position: Vector3::new(0., -0.5, 0.),
+            position: Vector3::new(0., -50., 0.),
             color: Vector4::one(),
             uv: Vector2::new(1., 1.),
         },
     ];
 
     let local_to_world_matrices = [
-        Matrix4x4::identity(),
-        Matrix4x4::from_columns(
-            Vector4::new(1., 0., 0., 0.5),
-            Vector4::new(0., 1., 0., 0.5),
-            Vector4::new(0., 0., 1., 0.),
-            Vector4::new(0., 0., 0., 1.),
-        ),
+        Matrix4x4::ortho(-256., 256., -256., 256., -1., 1.),
+        Matrix4x4::ortho(-256., 256., -256., 256., -1., 1.),
     ];
 
     let vertex_attr = [
-        VertexAttributeInputDescriptor {
+        VertexAttributeDescriptor {
             field_type: ShaderVariableType::FVec3,
             location: 0,
         },
-        VertexAttributeInputDescriptor {
+        VertexAttributeDescriptor {
             field_type: ShaderVariableType::FVec4,
             location: 1,
         },
-        VertexAttributeInputDescriptor {
+        VertexAttributeDescriptor {
             field_type: ShaderVariableType::FVec2,
             location: 2,
         },
     ];
 
-    let instance_attr = [VertexAttributeInputDescriptor {
+    let instance_attr = [VertexAttributeDescriptor {
         field_type: ShaderVariableType::FMat4x4,
         location: 3,
     }];
 
-    let vertex_buffer_desc = VertexBufferInputDescriptor {
+    let vertex_buffer_desc = VertexBufferDescriptor {
         per_vertex_attributes: vertex_attr.as_ptr(),
         per_instance_attributes: instance_attr.as_ptr(),
         per_vertex_attribute_count: vertex_attr.len() as i32,

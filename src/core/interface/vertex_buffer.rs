@@ -10,15 +10,15 @@ pub enum RenderTopology {
 }
 
 #[repr(C)]
-pub struct VertexAttributeInputDescriptor {
+pub struct VertexAttributeDescriptor {
     pub field_type: ShaderVariableType,
     pub location: i32,
 }
 
 #[repr(C)]
-pub struct VertexBufferInputDescriptor {
-    pub per_vertex_attributes: *const VertexAttributeInputDescriptor,
-    pub per_instance_attributes: *const VertexAttributeInputDescriptor,
+pub struct VertexBufferDescriptor {
+    pub per_vertex_attributes: *const VertexAttributeDescriptor,
+    pub per_instance_attributes: *const VertexAttributeDescriptor,
     pub per_vertex_attribute_count: i32,
     pub per_instance_attribute_count: i32,
     pub vertex_count: i32,
@@ -29,7 +29,7 @@ pub struct VertexBufferInputDescriptor {
 extern "C" {
     pub fn division_engine_vertex_buffer_alloc(
         ctx: *mut DivisionContext,
-        desriptor: *const VertexBufferInputDescriptor,
+        desriptor: *const VertexBufferDescriptor,
         out_vertex_buffer_id: *mut u32,
     ) -> bool;
 

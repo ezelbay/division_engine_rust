@@ -12,7 +12,7 @@ fs_extra = "1.2.0"
 walkdir="2.3.3"
 
 [dependencies]
-division_math = { git = "https://github.com/Den163/division_math", branch = "master", feature = "enable_simd" }
+division_math = { git = "https://github.com/Den163/division_math", tag = "0.1.0", feature = "enable_simd" }
 
 [dev-dependencies]
 stb_image_rust="2.27.2"

@@ -2,6 +2,7 @@ use std::ffi::c_char;
 use super::context::DivisionContext;
 
 #[repr(i32)]
+#[derive(Clone, Copy)]
 pub enum ShaderType {
     Vertex = 1,
     Fragment = 2,
@@ -19,17 +20,18 @@ pub enum ShaderVariableType {
 }
 
 #[repr(C)]
-pub struct DivisionShaderFileDescriptor {
+pub struct DivisionShaderSourceDescriptor {
     pub shader_type: ShaderType,
-    pub file_path: *const c_char,
     pub entry_point_name: *const c_char,
+    pub source: *const c_char,
+    pub source_size: i32
 }
 
 extern "C" {
     pub fn division_engine_shader_program_alloc(
         ctx: *mut DivisionContext,
-        settings: *const DivisionShaderFileDescriptor,
-        source_count: i32,
+        descriptors: *const DivisionShaderSourceDescriptor,
+        descriptor_count: i32,
         out_shader_program_id: *mut u32,
     ) -> bool;
 

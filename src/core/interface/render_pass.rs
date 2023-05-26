@@ -1,4 +1,4 @@
-use std::{ffi::c_ulong, ops::BitOr};
+use std::{ffi::c_ulong};
 
 use super::context::DivisionContext;
 

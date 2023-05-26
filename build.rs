@@ -1,7 +1,6 @@
 use cmake::Config;
 use division_shader_compiler_rust::{ShaderCompiler, ShaderType};
-use std::{env, fs, fmt};
-use std::ffi::OsStr;
+use std::{env, fs};
 use std::path::Path;
 use std::vec;
 
