@@ -40,5 +40,7 @@ impl DivisionCoreDelegate for MyDelegate {
         ).unwrap();
     }
 
-    fn update(&self, core: &mut DivisionCore) {}
+    fn update(&self, core: &mut DivisionCore) {
+        
+    }
 }

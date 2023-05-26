@@ -3,11 +3,15 @@ use std::{
     ptr::null_mut,
 };
 
-use super::{interface::{
-    context::{division_engine_context_alloc, division_engine_context_free, DivisionContext},
-    renderer::division_engine_renderer_run_loop,
-    settings::DivisionSettings,
-}, division_core_builder::DivisionCoreBuilder, DivisionCoreDelegate};
+use super::{
+    division_core_builder::DivisionCoreBuilder,
+    interface::{
+        context::{division_engine_context_alloc, division_engine_context_free, DivisionContext},
+        renderer::division_engine_renderer_run_loop,
+        settings::DivisionSettings,
+    },
+    DivisionCoreDelegate,
+};
 
 pub struct DivisionCore {
     pub(crate) ctx: *mut DivisionContext,

@@ -1,7 +1,7 @@
 use super::{
     interface::{vertex_buffer::{
         division_engine_vertex_buffer_alloc, division_engine_vertex_buffer_free,
-        VertexBufferDescriptor,
+        VertexBufferDescriptor, division_engine_vertex_buffer_borrow_data_pointer,
     }, context::DivisionContext},
     DivisionCore, DivisionError,
 };
@@ -11,6 +11,11 @@ pub use super::interface::vertex_buffer::{RenderTopology, VertexAttributeDescrip
 pub struct VertexBuffer {
     ctx: *mut DivisionContext,
     id: u32,
+}
+
+pub struct VertexBufferData<'a, TVertexData, TInstanceData> {
+    pub per_vertex_data: &'a mut [TVertexData],
+    pub per_instance_data: &'a mut [TInstanceData],
 }
 
 impl DivisionCore {
