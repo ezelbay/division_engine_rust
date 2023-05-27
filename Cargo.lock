@@ -3,6 +3,12 @@
 version = 3
 
 [[package]]
+name = "bitflags"
+version = "2.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6776fc96284a0bb647b615056fc496d1fe1644a7ab01829818a6d91cae888b84"
+
+[[package]]
 name = "cc"
 version = "1.0.79"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -21,6 +27,7 @@ dependencies = [
 name = "division_engine_rust"
 version = "0.1.0"
 dependencies = [
+ "bitflags",
  "cmake",
  "division_math",
  "division_shader_compiler_rust",
@@ -32,7 +39,7 @@ dependencies = [
 [[package]]
 name = "division_math"
 version = "0.1.0"
-source = "git+https://github.com/Den163/division_math?tag=0.1.0#db32b4b8500024ac018ca98793fa3de571513587"
+source = "git+https://github.com/Den163/division_math?tag=v0.1.1#73d00854abb1bd21a2f28bb8f1697e1d9d81ca15"
 dependencies = [
  "itertools",
 ]
@@ -40,7 +47,7 @@ dependencies = [
 [[package]]
 name = "division_shader_compiler_rust"
 version = "0.1.0"
-source = "git+https://github.com/Den163/division_shader_compiler_rust?tag=v0.1.0#b7fba4f20e7c1801fdec6662df7e6498257e63b9"
+source = "git+https://github.com/Den163/division_shader_compiler_rust?tag=v0.1.1#7d1478bfa8a5937b29aa8a4ad20805e63e888715"
 dependencies = [
  "cmake",
 ]

@@ -3,3 +3,4 @@
 .idea
 .vscode
 resources/shaders/**/*.metal
+cmake_tools_build

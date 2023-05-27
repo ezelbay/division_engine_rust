@@ -3,6 +3,8 @@ use std::{
     ptr::null_mut,
 };
 
+pub type DivisionId = u32;
+
 use super::{
     division_core_builder::DivisionCoreBuilder,
     interface::{
@@ -68,7 +70,7 @@ impl DivisionCore {
 
     pub(crate) unsafe extern "C" fn init_callback(ctx: *mut DivisionContext) {
         let core = (*ctx).user_data as *mut DivisionCore;
-        (*core).delegate.update(&mut *core);
+        (*core).delegate.init(&mut *core);
     }
 
     pub(crate) unsafe extern "C" fn update_callback(ctx: *mut DivisionContext) {

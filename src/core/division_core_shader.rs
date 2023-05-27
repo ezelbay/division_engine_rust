@@ -1,21 +1,15 @@
-use std::{ffi::CString};
+use std::ffi::CString;
 
 use super::{
-    interface::{
-        shader::{
-            division_engine_shader_program_alloc, division_engine_shader_program_free,
-            DivisionShaderSourceDescriptor,
-        },
+    interface::shader::{
+        division_engine_shader_program_alloc, division_engine_shader_program_free,
+        DivisionShaderSourceDescriptor,
     },
-    DivisionCore, DivisionError,
+    DivisionCore, DivisionError, DivisionId,
 };
 
 pub use super::interface::shader::ShaderType;
 pub use super::interface::shader::ShaderVariableType;
-
-pub struct ShaderProgram {
-    id: u32,
-}
 
 pub struct ShaderSourceDescriptor {
     shader_type: ShaderType,
@@ -24,7 +18,10 @@ pub struct ShaderSourceDescriptor {
 }
 
 impl DivisionCore {
-    pub fn create_shader_program(&self, descriptors: &[ShaderSourceDescriptor]) -> Result<ShaderProgram, DivisionError> {
+    pub fn create_shader_program(
+        &mut self,
+        descriptors: &[ShaderSourceDescriptor],
+    ) -> Result<DivisionId, DivisionError> {
         let c_desc: Vec<DivisionShaderSourceDescriptor> = descriptors
             .into_iter()
             .map(|d| DivisionShaderSourceDescriptor {
@@ -35,24 +32,26 @@ impl DivisionCore {
             })
             .collect();
 
-        let mut shader_program = ShaderProgram { id: 0 };
+        let mut shader_id = 0;
         unsafe {
             if !division_engine_shader_program_alloc(
                 self.ctx,
                 c_desc.as_ptr(),
                 c_desc.len() as i32,
-                &mut shader_program.id,
+                &mut shader_id,
             ) {
-                return Err(DivisionError::Core(String::from("Failed to create a shader")));
+                return Err(DivisionError::Core(String::from(
+                    "Failed to create a shader",
+                )));
             }
         }
 
-        Ok(shader_program)
+        Ok(shader_id)
     }
 
-    pub fn drop_shader_program(&self, shader_program: ShaderProgram) {
+    pub fn delete_shader_program(&mut self, id: DivisionId) {
         unsafe {
-            division_engine_shader_program_free(self.ctx, shader_program.id);
+            division_engine_shader_program_free(self.ctx, id);
         }
     }
 }

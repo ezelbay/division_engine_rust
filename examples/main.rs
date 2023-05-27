@@ -15,7 +15,7 @@ use division_engine_rust::core::interface::texture::division_engine_texture_allo
 use division_engine_rust::core::interface::texture::division_engine_texture_set_data;
 use division_engine_rust::core::interface::texture::TextureDescriptor;
 use division_engine_rust::core::interface::texture::TextureFormat;
-use division_engine_rust::core::interface::uniform_buffer::UniformBufferDescriptor;
+use division_engine_rust::core::interface::vertex_buffer::DivisionVertexBufferDataBorrowInfo;
 use division_engine_rust::core::interface::vertex_buffer::division_engine_vertex_buffer_alloc;
 use division_engine_rust::core::interface::vertex_buffer::division_engine_vertex_buffer_borrow_data_pointer;
 use division_engine_rust::core::interface::vertex_buffer::division_engine_vertex_buffer_return_data_pointer;
@@ -26,14 +26,10 @@ use division_math::Matrix4x4;
 use division_math::Vector2;
 use division_math::Vector3;
 use division_math::Vector4;
-use std::ffi::{c_char, c_float, c_long, c_ulong, c_void, CStr, CString};
+use std::ffi::{c_char, c_void, CStr, CString};
 use std::fs;
 use std::mem::size_of;
 use std::ptr::null_mut;
-
-static VERTICES: [f32; 9] = [-0.9, -0.9, 0., 0.85, -0.9, 0., -0.9, 0.85, 0.];
-
-static mut BUFFER_ID: c_long = -1;
 
 #[repr(C)]
 pub struct VertexData {
@@ -191,9 +187,19 @@ unsafe extern "C" fn init_func(ctx: *mut DivisionContext) {
     };
 
     let mut vert_buffer_id = 0;
+    let mut vert_buff_borrow_info = DivisionVertexBufferDataBorrowInfo {
+        vertex_data_offset: 0,
+        instance_data_offset: 0,
+        vertex_count: 0,
+        instance_count: 0,
+    };
     division_engine_vertex_buffer_alloc(ctx, &vertex_buffer_desc, &mut vert_buffer_id);
 
-    let vert_buff_ptr = division_engine_vertex_buffer_borrow_data_pointer(ctx, vert_buffer_id);
+    let vert_buff_ptr = division_engine_vertex_buffer_borrow_data_pointer(
+        ctx, 
+        vert_buffer_id,
+        &mut vert_buff_borrow_info,
+    );
 
     let vert_buffer_per_vertex_ptr = vert_buff_ptr as *mut VertexData;
     let vert_buffer_per_instance_ptr =
@@ -261,4 +267,4 @@ unsafe extern "C" fn init_func(ctx: *mut DivisionContext) {
     division_engine_render_pass_alloc(ctx, render_pass_desc, &mut render_pass_id);
 }
 
-unsafe extern "C" fn update_func(ctx: *mut DivisionContext) {}
+unsafe extern "C" fn update_func(_ctx: *mut DivisionContext) {}

@@ -26,6 +26,14 @@ pub struct VertexBufferDescriptor {
     pub topology: RenderTopology,
 }
 
+#[repr(C)]
+pub struct DivisionVertexBufferDataBorrowInfo {
+    pub vertex_data_offset: u32,
+    pub instance_data_offset: u32,
+    pub vertex_count: u32,
+    pub instance_count: u32,
+}
+
 extern "C" {
     pub fn division_engine_vertex_buffer_alloc(
         ctx: *mut DivisionContext,
@@ -37,7 +45,8 @@ extern "C" {
 
     pub fn division_engine_vertex_buffer_borrow_data_pointer(
         ctx: *mut DivisionContext,
-        vertex_buffer: u32,
+        vertex_buffer_id: u32,
+        out_borrow_info: *mut DivisionVertexBufferDataBorrowInfo
     ) -> *mut c_void;
 
     pub fn division_engine_vertex_buffer_return_data_pointer(

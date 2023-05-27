@@ -1,8 +1,8 @@
 use cmake::Config;
 use division_shader_compiler_rust::{ShaderCompiler, ShaderType};
-use std::{env, fs};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::vec;
+use std::{env, fs};
 
 struct DivisionBuildOptions {
     static_libs: Vec<String>,
@@ -18,8 +18,9 @@ fn main() {
     let build_options = get_build_options();
     let out_dir = env::var("OUT_DIR").unwrap();
     let division_engine_core = "division_engine_core";
-
     let build_path = Path::new(&out_dir).join("build");
+    let resource_root_path = get_exec_path();
+
     Config::new(division_engine_core)
         .target(division_engine_core)
         .out_dir(&out_dir)
@@ -49,13 +50,7 @@ fn main() {
     println!("cargo:rustc-link-lib=static={}", division_engine_core);
 
     compile_shaders_to_msl();
-
-    fs_extra::dir::remove(build_path.join("resources")).expect("Failed to delete resources folder");
-
-    let mut copy_options = fs_extra::dir::CopyOptions::new();
-    copy_options.copy_inside = true;
-    fs_extra::dir::copy(Path::new("resources"), build_path, &copy_options)
-        .expect("Failed to copy resources folder");
+    copy_resources_to_build(&resource_root_path.to_path_buf());
 }
 
 fn get_build_options() -> DivisionBuildOptions {
@@ -69,7 +64,7 @@ fn get_build_options() -> DivisionBuildOptions {
 fn build_with_osx_metal() -> DivisionBuildOptions {
     DivisionBuildOptions {
         dynamic_libs: Vec::new(),
-        static_libs: make_strings_vec(vec![ "osx_metal_internal", ]),
+        static_libs: make_strings_vec(vec!["osx_metal_internal"]),
         frameworks: make_strings_vec(vec!["Metal", "MetalKit", "AppKit"]),
     }
 }
@@ -88,8 +83,7 @@ fn make_strings_vec(strings: Vec<&str>) -> Vec<String> {
 
 fn compile_shaders_to_msl() {
     let shader_compiler = ShaderCompiler::new();
-    for dir in walkdir::WalkDir::new("resources/shaders")
-    {
+    for dir in walkdir::WalkDir::new("resources/shaders") {
         let dir = match dir {
             Ok(v) => v,
             Err(_) => continue,
@@ -112,33 +106,54 @@ fn compile_shaders_to_msl() {
             Some("vert") => {
                 entry_point = "vert";
                 shader_type = ShaderType::Vertex
-            },
+            }
             Some("frag") => {
                 entry_point = "frag";
                 shader_type = ShaderType::Fragment
-            },
+            }
             _ => continue,
         }
-        
+
         let glsl_src = std::fs::read_to_string(path);
         let glsl_src = match glsl_src {
             Ok(v) => v,
             Err(e) => {
-                eprintln!("Failed to read a shader file by path: `{:?}` with error: `{}` ", path, e);
+                eprintln!(
+                    "Failed to read a shader file by path: `{:?}` with error: `{}` ",
+                    path, e
+                );
                 continue;
             }
         };
 
-        let msl_src = match shader_compiler.compile_glsl_to_metal(&glsl_src, entry_point, shader_type) {
-            Ok(v) => v,
-            Err(_) => { 
-                eprint!("Failed to compile the shader by path: {:?}", path);
-                continue;
-            }
-        };
+        let msl_src =
+            match shader_compiler.compile_glsl_to_metal(&glsl_src, entry_point, shader_type) {
+                Ok(v) => v,
+                Err(_) => {
+                    eprint!("Failed to compile the shader by path: {:?}", path);
+                    continue;
+                }
+            };
 
         if fs::write(format!("{}.metal", path.to_string_lossy()), msl_src).is_err() {
             eprint!("Failed to write msl output by path: {:?}", path);
         }
     }
+}
+
+fn copy_resources_to_build(path: &PathBuf) {
+    fs_extra::dir::remove(path.join("resources")).expect("Failed to delete resources folder");
+
+    let mut copy_options = fs_extra::dir::CopyOptions::new();
+    copy_options.copy_inside = true;
+    fs_extra::dir::copy(Path::new("resources"), path, &copy_options)
+        .expect("Failed to copy resources folder");
+}
+
+fn get_exec_path() -> PathBuf {
+    //<root or manifest path>/target/<profile>/
+    let manifest_dir_string = env::var("CARGO_MANIFEST_DIR").unwrap();
+    let build_type = env::var("PROFILE").unwrap();
+    let path = Path::new(&manifest_dir_string).join("target").join(build_type);
+    return PathBuf::from(path);
 }

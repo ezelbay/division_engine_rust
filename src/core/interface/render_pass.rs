@@ -1,4 +1,5 @@
-use std::{ffi::c_ulong};
+use std::ffi::c_ulong;
+use bitflags::bitflags;
 
 use super::context::DivisionContext;
 
@@ -8,24 +9,32 @@ pub struct IdWithBinding {
     pub shader_location: u32,
 }
 
-#[repr(i32)]
-pub enum ColorMask {
-    None = 0,
-    R = 1 << 0,
-    G = 1 << 1,
-    B = 1 << 2,
-    A = 1 << 3,
-    RGB = ColorMask::R as i32 | ColorMask::G as i32 | ColorMask::B as i32,
-    RGBA = ColorMask::RGB as i32 | ColorMask::A as i32,
+bitflags! {
+    #[repr(transparent)]
+    #[derive(PartialEq, Clone, Copy)]
+    pub struct ColorMask: i32 {
+        const None = 0;
+        const R = 1 << 0;
+        const G = 1 << 1;
+        const B = 1 << 2;
+        const A = 1 << 3;
+        const RGB = Self::R.bits() | Self::G.bits() | Self::B.bits();
+        const RGBA = Self::RGB.bits() | Self::A.bits();
+    }
+}
+
+
+bitflags! {
+    #[repr(transparent)]
+    #[derive(PartialEq, Clone, Copy)]
+    pub struct RenderPassCapabilityMask: i32 {
+        const None = 0;
+        const AlphaBlend = 1;
+    }
 }
 
 #[repr(i32)]
-pub enum RenderPassCapabilityMask {
-    None = 0,
-    AlphaBlend = 1,
-}
-
-#[repr(i32)]
+#[derive(PartialEq, Clone, Copy)]
 pub enum AlphaBlend {
     Zero = 0,
     One = 1,
@@ -45,6 +54,7 @@ pub enum AlphaBlend {
 }
 
 #[repr(i32)]
+#[derive(PartialEq, Clone, Copy)]
 pub enum AlphaBlendOperation {
     Add = 1,
     Subtract = 2,
@@ -83,7 +93,7 @@ pub struct RenderPassDescriptor {
 extern "C" {
     pub fn division_engine_render_pass_alloc(
         ctx: *mut DivisionContext,
-        render_pass: RenderPassDescriptor,
+        descriptor: RenderPassDescriptor,
         out_render_pass_id: *mut u32,
     ) -> bool;
 

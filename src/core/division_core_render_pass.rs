@@ -1,0 +1,139 @@
+use std::{ops::{Range}, ptr::null};
+
+use division_math::Vector4;
+
+use super::{
+    interface::{
+        context::DivisionContext,
+        render_pass::{
+            division_engine_render_pass_alloc, division_engine_render_pass_free, AlphaBlend,
+            AlphaBlendOperation, AlphaBlendingOptions, ColorMask, RenderPassCapabilityMask,
+            RenderPassDescriptor,
+        },
+    },
+    DivisionCore, DivisionError, DivisionId,
+};
+
+pub struct RenderPassBuilder {
+    ctx: *mut DivisionContext,
+    descriptor: RenderPassDescriptor,
+}
+
+impl DivisionCore {
+    pub fn render_pass_builder(&self) -> RenderPassBuilder {
+        RenderPassBuilder {
+            ctx: self.ctx,
+            descriptor: RenderPassDescriptor {
+                alpha_blending_options: AlphaBlendingOptions {
+                    src: AlphaBlend::One,
+                    dst: AlphaBlend::Zero,
+                    operation: AlphaBlendOperation::Add,
+                    constant_blend_color: [0., 0., 0., 0.],
+                },
+                first_vertex: 0,
+                vertex_count: 0,
+                instance_count: 0,
+                uniform_vertex_buffers: null(),
+                uniform_vertex_buffer_count: 0,
+                uniform_fragment_buffers: null(),
+                uniform_fragment_buffer_count: 0,
+                fragment_textures: null(),
+                fragment_texture_count: 0,
+                vertex_buffer: 0,
+                shader_program: 0,
+                capabilities_mask: RenderPassCapabilityMask::None,
+                color_mask: ColorMask::RGB,
+            },
+        }
+    }
+
+    pub fn delete_render_pass(&mut self, render_pass_id: DivisionId) {
+        unsafe {
+            division_engine_render_pass_free(self.ctx, render_pass_id);
+        }
+    }
+}
+
+impl RenderPassBuilder {
+    pub fn shader(mut self, shader_id: DivisionId) -> Self {
+        self.descriptor.shader_program = shader_id;
+        self
+    }
+
+    pub fn vertex_buffer(
+        mut self,
+        vertex_buffer_id: DivisionId,
+        vertices_range: Range<usize>,
+    ) -> Self {
+        self.descriptor.first_vertex = vertices_range.start as u64;
+        self.descriptor.vertex_count = (vertices_range.end - vertices_range.start) as u64;
+        self.descriptor.vertex_buffer = vertex_buffer_id;
+
+        self
+    }
+
+    pub fn vertex_buffer_instanced(
+        #[allow(unused_mut)] mut self,
+        vertex_buffer_id: DivisionId,
+        vertices_range: Range<usize>,
+        instance_count: u64,
+    ) -> Self {
+        let mut builder = self.vertex_buffer(vertex_buffer_id, vertices_range);
+        builder.descriptor.instance_count = instance_count;
+        builder
+    }
+
+    pub fn alpha_blending(
+        mut self,
+        src: AlphaBlend,
+        dst: AlphaBlend,
+        operation: AlphaBlendOperation,
+    ) -> Self {
+        assert!(!has_constant_color(src) && !has_constant_color(dst));
+
+        let blend_options = &mut self.descriptor.alpha_blending_options;
+        blend_options.src = src;
+        blend_options.dst = dst;
+        blend_options.operation = operation;
+
+        self.descriptor.capabilities_mask |= RenderPassCapabilityMask::AlphaBlend;
+        self
+    }
+
+    pub fn alpha_blending_with_constant_color(
+        mut self,
+        src: AlphaBlend,
+        dst: AlphaBlend,
+        operation: AlphaBlendOperation,
+        color: Vector4,
+    ) -> Self {
+        assert!(has_constant_color(src) || has_constant_color(dst));
+
+        let blend_options = &mut self.descriptor.alpha_blending_options;
+        blend_options.src = src;
+        blend_options.dst = dst;
+        blend_options.operation = operation;
+        blend_options.constant_blend_color = [color.r(), color.g(), color.b(), color.a()];
+
+        self.descriptor.capabilities_mask |= RenderPassCapabilityMask::AlphaBlend;
+        self
+    }
+
+    pub fn build(#[allow(unused_mut)] mut self) -> Result<DivisionId, DivisionError> {
+        let mut pass_id = 0;
+        unsafe {
+            if !division_engine_render_pass_alloc(self.ctx, self.descriptor, &mut pass_id) {
+                return Err(DivisionError::Core("Failed to create a render pass".to_string()));
+            }
+        }
+
+        Ok(pass_id)
+    }
+}
+
+fn has_constant_color(blend: AlphaBlend) -> bool {
+    blend != AlphaBlend::ConstantAlpha
+        && blend != AlphaBlend::ConstantColor
+        && blend != AlphaBlend::OneMinusConstantAlpha
+        && blend != AlphaBlend::OneMinusConstantColor
+}
