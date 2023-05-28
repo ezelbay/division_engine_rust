@@ -1,12 +1,12 @@
-use std::ffi::c_void;
+use std::{ffi::c_void, mem::MaybeUninit};
 
 use super::{
     interface::{
         context::DivisionContext,
         vertex_buffer::{
-            division_engine_vertex_buffer_alloc, division_engine_vertex_buffer_borrow_data_pointer,
-            division_engine_vertex_buffer_free, division_engine_vertex_buffer_return_data_pointer,
-            DivisionVertexBufferDataBorrowInfo, VertexBufferDescriptor,
+            division_engine_vertex_buffer_alloc, division_engine_vertex_buffer_borrow_data,
+            division_engine_vertex_buffer_free, division_engine_vertex_buffer_return_data,
+            VertexBufferDescriptor, DivisionVertexBufferBorrowedData,
         },
     },
     DivisionCore, DivisionError, DivisionId,
@@ -17,9 +17,10 @@ pub use super::interface::vertex_buffer::{RenderTopology, VertexAttributeDescrip
 pub struct VertexBufferData<'a, TX, TY> {
     pub per_vertex_data: &'a mut [TX],
     pub per_instance_data: &'a mut [TY],
+    pub vertex_indices: &'a mut [u32],
 
     ctx: *mut DivisionContext,
-    ptr: *mut c_void,
+    borrowed: DivisionVertexBufferBorrowedData,
     vertex_buffer_id: u32,
 }
 
@@ -29,6 +30,7 @@ impl DivisionCore {
         per_vertex_attributes: &[VertexAttributeDescriptor],
         per_instance_attributes: &[VertexAttributeDescriptor],
         vertex_count: usize,
+        index_count: usize,
         instance_count: usize,
         topology: RenderTopology,
     ) -> Result<DivisionId, DivisionError> {
@@ -43,6 +45,7 @@ impl DivisionCore {
                     per_instance_attributes: per_instance_attributes.as_ptr(),
                     per_instance_attribute_count: per_instance_attributes.len() as i32,
                     vertex_count: vertex_count as i32,
+                    index_count: index_count as i32,
                     instance_count: instance_count as i32,
                     topology,
                 },
@@ -62,33 +65,28 @@ impl DivisionCore {
         vertex_buffer_id: DivisionId,
     ) -> VertexBufferData<TVertex, TInstance> {
         unsafe {
-            let mut borrow_info = DivisionVertexBufferDataBorrowInfo {
-                vertex_data_offset: 0,
-                instance_data_offset: 0,
-                vertex_count: 0,
-                instance_count: 0,
-            };
-            let ptr = division_engine_vertex_buffer_borrow_data_pointer(
+            let mut borrowed = MaybeUninit::uninit();
+            division_engine_vertex_buffer_borrow_data(
                 self.ctx,
                 vertex_buffer_id,
-                &mut borrow_info,
+                borrowed.as_mut_ptr(),
             );
 
-            let per_vert_ptr = ptr.add(borrow_info.vertex_data_offset as usize) as *mut TVertex;
-            let per_inst_ptr = ptr.add(borrow_info.instance_data_offset as usize) as *mut TInstance;
+            let borrowed = borrowed.assume_init();
+            let per_vert_ptr = borrowed.vertex_data_ptr as *mut TVertex;
+            let per_inst_ptr = borrowed.instance_data_ptr as *mut TInstance;
+            let index_ptr = borrowed.index_data_ptr as *mut u32;
+            let vertex_count = borrowed.vertex_count as usize;
+            let index_count = borrowed.index_count as usize;
+            let instance_count = borrowed.instance_count as usize;
 
             return VertexBufferData {
                 ctx: self.ctx,
-                ptr,
+                borrowed,
                 vertex_buffer_id,
-                per_vertex_data: std::slice::from_raw_parts_mut(
-                    per_vert_ptr,
-                    borrow_info.vertex_count as usize,
-                ),
-                per_instance_data: std::slice::from_raw_parts_mut(
-                    per_inst_ptr,
-                    borrow_info.instance_count as usize,
-                ),
+                per_vertex_data: std::slice::from_raw_parts_mut(per_vert_ptr, vertex_count),
+                per_instance_data: std::slice::from_raw_parts_mut(per_inst_ptr, instance_count),
+                vertex_indices: std::slice::from_raw_parts_mut(index_ptr, index_count),
             };
         }
     }
@@ -103,10 +101,10 @@ impl DivisionCore {
 impl<'a, TX, TY> Drop for VertexBufferData<'a, TX, TY> {
     fn drop(&mut self) {
         unsafe {
-            division_engine_vertex_buffer_return_data_pointer(
+            division_engine_vertex_buffer_return_data(
                 self.ctx,
                 self.vertex_buffer_id,
-                self.ptr,
+                &mut self.borrowed,
             )
         }
     }

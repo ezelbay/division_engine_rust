@@ -78,6 +78,7 @@ pub struct RenderPassDescriptor {
 
     pub first_vertex: c_ulong,
     pub vertex_count: c_ulong,
+    pub index_count: c_ulong,
     pub instance_count: c_ulong,
     pub uniform_vertex_buffers: *const IdWithBinding,
     pub uniform_vertex_buffer_count: i32,

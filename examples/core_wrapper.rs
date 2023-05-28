@@ -59,6 +59,18 @@ impl DivisionCoreDelegate for MyDelegate {
         ])
         .unwrap();
 
+        let vertices_data = [
+            Vert { pos: Vector3::new(100.,500.,0.), color: Vector4::one(), uv: Vector2::new(0., 1.) },
+            Vert { pos: Vector3::new(100., 100., 0.), color: Vector4::one(), uv: Vector2::new(0., 0.) },
+            Vert { pos: Vector3::new(500., 100., 0.), color: Vector4::one(), uv: Vector2::new(1., 0.) },
+            Vert { pos: Vector3::new(500., 500., 0.), color: Vector4::one(), uv: Vector2::new(1., 1.) },
+        ];
+        let instances_data = [
+            Inst { local_to_world: Matrix4x4::ortho(0., 1024., 0., 1024., 0., 1.) },
+            Inst { local_to_world: Matrix4x4::ortho(0., 1024., 0., 1024., 0., 1.) },
+        ];
+        let indices = [0,1,2,0,2,3];
+
         let vertex_buffer_id = core.create_vertex_buffer(
             &[
                 VertexAttributeDescriptor { location: 0, field_type: ShaderVariableType::FVec3, },
@@ -69,29 +81,18 @@ impl DivisionCoreDelegate for MyDelegate {
                 location: 3,
                 field_type: ShaderVariableType::FMat4x4,
             }],
-            6,
-            2,
+            vertices_data.len(),
+            indices.len(),
+            instances_data.len(),
             RenderTopology::Triangles,
         )
         .unwrap();
 
         {
-            let vertices_data = [
-                Vert { pos: Vector3::new(100.,500.,0.), color: Vector4::one(), uv: Vector2::new(0., 1.) },
-                Vert { pos: Vector3::new(100., 100., 0.), color: Vector4::one(), uv: Vector2::new(0., 0.) },
-                Vert { pos: Vector3::new(500., 100., 0.), color: Vector4::one(), uv: Vector2::new(1., 0.) },
-                Vert { pos: Vector3::new(100., 500., 0.), color: Vector4::one(), uv: Vector2::new(0., 1.) },
-                Vert { pos: Vector3::new(500., 500., 0.), color: Vector4::one(), uv: Vector2::new(1., 1.) },
-                Vert { pos: Vector3::new(500., 100., 0.), color: Vector4::one(), uv: Vector2::new(1., 0.) },
-            ];
-            let instances_data = [
-                Inst { local_to_world: Matrix4x4::ortho(0., 1024., 0., 1024., 0., 1.) },
-                Inst { local_to_world: Matrix4x4::ortho(0., 1024., 0., 1024., 0., 1.) },
-            ];
-
             let data = core.vertex_buffer_data::<Vert, Inst>(vertex_buffer_id);
             data.per_vertex_data.copy_from_slice(&vertices_data);
             data.per_instance_data.copy_from_slice(&instances_data);
+            data.vertex_indices.copy_from_slice(&indices);
         }
 
         let image = fs::read(bin_root_path.join("resources/images/nevsky.jpg")).unwrap();
@@ -118,7 +119,8 @@ impl DivisionCoreDelegate for MyDelegate {
         }
 
         core.render_pass_builder()
-            .vertex_buffer_instanced(vertex_buffer_id, 0..6, 2)
+            .vertex_buffer(vertex_buffer_id, vertices_data.len(), indices.len())
+            .instances(instances_data.len())
             .fragment_textures(&[IdWithBinding::new(texture_id, 0)])
             .fragment_uniform_buffers(&[IdWithBinding::new(buff_id, 1)])
             .shader(shader_id)

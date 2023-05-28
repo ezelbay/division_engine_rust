@@ -34,6 +34,7 @@ impl DivisionCore {
                 },
                 first_vertex: 0,
                 vertex_count: 0,
+                index_count: 0,
                 instance_count: 0,
                 uniform_vertex_buffers: null(),
                 uniform_vertex_buffer_count: 0,
@@ -65,26 +66,25 @@ impl RenderPassBuilder {
     pub fn vertex_buffer(
         mut self,
         vertex_buffer_id: DivisionId,
-        vertices_range: Range<usize>,
+        vertex_count: usize,
+        index_count: usize,
     ) -> Self {
-        self.descriptor.first_vertex = vertices_range.start as u64;
-        self.descriptor.vertex_count = (vertices_range.end - vertices_range.start) as u64;
+        self.descriptor.first_vertex = 0;
+        self.descriptor.vertex_count = vertex_count as u64;
+        self.descriptor.index_count = index_count as u64;
         self.descriptor.vertex_buffer = vertex_buffer_id;
 
         self
     }
 
-    pub fn vertex_buffer_instanced(
+    pub fn instances(
         #[allow(unused_mut)] mut self,
-        vertex_buffer_id: DivisionId,
-        vertices_range: Range<usize>,
-        instance_count: u64,
+        instance_count: usize,
     ) -> Self {
-        let mut builder = self.vertex_buffer(vertex_buffer_id, vertices_range);
-        builder.descriptor.instance_count = instance_count;
-        builder.descriptor.capabilities_mask |= RenderPassCapabilityMask::InstancedRendering;
+        self.descriptor.instance_count = instance_count as u64;
+        self.descriptor.capabilities_mask |= RenderPassCapabilityMask::InstancedRendering;
 
-        builder
+        self
     }
 
     pub fn alpha_blending(
