@@ -4,13 +4,14 @@ use division_engine_rust::core::{
 };
 use division_math::{Vector3, Vector4, Vector2, Matrix4x4};
 use stb_image_rust::{stbi_set_flip_vertically_on_load, stbi_image_free};
-use std::{fs, ptr::{null_mut}, path::Path, env};
+use std::{fs, ptr::{null_mut}, env};
 
 pub struct MyDelegate {
 }
 
 #[repr(packed)]
 #[derive(Clone, Copy)]
+#[allow(dead_code)]
 pub struct Vert {
     pos: Vector3,
     color: Vector4,
@@ -19,6 +20,7 @@ pub struct Vert {
 
 #[repr(packed)]
 #[derive(Clone, Copy)]
+#[allow(dead_code)]
 pub struct Inst {
     local_to_world: Matrix4x4,
 }

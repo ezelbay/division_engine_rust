@@ -1,4 +1,4 @@
-use std::{ffi::c_void, mem::MaybeUninit};
+use std::{mem::MaybeUninit};
 
 use super::{
     interface::{
