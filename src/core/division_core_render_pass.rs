@@ -14,6 +14,8 @@ use super::{
     DivisionCore, DivisionError, DivisionId,
 };
 
+pub use super::interface::render_pass::IdWithBinding;
+
 pub struct RenderPassBuilder {
     ctx: *mut DivisionContext,
     descriptor: RenderPassDescriptor,
@@ -119,6 +121,12 @@ impl RenderPassBuilder {
         self
     }
 
+    pub fn fragment_textures(mut self, texture_ids: &[IdWithBinding]) -> Self {
+        self.descriptor.fragment_textures = texture_ids.as_ptr();
+        self.descriptor.fragment_texture_count = texture_ids.len() as i32;
+        self
+    }
+
     pub fn build(#[allow(unused_mut)] mut self) -> Result<DivisionId, DivisionError> {
         let mut pass_id = 0;
         unsafe {
@@ -128,6 +136,12 @@ impl RenderPassBuilder {
         }
 
         Ok(pass_id)
+    }
+}
+
+impl IdWithBinding {
+    pub fn new(id: u32, shader_binding: u32) -> IdWithBinding {
+        IdWithBinding { id, shader_binding }
     }
 }
 

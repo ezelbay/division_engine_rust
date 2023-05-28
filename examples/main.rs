@@ -239,7 +239,7 @@ unsafe extern "C" fn init_func(ctx: *mut DivisionContext) {
 
     let textures = [IdWithBinding {
         id: texture_id,
-        shader_location: 0,
+        shader_binding: 0,
     }];
     let render_pass_desc = RenderPassDescriptor {
         shader_program: shader_id,

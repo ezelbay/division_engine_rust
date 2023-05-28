@@ -6,7 +6,7 @@ use super::context::DivisionContext;
 #[repr(C)]
 pub struct IdWithBinding {
     pub id: u32,
-    pub shader_location: u32,
+    pub shader_binding: u32,
 }
 
 bitflags! {

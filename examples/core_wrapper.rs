@@ -1,9 +1,10 @@
 use division_engine_rust::core::{
     DivisionCore, DivisionCoreDelegate, RenderTopology, ShaderSourceDescriptor, ShaderType,
-    ShaderVariableType, VertexAttributeDescriptor
+    ShaderVariableType, VertexAttributeDescriptor, TextureFormat, IdWithBinding
 };
 use division_math::{Vector3, Vector4, Vector2, Matrix4x4};
-use std::fs;
+use stb_image_rust::stbi_set_flip_vertically_on_load;
+use std::{fs, ptr::{null_mut}};
 
 pub struct MyDelegate {
 }
@@ -73,12 +74,12 @@ impl DivisionCoreDelegate for MyDelegate {
 
         {
             let vertices_data = [
-                Vert { pos: Vector3::new(0.,100.,0.), color: Vector4::one(), uv: Vector2::new(0., 0.) },
+                Vert { pos: Vector3::new(0.,100.,0.), color: Vector4::one(), uv: Vector2::new(0., 1.) },
                 Vert { pos: Vector3::new(0., 0., 0.), color: Vector4::one(), uv: Vector2::new(0., 0.) },
-                Vert { pos: Vector3::new(100., 0., 0.), color: Vector4::one(), uv: Vector2::new(0., 0.) },
-                Vert { pos: Vector3::new(0., 100., 0.), color: Vector4::one(), uv: Vector2::new(0., 0.) },
-                Vert { pos: Vector3::new(100., 100., 0.), color: Vector4::one(), uv: Vector2::new(0., 0.) },
-                Vert { pos: Vector3::new(100., 0., 0.), color: Vector4::one(), uv: Vector2::new(0., 0.) },
+                Vert { pos: Vector3::new(100., 0., 0.), color: Vector4::one(), uv: Vector2::new(1., 0.) },
+                Vert { pos: Vector3::new(0., 100., 0.), color: Vector4::one(), uv: Vector2::new(0., 1.) },
+                Vert { pos: Vector3::new(100., 100., 0.), color: Vector4::one(), uv: Vector2::new(1., 1.) },
+                Vert { pos: Vector3::new(100., 0., 0.), color: Vector4::one(), uv: Vector2::new(1., 0.) },
             ];
             let instances_data = [
                 Inst { local_to_world: Matrix4x4::ortho(0., 1024., 0., 1024., 0., 1.) },
@@ -90,8 +91,22 @@ impl DivisionCoreDelegate for MyDelegate {
             data.per_instance_data.copy_from_slice(&instances_data);
         }
 
+        let image = fs::read("resources/images/nevsky.jpg").unwrap();
+        let (mut width,mut height) = (0,0);
+        let texture_id = unsafe {
+            stbi_set_flip_vertically_on_load(1);
+
+            let data = stb_image_rust::stbi_load_from_memory(
+                image.as_ptr(), image.len() as i32, &mut width, &mut height, null_mut(), 3);
+
+            core.create_texture_buffer_with_data(width as u32, height as u32, TextureFormat::RGB24Uint, 
+                std::slice::from_raw_parts(data, (width * height) as usize)).unwrap()
+        };
+
+
         core.render_pass_builder()
             .vertex_buffer(vertex_buffer_id, 0..6)
+            .fragment_textures(&[IdWithBinding::new(texture_id, 0)])
             .shader(shader_id)
             .build()
             .unwrap();
