@@ -40,6 +40,10 @@ impl DivisionCore {
         return Ok(buffer_id);
     }
 
+    pub fn create_uniform_buffer_with_size_of<T>(&mut self) -> Result<DivisionId, DivisionError> {
+        self.create_uniform_buffer(std::mem::size_of::<T>())
+    }
+
     pub fn uniform_buffer_data<T>(
         &mut self,
         uniform_buffer_id: DivisionId,

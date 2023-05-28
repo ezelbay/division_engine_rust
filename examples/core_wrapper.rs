@@ -103,7 +103,7 @@ impl DivisionCoreDelegate for MyDelegate {
                 std::slice::from_raw_parts(data, (width * height) as usize)).unwrap()
         };
 
-        let buff_id = core.create_uniform_buffer(std::mem::size_of::<Vector4>()).unwrap();
+        let buff_id = core.create_uniform_buffer_with_size_of::<Vector4>().unwrap();
 
         {
             let buff_data = core.uniform_buffer_data(buff_id);
