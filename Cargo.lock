@@ -39,7 +39,7 @@ dependencies = [
 [[package]]
 name = "division_math"
 version = "0.1.0"
-source = "git+https://github.com/Den163/division_math?tag=v0.1.1#73d00854abb1bd21a2f28bb8f1697e1d9d81ca15"
+source = "git+https://github.com/Den163/division_math?rev=31d52bf5dae2343cee5ec8b9ced6e237062a1cfc#31d52bf5dae2343cee5ec8b9ced6e237062a1cfc"
 dependencies = [
  "itertools",
 ]

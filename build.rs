@@ -19,7 +19,10 @@ fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let division_engine_core = "division_engine_core";
     let build_path = Path::new(&out_dir).join("build");
-    let resource_root_path = get_exec_path();
+    let examples_dir = Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap())
+        .join("target")
+        .join(env::var("PROFILE").unwrap())
+        .join("examples");
 
     Config::new(division_engine_core)
         .target(division_engine_core)
@@ -50,7 +53,7 @@ fn main() {
     println!("cargo:rustc-link-lib=static={}", division_engine_core);
 
     compile_shaders_to_msl();
-    copy_resources_to_build(&resource_root_path.to_path_buf());
+    copy_resources_to_build(&examples_dir);
 }
 
 fn get_build_options() -> DivisionBuildOptions {
@@ -148,12 +151,4 @@ fn copy_resources_to_build(path: &PathBuf) {
     copy_options.copy_inside = true;
     fs_extra::dir::copy(Path::new("resources"), path, &copy_options)
         .expect("Failed to copy resources folder");
-}
-
-fn get_exec_path() -> PathBuf {
-    //<root or manifest path>/target/<profile>/
-    let manifest_dir_string = env::var("CARGO_MANIFEST_DIR").unwrap();
-    let build_type = env::var("PROFILE").unwrap();
-    let path = Path::new(&manifest_dir_string).join("target").join(build_type);
-    return PathBuf::from(path);
 }
