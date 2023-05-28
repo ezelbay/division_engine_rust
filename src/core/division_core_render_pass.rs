@@ -82,6 +82,8 @@ impl RenderPassBuilder {
     ) -> Self {
         let mut builder = self.vertex_buffer(vertex_buffer_id, vertices_range);
         builder.descriptor.instance_count = instance_count;
+        builder.descriptor.capabilities_mask |= RenderPassCapabilityMask::InstancedRendering;
+
         builder
     }
 

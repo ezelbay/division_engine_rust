@@ -29,7 +29,8 @@ bitflags! {
     #[derive(PartialEq, Clone, Copy)]
     pub struct RenderPassCapabilityMask: i32 {
         const None = 0;
-        const AlphaBlend = 1;
+        const AlphaBlend = 1 << 0;
+        const InstancedRendering = 1 << 1;
     }
 }
 
