@@ -15,11 +15,12 @@ use super::{
 pub use super::interface::vertex_buffer::{RenderTopology, VertexAttributeDescriptor};
 
 pub struct VertexBufferData<'a, TX, TY> {
+    pub per_vertex_data: &'a mut [TX],
+    pub per_instance_data: &'a mut [TY],
+
     ctx: *mut DivisionContext,
     ptr: *mut c_void,
     vertex_buffer_id: u32,
-    pub per_vertex_data: &'a mut [TX],
-    pub per_instance_data: &'a mut [TY],
 }
 
 impl DivisionCore {

@@ -5,7 +5,6 @@ use super::context::DivisionContext;
 #[repr(C)]
 pub struct UniformBufferDescriptor {
     pub data_bytes: c_ulong,
-    pub binding: i32,
 }
 
 extern "C" {

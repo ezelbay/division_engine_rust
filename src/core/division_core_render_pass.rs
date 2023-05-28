@@ -121,9 +121,24 @@ impl RenderPassBuilder {
         self
     }
 
+    pub fn vertex_uniform_buffers(mut self, vertex_uniforms: &[IdWithBinding]) -> Self {
+        self.descriptor.uniform_vertex_buffers = vertex_uniforms.as_ptr();
+        self.descriptor.uniform_vertex_buffer_count = vertex_uniforms.len() as i32;
+
+        self
+    }
+
+    pub fn fragment_uniform_buffers(mut self, fragment_uniforms: &[IdWithBinding]) -> Self {
+        self.descriptor.uniform_fragment_buffers = fragment_uniforms.as_ptr();
+        self.descriptor.uniform_fragment_buffer_count = fragment_uniforms.len() as i32;
+
+        self
+    }
+
     pub fn fragment_textures(mut self, texture_ids: &[IdWithBinding]) -> Self {
         self.descriptor.fragment_textures = texture_ids.as_ptr();
         self.descriptor.fragment_texture_count = texture_ids.len() as i32;
+
         self
     }
 

@@ -103,10 +103,17 @@ impl DivisionCoreDelegate for MyDelegate {
                 std::slice::from_raw_parts(data, (width * height) as usize)).unwrap()
         };
 
+        let buff_id = core.create_uniform_buffer(std::mem::size_of::<Vector4>()).unwrap();
+
+        {
+            let buff_data = core.uniform_buffer_data(buff_id);
+            *buff_data.data = Vector4::one() * 0.5;
+        }
 
         core.render_pass_builder()
             .vertex_buffer(vertex_buffer_id, 0..6)
             .fragment_textures(&[IdWithBinding::new(texture_id, 0)])
+            .vertex_uniform_buffers(&[IdWithBinding::new(buff_id, 1)])
             .shader(shader_id)
             .build()
             .unwrap();
