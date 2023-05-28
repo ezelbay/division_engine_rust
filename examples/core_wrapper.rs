@@ -3,7 +3,7 @@ use division_engine_rust::core::{
     ShaderVariableType, VertexAttributeDescriptor, TextureFormat, IdWithBinding
 };
 use division_math::{Vector3, Vector4, Vector2, Matrix4x4};
-use stb_image_rust::stbi_set_flip_vertically_on_load;
+use stb_image_rust::{stbi_set_flip_vertically_on_load, stbi_image_free};
 use std::{fs, ptr::{null_mut}};
 
 pub struct MyDelegate {
@@ -99,8 +99,12 @@ impl DivisionCoreDelegate for MyDelegate {
             let data = stb_image_rust::stbi_load_from_memory(
                 image.as_ptr(), image.len() as i32, &mut width, &mut height, null_mut(), 3);
 
-            core.create_texture_buffer_with_data(width as u32, height as u32, TextureFormat::RGB24Uint, 
-                std::slice::from_raw_parts(data, (width * height) as usize)).unwrap()
+            let texture_id = core.create_texture_buffer_with_data(width as u32, height as u32, TextureFormat::RGB24Uint, 
+                std::slice::from_raw_parts(data, (width * height) as usize)).unwrap();
+
+            stbi_image_free(data);
+            
+            texture_id
         };
 
         let buff_id = core.create_uniform_buffer_with_size_of::<Vector4>().unwrap();
