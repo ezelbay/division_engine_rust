@@ -1,0 +1,3 @@
+[submodule "division_engine_core"]
+	path = division_engine_core
+	url = https://github.com/Den163/division_engine_core

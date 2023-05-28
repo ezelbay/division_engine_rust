@@ -1,3 +1,1 @@
-extern crate alloc;
-
-pub mod division_engine;
+pub mod core;

@@ -1,1 +1,6 @@
 /target
+.DS_Store
+.idea
+.vscode
+resources/shaders/**/*.metal
+cmake_tools_build
