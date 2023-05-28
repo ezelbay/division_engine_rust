@@ -37,9 +37,9 @@ fn main() {
 impl DivisionCoreDelegate for MyDelegate {
     fn init(&mut self, core: &mut DivisionCore) {
         let (vert_entry, vert_path, frag_entry, frag_path) = if cfg!(target_os = "macos") {
-            ("vert", "./resources/shaders/test.vert.metal", "frag", "resources/shaders/test.frag.metal")
+            ("vert", "resources/shaders/test.vert.metal", "frag", "resources/shaders/test.frag.metal")
         } else {
-            ("main", "./resources/shaders/test.vert", "main", "resources/shaders/test.frag")
+            ("main", "resources/shaders/test.vert", "main", "resources/shaders/test.frag")
         };
 
         let bin_root_path = env::current_exe().unwrap();
@@ -66,10 +66,10 @@ impl DivisionCoreDelegate for MyDelegate {
             Vert { pos: Vector3::new(500., 500., 0.), color: Vector4::one(), uv: Vector2::new(1., 1.) },
         ];
         let instances_data = [
-            Inst { local_to_world: Matrix4x4::ortho(0., 1024., 0., 1024., 0., 1.) },
-            Inst { local_to_world: Matrix4x4::ortho(0., 1024., 0., 1024., 0., 1.) },
+            Inst { local_to_world: Matrix4x4::ortho(0., 1024., 0., 1024., -1., 1.) },
+            Inst { local_to_world: Matrix4x4::ortho(0., 1024., 0., 1024., -1., 1.) },
         ];
-        let indices = [0,1,2,0,2,3];
+        let indices = [0,1,2,2,3,0];
 
         let vertex_buffer_id = core.create_vertex_buffer(
             &[
@@ -103,7 +103,9 @@ impl DivisionCoreDelegate for MyDelegate {
             let data = stb_image_rust::stbi_load_from_memory(
                 image.as_ptr(), image.len() as i32, &mut width, &mut height, null_mut(), 4);
 
-            let texture_id = core.create_texture_buffer_with_data(width as u32, height as u32, TextureFormat::RGBA32Uint,
+            let texture_id = core.create_texture_buffer_with_data(
+                width as u32, height as u32, 
+                TextureFormat::RGBA32Uint,
                 std::slice::from_raw_parts(data, (width * height) as usize)).unwrap();
 
             stbi_image_free(data);

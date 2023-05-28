@@ -12,7 +12,7 @@ struct DivisionBuildOptions {
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
-    println!("cargo:rerun-if-changed=resources");
+    println!("cargo:rerun-if-changed=resources/*");
     println!("cargo:rerun-if-changed=division_engine_core");
 
     let build_options = get_build_options();
