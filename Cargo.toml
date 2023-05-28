@@ -12,10 +12,10 @@ fs_extra = "1.2.0"
 walkdir="2.3.3"
 
 [target.'cfg(target_arch="x86_64")'.dependencies]
-division_math = { git = "https://github.com/Den163/division_math", rev = "31d52bf5dae2343cee5ec8b9ced6e237062a1cfc", features=[] }
+division_math = { git = "https://github.com/Den163/division_math", tag="v0.1.2", features=[] }
 
 [target.'cfg(target_arch="aarch64")'.dependencies]
-division_math = { git = "https://github.com/Den163/division_math", rev = "31d52bf5dae2343cee5ec8b9ced6e237062a1cfc", features = ["enable_simd"] }
+division_math = { git = "https://github.com/Den163/division_math", tag="v0.1.2", features = ["enable_simd"] }
 
 [dependencies]
 bitflags="2.3.1"
