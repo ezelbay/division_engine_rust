@@ -68,8 +68,9 @@ impl RenderPassBuilder {
         vertex_buffer_id: DivisionId,
         vertex_count: usize,
         index_count: usize,
+        first_vertex: usize
     ) -> Self {
-        self.descriptor.first_vertex = 0;
+        self.descriptor.first_vertex = first_vertex as u64;
         self.descriptor.vertex_count = vertex_count as u64;
         self.descriptor.index_count = index_count as u64;
         self.descriptor.vertex_buffer = vertex_buffer_id;

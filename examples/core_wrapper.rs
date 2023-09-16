@@ -123,7 +123,7 @@ impl DivisionCoreDelegate for MyDelegate {
         }
 
         core.render_pass_builder()
-            .vertex_buffer(vertex_buffer_id, vertices_data.len(), indices.len())
+            .vertex_buffer(vertex_buffer_id, vertices_data.len(), indices.len(), 0)
             .instances(instances_data.len())
             .fragment_textures(&[IdWithBinding::new(texture_id, 0)])
             .fragment_uniform_buffers(&[IdWithBinding::new(buff_id, 1)])
