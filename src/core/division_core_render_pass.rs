@@ -1,4 +1,4 @@
-use std::{ptr::null};
+use std::ptr::null;
 
 use division_math::Vector4;
 
