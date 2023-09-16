@@ -1,5 +1,5 @@
-use std::ffi::c_ulong;
 use bitflags::bitflags;
+use std::ffi::c_ulong;
 
 use super::context::DivisionContext;
 
@@ -22,7 +22,6 @@ bitflags! {
         const RGBA = Self::RGB.bits() | Self::A.bits();
     }
 }
-
 
 bitflags! {
     #[repr(transparent)]
@@ -98,6 +97,17 @@ extern "C" {
         descriptor: RenderPassDescriptor,
         out_render_pass_id: *mut u32,
     ) -> bool;
+
+    pub fn division_engine_render_pass_borrow(
+        ctx: *mut DivisionContext,
+        render_pass_id: u32,
+    ) -> *mut RenderPassDescriptor;
+
+    pub fn division_engine_render_pass_return(
+        ctx: *mut DivisionContext,
+        render_pass_id: u32,
+        render_pass: *const RenderPassDescriptor,
+    );
 
     pub fn division_engine_render_pass_free(ctx: *mut DivisionContext, render_pass_id: u32);
 }

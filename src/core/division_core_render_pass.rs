@@ -1,4 +1,4 @@
-use std::ptr::null;
+use std::{ptr::null, usize};
 
 use division_math::Vector4;
 
@@ -6,7 +6,8 @@ use super::{
     interface::{
         context::DivisionContext,
         render_pass::{
-            division_engine_render_pass_alloc, division_engine_render_pass_free, AlphaBlend,
+            division_engine_render_pass_alloc, division_engine_render_pass_borrow,
+            division_engine_render_pass_free, division_engine_render_pass_return, AlphaBlend,
             AlphaBlendOperation, AlphaBlendingOptions, ColorMask, RenderPassCapabilityMask,
             RenderPassDescriptor,
         },
@@ -50,6 +51,24 @@ impl DivisionCore {
         }
     }
 
+    pub fn borrow_render_pass_mut_ptr(
+        &mut self,
+        render_pass_id: DivisionId,
+    ) -> &RenderPassDescriptor {
+        unsafe { &*division_engine_render_pass_borrow(self.ctx, render_pass_id) }
+    }
+
+    pub fn return_render_pass_mut_ptr(
+        &mut self,
+        render_pass_id: DivisionId,
+        render_pass_ptr: &RenderPassDescriptor,
+    ) {
+        unsafe { 
+            division_engine_render_pass_return(self.ctx, render_pass_id, render_pass_ptr) 
+        }
+    }
+
+    #[inline(always)]
     pub fn delete_render_pass(&mut self, render_pass_id: DivisionId) {
         unsafe {
             division_engine_render_pass_free(self.ctx, render_pass_id);
@@ -68,7 +87,7 @@ impl RenderPassBuilder {
         vertex_buffer_id: DivisionId,
         vertex_count: usize,
         index_count: usize,
-        first_vertex: usize
+        first_vertex: usize,
     ) -> Self {
         self.descriptor.first_vertex = first_vertex as u64;
         self.descriptor.vertex_count = vertex_count as u64;
@@ -78,10 +97,7 @@ impl RenderPassBuilder {
         self
     }
 
-    pub fn instances(
-        #[allow(unused_mut)] mut self,
-        instance_count: usize,
-    ) -> Self {
+    pub fn instances(#[allow(unused_mut)] mut self, instance_count: usize) -> Self {
         self.descriptor.instance_count = instance_count as u64;
         self.descriptor.capabilities_mask |= RenderPassCapabilityMask::InstancedRendering;
 
@@ -149,7 +165,9 @@ impl RenderPassBuilder {
         let mut pass_id = 0;
         unsafe {
             if !division_engine_render_pass_alloc(self.ctx, self.descriptor, &mut pass_id) {
-                return Err(DivisionError::Core("Failed to create a render pass".to_string()));
+                return Err(DivisionError::Core(
+                    "Failed to create a render pass".to_string(),
+                ));
             }
         }
 
