@@ -7,19 +7,26 @@ use super::{
         context::DivisionContext,
         render_pass::{
             division_engine_render_pass_alloc, division_engine_render_pass_borrow,
-            division_engine_render_pass_free, division_engine_render_pass_return, AlphaBlend,
-            AlphaBlendOperation, AlphaBlendingOptions, ColorMask, RenderPassCapabilityMask,
-            RenderPassDescriptor,
+            division_engine_render_pass_free, division_engine_render_pass_return,
+            AlphaBlendingOptions, ColorMask, RenderPassCapabilityMask, RenderPassDescriptor,
         },
     },
     DivisionCore, DivisionError, DivisionId,
 };
 
+pub use super::interface::render_pass::AlphaBlend;
+pub use super::interface::render_pass::AlphaBlendOperation;
 pub use super::interface::render_pass::IdWithBinding;
 
 pub struct RenderPassBuilder {
     ctx: *mut DivisionContext,
     descriptor: RenderPassDescriptor,
+}
+
+pub struct BorrowedRenderPass<'a> {
+    ctx: *mut DivisionContext,
+    render_pass_id: u32,
+    pub render_pass: &'a mut RenderPassDescriptor,
 }
 
 impl DivisionCore {
@@ -51,20 +58,13 @@ impl DivisionCore {
         }
     }
 
-    pub fn borrow_render_pass_mut_ptr(
-        &mut self,
-        render_pass_id: DivisionId,
-    ) -> &RenderPassDescriptor {
-        unsafe { &*division_engine_render_pass_borrow(self.ctx, render_pass_id) }
-    }
-
-    pub fn return_render_pass_mut_ptr(
-        &mut self,
-        render_pass_id: DivisionId,
-        render_pass_ptr: &RenderPassDescriptor,
-    ) {
-        unsafe { 
-            division_engine_render_pass_return(self.ctx, render_pass_id, render_pass_ptr) 
+    pub fn borrow_render_pass_mut_ptr(&self, render_pass_id: DivisionId) -> BorrowedRenderPass {
+        unsafe {
+            BorrowedRenderPass {
+                ctx: self.ctx,
+                render_pass_id,
+                render_pass: &mut *division_engine_render_pass_borrow(self.ctx, render_pass_id),
+            }
         }
     }
 
@@ -87,12 +87,22 @@ impl RenderPassBuilder {
         vertex_buffer_id: DivisionId,
         vertex_count: usize,
         index_count: usize,
-        first_vertex: usize,
     ) -> Self {
-        self.descriptor.first_vertex = first_vertex as u64;
         self.descriptor.vertex_count = vertex_count as u64;
         self.descriptor.index_count = index_count as u64;
         self.descriptor.vertex_buffer = vertex_buffer_id;
+
+        self
+    }
+
+    pub fn first_vertex(mut self, first_vertex: usize) -> Self {
+        self.descriptor.first_vertex = first_vertex as u64;
+
+        self
+    }
+
+    pub fn enable_instancing(mut self) -> Self {
+        self.descriptor.capabilities_mask |= RenderPassCapabilityMask::InstancedRendering;
 
         self
     }
@@ -186,4 +196,12 @@ fn has_constant_color(blend: AlphaBlend) -> bool {
         && blend != AlphaBlend::ConstantColor
         && blend != AlphaBlend::OneMinusConstantAlpha
         && blend != AlphaBlend::OneMinusConstantColor
+}
+
+impl<'a> Drop for BorrowedRenderPass<'a> {
+    fn drop(&mut self) {
+        unsafe {
+            division_engine_render_pass_return(self.ctx, self.render_pass_id, self.render_pass);
+        }
+    }
 }
