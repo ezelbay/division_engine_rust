@@ -1,7 +1,6 @@
 /target
 .DS_Store
 .idea
-.vscode
 resources/shaders/**/*.metal
 build
 .cache
