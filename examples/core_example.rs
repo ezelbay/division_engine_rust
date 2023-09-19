@@ -1,12 +1,9 @@
-use division_engine_rust::core::c_interface::stb::{
-    stbi_image_free, stbi_load_from_memory, stbi_set_flip_vertically_on_load,
-};
 use division_engine_rust::core::{
-    Core, CoreDelegate, IdWithBinding, RenderTopology, ShaderVariableType, TextureFormat,
+    Core, CoreDelegate, IdWithBinding, Image, RenderTopology, ShaderVariableType,
     VertexAttributeDescriptor,
 };
 use division_math::{Matrix4x4, Vector2, Vector3, Vector4};
-use std::{env, fs, ptr::null_mut};
+use std::path::Path;
 
 pub struct MyDelegate {}
 
@@ -39,11 +36,8 @@ fn main() {
 
 impl CoreDelegate for MyDelegate {
     fn init(&mut self, core: &mut Core) {
-        let bin_root_path = env::current_exe().unwrap();
-        let bin_root_path = bin_root_path.parent().unwrap();
-
         let shader_id = core
-            .create_builtin_bundled_shader_program("resources/shaders/test")
+            .create_bundled_shader_program(&Path::new("resources").join("shaders").join("test"))
             .unwrap();
 
         let vertices_data = [
@@ -107,30 +101,14 @@ impl CoreDelegate for MyDelegate {
             data.vertex_indices.copy_from_slice(&indices);
         }
 
-        let image = fs::read(bin_root_path.join("resources/images/nevsky.jpg")).unwrap();
-        let (mut width, mut height) = (0, 0);
-        let texture_id = unsafe {
-            stbi_set_flip_vertically_on_load(1);
-
-            let data = stbi_load_from_memory(
-                image.as_ptr(),
-                image.len() as i32,
-                &mut width,
-                &mut height,
-                null_mut(),
-                4,
-            );
+        let texture_id = {
+            let image = Image::create_bundled_image(
+                &Path::new("resources").join("images").join("nevsky.jpg"),
+            ).unwrap();
 
             let texture_id = core
-                .create_texture_buffer_with_data(
-                    width as u32,
-                    height as u32,
-                    TextureFormat::RGBA32Uint,
-                    std::slice::from_raw_parts(data, (width * height) as usize),
-                )
+                .create_texture_buffer_from_image(&image)
                 .unwrap();
-
-            stbi_image_free(data);
 
             texture_id
         };

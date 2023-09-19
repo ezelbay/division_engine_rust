@@ -1,4 +1,4 @@
-use std::ffi::{c_char, c_int, c_void};
+use std::ffi::{c_char, c_int};
 
 extern "C" {
     pub fn stbi_load(

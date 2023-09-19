@@ -5,7 +5,7 @@ use super::{
         division_engine_shader_program_alloc, division_engine_shader_program_free,
         DivisionShaderSourceDescriptor,
     },
-    Core, DivisionError, DivisionId,
+    Core, Error, DivisionId,
 };
 
 pub use super::c_interface::shader::DivisionShaderType as ShaderType;
@@ -21,7 +21,7 @@ impl Core {
     pub fn create_shader_program(
         &mut self,
         descriptors: &[ShaderSourceDescriptor],
-    ) -> Result<DivisionId, DivisionError> {
+    ) -> Result<DivisionId, Error> {
         let c_desc: Vec<DivisionShaderSourceDescriptor> = descriptors
             .into_iter()
             .map(|d| DivisionShaderSourceDescriptor {
@@ -40,7 +40,7 @@ impl Core {
                 c_desc.len() as i32,
                 &mut shader_id,
             ) {
-                return Err(DivisionError::Core(String::from(
+                return Err(Error::Core(String::from(
                     "Failed to create a shader",
                 )));
             }

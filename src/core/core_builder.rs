@@ -1,6 +1,6 @@
 use std::{ffi::CString, ptr::null_mut};
 
-use super::{c_interface::settings::DivisionSettings, Core, DivisionError, CoreDelegate};
+use super::{c_interface::settings::DivisionSettings, Core, Error, CoreDelegate};
 
 pub struct CoreBuilder {
     _title: CString,
@@ -35,7 +35,7 @@ impl CoreBuilder {
         self
     }
 
-    pub fn build(self, delegate: Box<dyn CoreDelegate>) -> Result<Box<Core>, DivisionError> {
+    pub fn build(self, delegate: Box<dyn CoreDelegate>) -> Result<Box<Core>, Error> {
         Core::new(self._title, self._settings, delegate)
     }
 }

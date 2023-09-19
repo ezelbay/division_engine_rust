@@ -23,9 +23,9 @@ pub struct Core {
 }
 
 #[derive(Debug)]
-pub enum DivisionError {
+pub enum Error {
     Core(String),
-    Internal { error_code: i32, message: String },
+    CInterface { error_code: i32, message: String },
 }
 
 impl Core {
@@ -37,7 +37,7 @@ impl Core {
         window_title: CString,
         settings: DivisionSettings,
         delegate: Box<dyn CoreDelegate>,
-    ) -> Result<Box<Core>, DivisionError> {
+    ) -> Result<Box<Core>, Error> {
         let mut core = Box::new(Core {
             ctx: null_mut(),
             settings,
@@ -49,7 +49,7 @@ impl Core {
 
         unsafe {
             if !division_engine_context_alloc(&core.settings, &mut core.ctx) {
-                return Err(DivisionError::Core(String::from(
+                return Err(Error::Core(String::from(
                     "Failed to create new division engine context",
                 )));
             }

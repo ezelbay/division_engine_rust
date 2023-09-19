@@ -9,7 +9,7 @@ use super::{
             DivisionVertexBufferBorrowedData, DivisionVertexBufferDescriptor,
         },
     },
-    Core, DivisionError, DivisionId,
+    Core, Error, DivisionId,
 };
 
 pub use super::c_interface::{
@@ -39,7 +39,7 @@ impl Core {
         index_count: usize,
         instance_count: usize,
         topology: RenderTopology,
-    ) -> Result<DivisionId, DivisionError> {
+    ) -> Result<DivisionId, Error> {
         let mut id = 0;
 
         unsafe {
@@ -57,7 +57,7 @@ impl Core {
                 },
                 &mut id,
             ) {
-                return Err(DivisionError::Core(String::from(
+                return Err(Error::Core(String::from(
                     "Failed to create a vertex buffer",
                 )));
             }

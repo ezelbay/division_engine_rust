@@ -1,5 +1,11 @@
+mod image;
 mod shader;
-mod texture;
 
+use std::{path::PathBuf, env};
+
+pub use image::*;
 pub use shader::*;
-pub use texture::*;
+
+pub fn make_exe_dir_path() -> PathBuf {
+    env::current_exe().unwrap().parent().unwrap().to_path_buf()
+}

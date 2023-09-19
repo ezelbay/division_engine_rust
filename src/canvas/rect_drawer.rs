@@ -1,7 +1,9 @@
+use std::path::Path;
+
 use division_math::{Matrix4x4, Vector2, Vector4};
 
 use crate::core::{
-    Core, DivisionError, DivisionId, RenderTopology,
+    Core, Error, DivisionId, RenderTopology,
     VertexAttributeDescriptor, VertexBufferData, ShaderVariableType,
 };
 
@@ -43,7 +45,7 @@ pub const INDEX_PER_RECT: usize = 6;
 impl Core {
     pub fn create_rect_drawer<'a>(&'a mut self, view_matrix: Matrix4x4) -> RectDrawer<'a> {
         let shader_id = self
-            .create_builtin_bundled_shader_program("resources/shaders/canvas/solid_shape")
+            .create_bundled_shader_program(Path::new("resources/shaders/canvas/solid_shape"))
             .unwrap();
 
         let vertex_buffer_id = Self::make_vertex_buffer(self);
@@ -121,9 +123,9 @@ impl Core {
 }
 
 impl<'a> RectDrawer<'a> {
-    pub fn draw_rect(&mut self, solid_rect: SolidRect) -> Result<(), DivisionError> {
+    pub fn draw_rect(&mut self, solid_rect: SolidRect) -> Result<(), Error> {
         if self.instance_count >= RECT_CAPACITY {
-            return Err(DivisionError::Core(
+            return Err(Error::Core(
                 "Rect capacity limit exceed".to_string(),
             ));
         }

@@ -12,7 +12,7 @@ use super::{
             DivisionRenderPassDescriptor,
         },
     },
-    Core, DivisionError, DivisionId,
+    Core, Error, DivisionId,
 };
 
 pub use super::c_interface::render_pass::DivisionAlphaBlend as AlphaBlend;
@@ -172,11 +172,11 @@ impl RenderPassBuilder {
         self
     }
 
-    pub fn build(#[allow(unused_mut)] mut self) -> Result<DivisionId, DivisionError> {
+    pub fn build(#[allow(unused_mut)] mut self) -> Result<DivisionId, Error> {
         let mut pass_id = 0;
         unsafe {
             if !division_engine_render_pass_alloc(self.ctx, self.descriptor, &mut pass_id) {
-                return Err(DivisionError::Core(
+                return Err(Error::Core(
                     "Failed to create a render pass".to_string(),
                 ));
             }

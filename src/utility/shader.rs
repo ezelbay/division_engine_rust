@@ -1,15 +1,20 @@
-use std::{env, fs};
+use std::{env, fs, path::Path, io};
 
-use crate::core::{Core, DivisionError, DivisionId, ShaderSourceDescriptor, ShaderType};
+use crate::core::{Core, Error, DivisionId, ShaderSourceDescriptor, ShaderType};
 
 impl Core {
     /// Creates program with vertex and fragment bundled shaders with same names.
     /// [`shader_path`] should be relative to the executable folder. 
     /// Not suitable for complex cases
-    pub fn create_builtin_bundled_shader_program(
+    pub fn create_bundled_shader_program(
         &mut self,
-        shader_path: &str,
-    ) -> Result<DivisionId, DivisionError> {
+        shader_path: &Path,
+    ) -> Result<DivisionId, Error> {
+        let shader_path = shader_path.to_str()
+            .ok_or_else(
+                || Error::Core("The shader path is incorrect".to_string())
+            )?;
+
         let (vert_entry, vert_path, frag_entry, frag_path) = if cfg!(target_os = "macos") {
             (
                 "vert",
@@ -33,13 +38,22 @@ impl Core {
             ShaderSourceDescriptor::new(
                 ShaderType::Vertex,
                 vert_entry,
-                &fs::read_to_string(bin_root_path.join(vert_path)).unwrap(),
+                &fs::read_to_string(bin_root_path.join(vert_path))
+                    .map_err(|e| new_shader_read_error("vertex", e))?,
             ),
             ShaderSourceDescriptor::new(
                 ShaderType::Fragment,
                 frag_entry,
-                &fs::read_to_string(bin_root_path.join(frag_path)).unwrap(),
+                &fs::read_to_string(bin_root_path.join(frag_path))
+                    .map_err(|e| new_shader_read_error("fragment", e))?,
             ),
         ])
     }
+}
+
+fn new_shader_read_error(shader_type: &str, base_error: io::Error) -> crate::core::Error {
+    let io_message = base_error.to_string();
+    crate::core::Error::Core(
+        format!("Failed to read {shader_type} shader. io::Error message: `{io_message}`")
+    )
 }

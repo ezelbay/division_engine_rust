@@ -10,7 +10,7 @@ use super::{
             division_engine_uniform_buffer_return_data_pointer, DivisionUniformBufferDescriptor,
         },
     },
-    Core, DivisionError, DivisionId,
+    Core, Error, DivisionId,
 };
 
 pub struct UniformBufferData<'a, T> {
@@ -24,14 +24,14 @@ impl Core {
     pub fn create_uniform_buffer(
         &mut self,
         size_bytes: usize,
-    ) -> Result<DivisionId, DivisionError> {
+    ) -> Result<DivisionId, Error> {
         let mut buffer_id = 0;
         unsafe {
             let desc = DivisionUniformBufferDescriptor {
                 data_bytes: size_bytes as c_ulong,
             };
             if !division_engine_uniform_buffer_alloc(self.ctx, desc, &mut buffer_id) {
-                return Err(DivisionError::Core(
+                return Err(Error::Core(
                     "Failed to create an uniform buffer".to_string(),
                 ));
             }
@@ -40,7 +40,7 @@ impl Core {
         return Ok(buffer_id);
     }
 
-    pub fn create_uniform_buffer_with_size_of<T>(&mut self) -> Result<DivisionId, DivisionError> {
+    pub fn create_uniform_buffer_with_size_of<T>(&mut self) -> Result<DivisionId, Error> {
         self.create_uniform_buffer(std::mem::size_of::<T>())
     }
 
