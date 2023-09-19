@@ -4,7 +4,7 @@ use std::ffi::c_ulong;
 use super::context::DivisionContext;
 
 #[repr(C)]
-pub struct IdWithBinding {
+pub struct DivisionIdWithBinding {
     pub id: u32,
     pub shader_binding: u32,
 }
@@ -12,7 +12,7 @@ pub struct IdWithBinding {
 bitflags! {
     #[repr(transparent)]
     #[derive(PartialEq, Clone, Copy)]
-    pub struct ColorMask: i32 {
+    pub struct DivisionColorMask: i32 {
         const None = 0;
         const R = 1 << 0;
         const G = 1 << 1;
@@ -26,7 +26,7 @@ bitflags! {
 bitflags! {
     #[repr(transparent)]
     #[derive(PartialEq, Clone, Copy)]
-    pub struct RenderPassCapabilityMask: i32 {
+    pub struct DivisionRenderPassCapabilityMask: i32 {
         const None = 0;
         const AlphaBlend = 1 << 0;
         const InstancedRendering = 1 << 1;
@@ -35,7 +35,7 @@ bitflags! {
 
 #[repr(i32)]
 #[derive(PartialEq, Clone, Copy)]
-pub enum AlphaBlend {
+pub enum DivisionAlphaBlend {
     Zero = 0,
     One = 1,
     SrcColor = 2,
@@ -55,7 +55,7 @@ pub enum AlphaBlend {
 
 #[repr(i32)]
 #[derive(PartialEq, Clone, Copy)]
-pub enum AlphaBlendOperation {
+pub enum DivisionAlphaBlendOperation {
     Add = 1,
     Subtract = 2,
     ReverseSubtract = 3,
@@ -64,49 +64,49 @@ pub enum AlphaBlendOperation {
 }
 
 #[repr(C)]
-pub struct AlphaBlendingOptions {
-    pub src: AlphaBlend,
-    pub dst: AlphaBlend,
-    pub operation: AlphaBlendOperation,
+pub struct DivisionAlphaBlendingOptions {
+    pub src: DivisionAlphaBlend,
+    pub dst: DivisionAlphaBlend,
+    pub operation: DivisionAlphaBlendOperation,
     pub constant_blend_color: [f32; 4],
 }
 
 #[repr(C)]
-pub struct RenderPassDescriptor {
-    pub alpha_blending_options: AlphaBlendingOptions,
+pub struct DivisionRenderPassDescriptor {
+    pub alpha_blending_options: DivisionAlphaBlendingOptions,
 
     pub first_vertex: c_ulong,
     pub vertex_count: c_ulong,
     pub index_count: c_ulong,
     pub instance_count: c_ulong,
-    pub uniform_vertex_buffers: *const IdWithBinding,
+    pub uniform_vertex_buffers: *const DivisionIdWithBinding,
     pub uniform_vertex_buffer_count: i32,
-    pub uniform_fragment_buffers: *const IdWithBinding,
+    pub uniform_fragment_buffers: *const DivisionIdWithBinding,
     pub uniform_fragment_buffer_count: i32,
-    pub fragment_textures: *const IdWithBinding,
+    pub fragment_textures: *const DivisionIdWithBinding,
     pub fragment_texture_count: i32,
     pub vertex_buffer: u32,
     pub shader_program: u32,
-    pub capabilities_mask: RenderPassCapabilityMask,
-    pub color_mask: ColorMask,
+    pub capabilities_mask: DivisionRenderPassCapabilityMask,
+    pub color_mask: DivisionColorMask,
 }
 
 extern "C" {
     pub fn division_engine_render_pass_alloc(
         ctx: *mut DivisionContext,
-        descriptor: RenderPassDescriptor,
+        descriptor: DivisionRenderPassDescriptor,
         out_render_pass_id: *mut u32,
     ) -> bool;
 
     pub fn division_engine_render_pass_borrow(
         ctx: *mut DivisionContext,
         render_pass_id: u32,
-    ) -> *mut RenderPassDescriptor;
+    ) -> *mut DivisionRenderPassDescriptor;
 
     pub fn division_engine_render_pass_return(
         ctx: *mut DivisionContext,
         render_pass_id: u32,
-        render_pass: *const RenderPassDescriptor,
+        render_pass: *const DivisionRenderPassDescriptor,
     );
 
     pub fn division_engine_render_pass_free(ctx: *mut DivisionContext, render_pass_id: u32);

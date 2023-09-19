@@ -1,30 +1,30 @@
 use std::ffi::c_void;
 
-use super::{context::DivisionContext, shader::ShaderVariableType};
+use super::{context::DivisionContext, shader::DivisionShaderVariableType};
 
 #[repr(i32)]
-pub enum RenderTopology {
+pub enum DivisionRenderTopology {
     Triangles = 1,
     Points = 2,
     Lines = 3,
 }
 
 #[repr(C)]
-pub struct VertexAttributeDescriptor {
-    pub field_type: ShaderVariableType,
+pub struct DivisionVertexAttributeDescriptor {
+    pub field_type: DivisionShaderVariableType,
     pub location: i32,
 }
 
 #[repr(C)]
-pub struct VertexBufferDescriptor {
-    pub per_vertex_attributes: *const VertexAttributeDescriptor,
-    pub per_instance_attributes: *const VertexAttributeDescriptor,
+pub struct DivisionVertexBufferDescriptor {
+    pub per_vertex_attributes: *const DivisionVertexAttributeDescriptor,
+    pub per_instance_attributes: *const DivisionVertexAttributeDescriptor,
     pub per_vertex_attribute_count: i32,
     pub per_instance_attribute_count: i32,
     pub vertex_count: i32,
     pub index_count: i32,
     pub instance_count: i32,
-    pub topology: RenderTopology,
+    pub topology: DivisionRenderTopology,
 }
 
 #[repr(C)]
@@ -40,7 +40,7 @@ pub struct DivisionVertexBufferBorrowedData {
 extern "C" {
     pub fn division_engine_vertex_buffer_alloc(
         ctx: *mut DivisionContext,
-        desriptor: *const VertexBufferDescriptor,
+        desriptor: *const DivisionVertexBufferDescriptor,
         out_vertex_buffer_id: *mut u32,
     ) -> bool;
 

@@ -7,10 +7,10 @@ use super::{
             division_engine_uniform_buffer_alloc,
             division_engine_uniform_buffer_borrow_data_pointer,
             division_engine_uniform_buffer_free,
-            division_engine_uniform_buffer_return_data_pointer, UniformBufferDescriptor,
+            division_engine_uniform_buffer_return_data_pointer, DivisionUniformBufferDescriptor,
         },
     },
-    DivisionCore, DivisionError, DivisionId,
+    Core, DivisionError, DivisionId,
 };
 
 pub struct UniformBufferData<'a, T> {
@@ -20,14 +20,14 @@ pub struct UniformBufferData<'a, T> {
     id: DivisionId,
 }
 
-impl DivisionCore {
+impl Core {
     pub fn create_uniform_buffer(
         &mut self,
         size_bytes: usize,
     ) -> Result<DivisionId, DivisionError> {
         let mut buffer_id = 0;
         unsafe {
-            let desc = UniformBufferDescriptor {
+            let desc = DivisionUniformBufferDescriptor {
                 data_bytes: size_bytes as c_ulong,
             };
             if !division_engine_uniform_buffer_alloc(self.ctx, desc, &mut buffer_id) {

@@ -1,6 +1,6 @@
 use division_engine_rust::{
     canvas::{rect::Rect, rect_drawer::SolidRect},
-    core::{DivisionCore, DivisionCoreDelegate},
+    core::{Core, CoreDelegate},
 };
 use division_math::{Matrix4x4, Vector2, Vector4};
 
@@ -9,7 +9,7 @@ struct MyDelegate {
 
 fn main() {
     let delegate = Box::new(MyDelegate {});
-    let core = DivisionCore::builder()
+    let core = Core::builder()
         .window_size(1024, 1024)
         .window_title("Hello rect drawer")
         .build(delegate)
@@ -18,8 +18,8 @@ fn main() {
     core.run();
 }
 
-impl DivisionCoreDelegate for MyDelegate {
-    fn init(&mut self, core: &mut DivisionCore) {
+impl CoreDelegate for MyDelegate {
+    fn init(&mut self, core: &mut Core) {
         let view_matrix = Matrix4x4::ortho(0., 1024., 0., 1024.);
         let mut rect_drawer = Box::new(core.create_rect_drawer(view_matrix));
 
@@ -41,5 +41,5 @@ impl DivisionCoreDelegate for MyDelegate {
             .unwrap()
     }
 
-    fn update(&mut self, _core: &mut DivisionCore) {}
+    fn update(&mut self, _core: &mut Core) {}
 }

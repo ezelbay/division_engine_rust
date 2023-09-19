@@ -3,13 +3,13 @@ use super::context::DivisionContext;
 
 #[repr(i32)]
 #[derive(Clone, Copy)]
-pub enum ShaderType {
+pub enum DivisionShaderType {
     Vertex = 1,
     Fragment = 2,
 }
 
 #[repr(i32)]
-pub enum ShaderVariableType {
+pub enum DivisionShaderVariableType {
     Float = 1,
     Double = 2,
     Integer = 3,
@@ -21,7 +21,7 @@ pub enum ShaderVariableType {
 
 #[repr(C)]
 pub struct DivisionShaderSourceDescriptor {
-    pub shader_type: ShaderType,
+    pub shader_type: DivisionShaderType,
     pub entry_point_name: *const c_char,
     pub source: *const c_char,
     pub source_size: i32

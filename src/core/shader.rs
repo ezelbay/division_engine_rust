@@ -5,11 +5,11 @@ use super::{
         division_engine_shader_program_alloc, division_engine_shader_program_free,
         DivisionShaderSourceDescriptor,
     },
-    DivisionCore, DivisionError, DivisionId,
+    Core, DivisionError, DivisionId,
 };
 
-pub use super::c_interface::shader::ShaderType;
-pub use super::c_interface::shader::ShaderVariableType;
+pub use super::c_interface::shader::DivisionShaderType as ShaderType;
+pub use super::c_interface::shader::DivisionShaderVariableType as ShaderVariableType;
 
 pub struct ShaderSourceDescriptor {
     shader_type: ShaderType,
@@ -17,7 +17,7 @@ pub struct ShaderSourceDescriptor {
     source: CString,
 }
 
-impl DivisionCore {
+impl Core {
     pub fn create_shader_program(
         &mut self,
         descriptors: &[ShaderSourceDescriptor],

@@ -1,8 +1,8 @@
 use division_math::{Matrix4x4, Vector2, Vector4};
 
 use crate::core::{
-    DivisionCore, DivisionError, DivisionId, RenderTopology, ShaderVariableType,
-    VertexAttributeDescriptor, VertexBufferData,
+    Core, DivisionError, DivisionId, RenderTopology,
+    VertexAttributeDescriptor, VertexBufferData, ShaderVariableType,
 };
 
 use super::rect::Rect;
@@ -13,7 +13,7 @@ pub struct SolidRect {
 }
 
 pub struct RectDrawer<'a> {
-    core: &'a mut DivisionCore,
+    core: &'a mut Core,
     shader_id: DivisionId,
     vertex_buffer_id: DivisionId,
     render_pass_id: DivisionId,
@@ -40,7 +40,7 @@ pub const RECT_CAPACITY: usize = 128;
 pub const VERTEX_PER_RECT: usize = 4;
 pub const INDEX_PER_RECT: usize = 6;
 
-impl DivisionCore {
+impl Core {
     pub fn create_rect_drawer<'a>(&'a mut self, view_matrix: Matrix4x4) -> RectDrawer<'a> {
         let shader_id = self
             .create_builtin_bundled_shader_program("resources/shaders/canvas/solid_shape")
@@ -67,7 +67,7 @@ impl DivisionCore {
         }
     }
 
-    fn make_vertex_buffer(core: &mut DivisionCore) -> DivisionId {
+    fn make_vertex_buffer(core: &mut Core) -> DivisionId {
         core.create_vertex_buffer(
             &[
                 VertexAttributeDescriptor {

@@ -3,21 +3,21 @@ use std::ffi::c_void;
 use super::{
     c_interface::texture::{
         division_engine_texture_alloc, division_engine_texture_free,
-        division_engine_texture_set_data, TextureDescriptor,
+        division_engine_texture_set_data, DivisionTextureDescriptor,
     },
-    DivisionCore, DivisionError, DivisionId,
+    Core, DivisionError, DivisionId,
 };
 
-pub use super::c_interface::texture::TextureFormat;
+pub use super::c_interface::texture::DivisionTextureFormat as TextureFormat;
 
-impl DivisionCore {
+impl Core {
     pub fn create_texture_buffer(
         &mut self,
         width: u32,
         height: u32,
         texture_format: TextureFormat,
     ) -> Result<DivisionId, DivisionError> {
-        let texture_desc = TextureDescriptor {
+        let texture_desc = DivisionTextureDescriptor {
             width,
             height,
             texture_format,

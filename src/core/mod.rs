@@ -1,19 +1,19 @@
 pub mod c_interface;
 
-mod division_core;
-mod division_core_builder;
-mod division_core_delegate;
-mod division_core_render_pass;
-mod division_core_shader;
-mod division_core_texture;
-mod division_core_uniform_buffers;
-mod division_core_vertex_buffer;
+mod core;
+mod core_builder;
+mod core_delegate;
+mod render_pass;
+mod shader;
+mod texture;
+mod uniform_buffer;
+mod vertex_buffer;
 
-pub use division_core::*;
-pub use division_core_builder::*;
-pub use division_core_delegate::*;
-pub use division_core_render_pass::*;
-pub use division_core_shader::*;
-pub use division_core_texture::*;
-pub use division_core_uniform_buffers::*;
-pub use division_core_vertex_buffer::*;
+pub use core::*;
+pub use core_builder::*;
+pub use core_delegate::*;
+pub use render_pass::*;
+pub use shader::*;
+pub use texture::*;
+pub use uniform_buffer::*;
+pub use vertex_buffer::*;

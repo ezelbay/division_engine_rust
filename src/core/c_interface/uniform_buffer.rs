@@ -3,14 +3,14 @@ use std::ffi::{c_ulong, c_void};
 use super::context::DivisionContext;
 
 #[repr(C)]
-pub struct UniformBufferDescriptor {
+pub struct DivisionUniformBufferDescriptor {
     pub data_bytes: c_ulong,
 }
 
 extern "C" {
     pub fn division_engine_uniform_buffer_alloc(
         ctx: *mut DivisionContext,
-        buffer: UniformBufferDescriptor,
+        buffer: DivisionUniformBufferDescriptor,
         out_buffer_id: *mut u32,
     ) -> bool;
 

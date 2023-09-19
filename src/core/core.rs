@@ -6,20 +6,20 @@ use std::{
 pub type DivisionId = u32;
 
 use super::{
-    division_core_builder::DivisionCoreBuilder,
+    core_builder::CoreBuilder,
     c_interface::{
         context::{division_engine_context_alloc, division_engine_context_free, DivisionContext},
         renderer::division_engine_renderer_run_loop,
         settings::DivisionSettings,
     },
-    DivisionCoreDelegate,
+    CoreDelegate,
 };
 
-pub struct DivisionCore {
+pub struct Core {
     pub(crate) ctx: *mut DivisionContext,
     settings: DivisionSettings,
     window_title: CString,
-    delegate: Box<dyn DivisionCoreDelegate>,
+    delegate: Box<dyn CoreDelegate>,
 }
 
 #[derive(Debug)]
@@ -28,17 +28,17 @@ pub enum DivisionError {
     Internal { error_code: i32, message: String },
 }
 
-impl DivisionCore {
-    pub fn builder() -> DivisionCoreBuilder {
-        DivisionCoreBuilder::new()
+impl Core {
+    pub fn builder() -> CoreBuilder {
+        CoreBuilder::new()
     }
 
     pub(crate) fn new(
         window_title: CString,
         settings: DivisionSettings,
-        delegate: Box<dyn DivisionCoreDelegate>,
-    ) -> Result<Box<DivisionCore>, DivisionError> {
-        let mut core = Box::new(DivisionCore {
+        delegate: Box<dyn CoreDelegate>,
+    ) -> Result<Box<Core>, DivisionError> {
+        let mut core = Box::new(Core {
             ctx: null_mut(),
             settings,
             window_title,
@@ -56,7 +56,7 @@ impl DivisionCore {
         }
 
         unsafe {
-            (*core.ctx).user_data = &*core as *const DivisionCore as *const c_void;
+            (*core.ctx).user_data = &*core as *const Core as *const c_void;
         }
 
         Ok(core)
@@ -69,12 +69,12 @@ impl DivisionCore {
     }
 
     pub(crate) unsafe extern "C" fn init_callback(ctx: *mut DivisionContext) {
-        let core = (*ctx).user_data as *mut DivisionCore;
+        let core = (*ctx).user_data as *mut Core;
         (*core).delegate.init(&mut *core);
     }
 
     pub(crate) unsafe extern "C" fn update_callback(ctx: *mut DivisionContext) {
-        let core = (*ctx).user_data as *mut DivisionCore;
+        let core = (*ctx).user_data as *mut Core;
         (*core).delegate.update(&mut *core);
     }
 
@@ -88,7 +88,7 @@ impl DivisionCore {
     }
 }
 
-impl Drop for DivisionCore {
+impl Drop for Core {
     fn drop(&mut self) {
         unsafe {
             division_engine_context_free(self.ctx);

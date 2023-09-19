@@ -6,13 +6,19 @@ use super::{
         vertex_buffer::{
             division_engine_vertex_buffer_alloc, division_engine_vertex_buffer_borrow_data,
             division_engine_vertex_buffer_free, division_engine_vertex_buffer_return_data,
-            DivisionVertexBufferBorrowedData, VertexBufferDescriptor,
+            DivisionVertexBufferBorrowedData, DivisionVertexBufferDescriptor,
         },
     },
-    DivisionCore, DivisionError, DivisionId,
+    Core, DivisionError, DivisionId,
 };
 
-pub use super::c_interface::vertex_buffer::{RenderTopology, VertexAttributeDescriptor};
+pub use super::c_interface::{
+    shader::DivisionShaderVariableType as ShaderVariableType,
+    vertex_buffer::{
+        DivisionRenderTopology as RenderTopology,
+        DivisionVertexAttributeDescriptor as VertexAttributeDescriptor,
+    },
+};
 
 pub struct VertexBufferData<'a, TVertexData, TInstanceData> {
     pub per_vertex_data: &'a mut [TVertexData],
@@ -24,7 +30,7 @@ pub struct VertexBufferData<'a, TVertexData, TInstanceData> {
     vertex_buffer_id: u32,
 }
 
-impl DivisionCore {
+impl Core {
     pub fn create_vertex_buffer(
         &mut self,
         per_vertex_attributes: &[VertexAttributeDescriptor],
@@ -39,7 +45,7 @@ impl DivisionCore {
         unsafe {
             if !division_engine_vertex_buffer_alloc(
                 self.ctx,
-                &VertexBufferDescriptor {
+                &DivisionVertexBufferDescriptor {
                     per_vertex_attributes: per_vertex_attributes.as_ptr(),
                     per_vertex_attribute_count: per_vertex_attributes.len() as i32,
                     per_instance_attributes: per_instance_attributes.as_ptr(),

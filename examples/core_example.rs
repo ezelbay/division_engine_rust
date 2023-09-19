@@ -1,5 +1,5 @@
 use division_engine_rust::core::{
-    DivisionCore, DivisionCoreDelegate, IdWithBinding, RenderTopology, ShaderVariableType,
+    Core, CoreDelegate, IdWithBinding, RenderTopology, ShaderVariableType,
     TextureFormat, VertexAttributeDescriptor,
 };
 use division_math::{Matrix4x4, Vector2, Vector3, Vector4};
@@ -26,7 +26,7 @@ pub struct Inst {
 
 fn main() {
     let delegate = Box::new(MyDelegate {});
-    let core = DivisionCore::builder()
+    let core = Core::builder()
         .window_size(1024, 1024)
         .window_title("Oh, my world")
         .build(delegate)
@@ -35,8 +35,8 @@ fn main() {
     core.run();
 }
 
-impl DivisionCoreDelegate for MyDelegate {
-    fn init(&mut self, core: &mut DivisionCore) {
+impl CoreDelegate for MyDelegate {
+    fn init(&mut self, core: &mut Core) {
         let bin_root_path = env::current_exe().unwrap();
         let bin_root_path = bin_root_path.parent().unwrap();
 
@@ -154,5 +154,5 @@ impl DivisionCoreDelegate for MyDelegate {
             .unwrap();
     }
 
-    fn update(&mut self, _core: &mut DivisionCore) {}
+    fn update(&mut self, _core: &mut Core) {}
 }

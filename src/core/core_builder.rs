@@ -1,13 +1,13 @@
 use std::{ffi::CString, ptr::null_mut};
 
-use super::{c_interface::settings::DivisionSettings, DivisionCore, DivisionError, DivisionCoreDelegate};
+use super::{c_interface::settings::DivisionSettings, Core, DivisionError, CoreDelegate};
 
-pub struct DivisionCoreBuilder {
+pub struct CoreBuilder {
     _title: CString,
     _settings: DivisionSettings,
 }
 
-impl DivisionCoreBuilder {
+impl CoreBuilder {
     pub fn new() -> Self {
         let builder = Self {
             _title: CString::new("New window").unwrap(),
@@ -15,9 +15,9 @@ impl DivisionCoreBuilder {
                 window_width: 512,
                 window_height: 512,
                 window_title: null_mut(),
-                error_callback: DivisionCore::error_callback,
-                init_callback: DivisionCore::init_callback,
-                update_callback: DivisionCore::update_callback,
+                error_callback: Core::error_callback,
+                init_callback: Core::init_callback,
+                update_callback: Core::update_callback,
             },
         };
         builder
@@ -35,7 +35,7 @@ impl DivisionCoreBuilder {
         self
     }
 
-    pub fn build(self, delegate: Box<dyn DivisionCoreDelegate>) -> Result<Box<DivisionCore>, DivisionError> {
-        DivisionCore::new(self._title, self._settings, delegate)
+    pub fn build(self, delegate: Box<dyn CoreDelegate>) -> Result<Box<Core>, DivisionError> {
+        Core::new(self._title, self._settings, delegate)
     }
 }

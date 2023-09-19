@@ -8,33 +8,34 @@ use super::{
         render_pass::{
             division_engine_render_pass_alloc, division_engine_render_pass_borrow,
             division_engine_render_pass_free, division_engine_render_pass_return,
-            AlphaBlendingOptions, ColorMask, RenderPassCapabilityMask, RenderPassDescriptor,
+            DivisionAlphaBlendingOptions, DivisionColorMask, DivisionRenderPassCapabilityMask,
+            DivisionRenderPassDescriptor,
         },
     },
-    DivisionCore, DivisionError, DivisionId,
+    Core, DivisionError, DivisionId,
 };
 
-pub use super::c_interface::render_pass::AlphaBlend;
-pub use super::c_interface::render_pass::AlphaBlendOperation;
-pub use super::c_interface::render_pass::IdWithBinding;
+pub use super::c_interface::render_pass::DivisionAlphaBlend as AlphaBlend;
+pub use super::c_interface::render_pass::DivisionAlphaBlendOperation as AlphaBlendOperation;
+pub use super::c_interface::render_pass::DivisionIdWithBinding as IdWithBinding;
 
 pub struct RenderPassBuilder {
     ctx: *mut DivisionContext,
-    descriptor: RenderPassDescriptor,
+    descriptor: DivisionRenderPassDescriptor,
 }
 
 pub struct BorrowedRenderPass<'a> {
     ctx: *mut DivisionContext,
     render_pass_id: u32,
-    pub render_pass: &'a mut RenderPassDescriptor,
+    pub render_pass: &'a mut DivisionRenderPassDescriptor,
 }
 
-impl DivisionCore {
+impl Core {
     pub fn render_pass_builder(&self) -> RenderPassBuilder {
         RenderPassBuilder {
             ctx: self.ctx,
-            descriptor: RenderPassDescriptor {
-                alpha_blending_options: AlphaBlendingOptions {
+            descriptor: DivisionRenderPassDescriptor {
+                alpha_blending_options: DivisionAlphaBlendingOptions {
                     src: AlphaBlend::One,
                     dst: AlphaBlend::Zero,
                     operation: AlphaBlendOperation::Add,
@@ -52,8 +53,8 @@ impl DivisionCore {
                 fragment_texture_count: 0,
                 vertex_buffer: 0,
                 shader_program: 0,
-                capabilities_mask: RenderPassCapabilityMask::None,
-                color_mask: ColorMask::RGB,
+                capabilities_mask: DivisionRenderPassCapabilityMask::None,
+                color_mask: DivisionColorMask::RGB,
             },
         }
     }
@@ -102,14 +103,14 @@ impl RenderPassBuilder {
     }
 
     pub fn enable_instancing(mut self) -> Self {
-        self.descriptor.capabilities_mask |= RenderPassCapabilityMask::InstancedRendering;
+        self.descriptor.capabilities_mask |= DivisionRenderPassCapabilityMask::InstancedRendering;
 
         self
     }
 
     pub fn instances(#[allow(unused_mut)] mut self, instance_count: usize) -> Self {
         self.descriptor.instance_count = instance_count as u64;
-        self.descriptor.capabilities_mask |= RenderPassCapabilityMask::InstancedRendering;
+        self.descriptor.capabilities_mask |= DivisionRenderPassCapabilityMask::InstancedRendering;
 
         self
     }
@@ -127,7 +128,7 @@ impl RenderPassBuilder {
         blend_options.dst = dst;
         blend_options.operation = operation;
 
-        self.descriptor.capabilities_mask |= RenderPassCapabilityMask::AlphaBlend;
+        self.descriptor.capabilities_mask |= DivisionRenderPassCapabilityMask::AlphaBlend;
         self
     }
 
@@ -146,7 +147,7 @@ impl RenderPassBuilder {
         blend_options.operation = operation;
         blend_options.constant_blend_color = [color.r(), color.g(), color.b(), color.a()];
 
-        self.descriptor.capabilities_mask |= RenderPassCapabilityMask::AlphaBlend;
+        self.descriptor.capabilities_mask |= DivisionRenderPassCapabilityMask::AlphaBlend;
         self
     }
 
