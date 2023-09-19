@@ -1,4 +1,4 @@
-pub mod interface;
+pub mod c_interface;
 
 mod division_core;
 mod division_core_builder;

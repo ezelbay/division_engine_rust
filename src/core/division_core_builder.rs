@@ -1,6 +1,6 @@
 use std::{ffi::CString, ptr::null_mut};
 
-use super::{interface::settings::DivisionSettings, DivisionCore, DivisionError, DivisionCoreDelegate};
+use super::{c_interface::settings::DivisionSettings, DivisionCore, DivisionError, DivisionCoreDelegate};
 
 pub struct DivisionCoreBuilder {
     _title: CString,

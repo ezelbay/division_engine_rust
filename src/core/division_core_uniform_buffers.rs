@@ -1,7 +1,7 @@
 use std::ffi::{c_ulong, c_void};
 
 use super::{
-    interface::{
+    c_interface::{
         context::DivisionContext,
         uniform_buffer::{
             division_engine_uniform_buffer_alloc,

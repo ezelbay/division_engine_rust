@@ -3,7 +3,7 @@ use std::{ptr::null, usize};
 use division_math::Vector4;
 
 use super::{
-    interface::{
+    c_interface::{
         context::DivisionContext,
         render_pass::{
             division_engine_render_pass_alloc, division_engine_render_pass_borrow,
@@ -14,9 +14,9 @@ use super::{
     DivisionCore, DivisionError, DivisionId,
 };
 
-pub use super::interface::render_pass::AlphaBlend;
-pub use super::interface::render_pass::AlphaBlendOperation;
-pub use super::interface::render_pass::IdWithBinding;
+pub use super::c_interface::render_pass::AlphaBlend;
+pub use super::c_interface::render_pass::AlphaBlendOperation;
+pub use super::c_interface::render_pass::IdWithBinding;
 
 pub struct RenderPassBuilder {
     ctx: *mut DivisionContext,

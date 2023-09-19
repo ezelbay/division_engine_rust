@@ -7,7 +7,7 @@ pub type DivisionId = u32;
 
 use super::{
     division_core_builder::DivisionCoreBuilder,
-    interface::{
+    c_interface::{
         context::{division_engine_context_alloc, division_engine_context_free, DivisionContext},
         renderer::division_engine_renderer_run_loop,
         settings::DivisionSettings,

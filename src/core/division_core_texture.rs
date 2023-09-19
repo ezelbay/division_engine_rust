@@ -1,14 +1,14 @@
 use std::ffi::c_void;
 
 use super::{
-    interface::texture::{
+    c_interface::texture::{
         division_engine_texture_alloc, division_engine_texture_free,
         division_engine_texture_set_data, TextureDescriptor,
     },
     DivisionCore, DivisionError, DivisionId,
 };
 
-pub use super::interface::texture::TextureFormat;
+pub use super::c_interface::texture::TextureFormat;
 
 impl DivisionCore {
     pub fn create_texture_buffer(

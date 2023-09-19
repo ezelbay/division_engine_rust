@@ -1,15 +1,15 @@
 use std::ffi::CString;
 
 use super::{
-    interface::shader::{
+    c_interface::shader::{
         division_engine_shader_program_alloc, division_engine_shader_program_free,
         DivisionShaderSourceDescriptor,
     },
     DivisionCore, DivisionError, DivisionId,
 };
 
-pub use super::interface::shader::ShaderType;
-pub use super::interface::shader::ShaderVariableType;
+pub use super::c_interface::shader::ShaderType;
+pub use super::c_interface::shader::ShaderVariableType;
 
 pub struct ShaderSourceDescriptor {
     shader_type: ShaderType,

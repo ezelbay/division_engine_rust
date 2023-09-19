@@ -1,7 +1,7 @@
 use std::mem::MaybeUninit;
 
 use super::{
-    interface::{
+    c_interface::{
         context::DivisionContext,
         vertex_buffer::{
             division_engine_vertex_buffer_alloc, division_engine_vertex_buffer_borrow_data,
@@ -12,7 +12,7 @@ use super::{
     DivisionCore, DivisionError, DivisionId,
 };
 
-pub use super::interface::vertex_buffer::{RenderTopology, VertexAttributeDescriptor};
+pub use super::c_interface::vertex_buffer::{RenderTopology, VertexAttributeDescriptor};
 
 pub struct VertexBufferData<'a, TVertexData, TInstanceData> {
     pub per_vertex_data: &'a mut [TVertexData],
