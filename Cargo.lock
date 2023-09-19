@@ -32,7 +32,6 @@ dependencies = [
  "division_math",
  "division_shader_compiler_rust",
  "fs_extra",
- "stb_image_rust",
  "walkdir",
 ]
 
@@ -81,12 +80,6 @@ checksum = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
 dependencies = [
  "winapi-util",
 ]
-
-[[package]]
-name = "stb_image_rust"
-version = "2.27.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d682a002ab01d5e09f47d22cfe4a55a8451cdaef5b0f87d6c8b8c3bc4360b6aa"
 
 [[package]]
 name = "walkdir"

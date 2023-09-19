@@ -1,9 +1,11 @@
+use division_engine_rust::core::c_interface::stb::{
+    stbi_image_free, stbi_load_from_memory, stbi_set_flip_vertically_on_load,
+};
 use division_engine_rust::core::{
-    Core, CoreDelegate, IdWithBinding, RenderTopology, ShaderVariableType,
-    TextureFormat, VertexAttributeDescriptor,
+    Core, CoreDelegate, IdWithBinding, RenderTopology, ShaderVariableType, TextureFormat,
+    VertexAttributeDescriptor,
 };
 use division_math::{Matrix4x4, Vector2, Vector3, Vector4};
-use stb_image_rust::{stbi_image_free, stbi_set_flip_vertically_on_load};
 use std::{env, fs, ptr::null_mut};
 
 pub struct MyDelegate {}
@@ -66,11 +68,9 @@ impl CoreDelegate for MyDelegate {
                 uv: Vector2::new(1., 1.),
             },
         ];
-        let instances_data = [
-            Inst {
-                local_to_world: Matrix4x4::ortho_with_near_far(0., 1024., 0., 1024., -1., 1.),
-            },
-        ];
+        let instances_data = [Inst {
+            local_to_world: Matrix4x4::ortho_with_near_far(0., 1024., 0., 1024., -1., 1.),
+        }];
         let indices = [0, 1, 2, 2, 3, 0];
 
         let vertex_buffer_id = core
@@ -112,7 +112,7 @@ impl CoreDelegate for MyDelegate {
         let texture_id = unsafe {
             stbi_set_flip_vertically_on_load(1);
 
-            let data = stb_image_rust::stbi_load_from_memory(
+            let data = stbi_load_from_memory(
                 image.as_ptr(),
                 image.len() as i32,
                 &mut width,

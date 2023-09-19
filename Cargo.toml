@@ -21,7 +21,6 @@ division_math = { git = "https://github.com/Den163/division_math", tag="v0.1.5",
 bitflags="2.3.1"
 
 [dev-dependencies]
-stb_image_rust="2.27.2"
 walkdir="2.3.3"
 
 [profile.dev]
