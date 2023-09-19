@@ -7,10 +7,11 @@ use super::{
             division_engine_uniform_buffer_alloc,
             division_engine_uniform_buffer_borrow_data_pointer,
             division_engine_uniform_buffer_free,
-            division_engine_uniform_buffer_return_data_pointer, DivisionUniformBufferDescriptor,
+            division_engine_uniform_buffer_return_data_pointer,
+            DivisionUniformBufferDescriptor,
         },
     },
-    Core, Error, DivisionId,
+    Core, DivisionId, Error,
 };
 
 pub struct UniformBufferData<'a, T> {
@@ -49,14 +50,16 @@ impl Core {
         uniform_buffer_id: DivisionId,
     ) -> UniformBufferData<T> {
         unsafe {
-            let ptr =
-                division_engine_uniform_buffer_borrow_data_pointer(self.ctx, uniform_buffer_id);
+            let ptr = division_engine_uniform_buffer_borrow_data_pointer(
+                self.ctx,
+                uniform_buffer_id,
+            );
             let ptr = ptr as *mut T;
 
             UniformBufferData {
-                data: ptr.as_mut().unwrap(), 
-                ctx: self.ctx, 
-                id: uniform_buffer_id
+                data: ptr.as_mut().unwrap(),
+                ctx: self.ctx,
+                id: uniform_buffer_id,
             }
         }
     }

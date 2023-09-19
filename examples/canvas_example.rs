@@ -4,8 +4,7 @@ use division_engine_rust::{
 };
 use division_math::{Matrix4x4, Vector2, Vector4};
 
-struct MyDelegate {
-}
+struct MyDelegate {}
 
 fn main() {
     let delegate = Box::new(MyDelegate {});
@@ -35,7 +34,10 @@ impl CoreDelegate for MyDelegate {
 
         rect_drawer
             .draw_rect(SolidRect {
-                rect: Rect::from_center_and_size(Vector2::new(1., 1.), Vector2::new(50., 50.)),
+                rect: Rect::from_center_and_size(
+                    Vector2::new(1., 1.),
+                    Vector2::new(50., 50.),
+                ),
                 color: Vector4::new(1., 0., 0., 1.),
             })
             .unwrap()

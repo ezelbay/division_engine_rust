@@ -1,6 +1,6 @@
 pub mod context;
-pub mod renderer;
 pub mod render_pass;
+pub mod renderer;
 pub mod settings;
 pub mod shader;
 pub mod state;

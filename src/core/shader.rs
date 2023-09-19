@@ -5,7 +5,7 @@ use super::{
         division_engine_shader_program_alloc, division_engine_shader_program_free,
         DivisionShaderSourceDescriptor,
     },
-    Core, Error, DivisionId,
+    Core, DivisionId, Error,
 };
 
 pub use super::c_interface::shader::DivisionShaderType as ShaderType;
@@ -40,9 +40,7 @@ impl Core {
                 c_desc.len() as i32,
                 &mut shader_id,
             ) {
-                return Err(Error::Core(String::from(
-                    "Failed to create a shader",
-                )));
+                return Err(Error::Core(String::from("Failed to create a shader")));
             }
         }
 

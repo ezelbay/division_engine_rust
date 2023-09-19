@@ -1,5 +1,5 @@
-use std::ffi::c_char;
 use super::context::DivisionContext;
+use std::ffi::c_char;
 
 #[repr(i32)]
 #[derive(Clone, Copy)]
@@ -16,7 +16,7 @@ pub enum DivisionShaderVariableType {
     FVec2 = 4,
     FVec3 = 5,
     FVec4 = 6,
-    FMat4x4 = 7
+    FMat4x4 = 7,
 }
 
 #[repr(C)]
@@ -24,7 +24,7 @@ pub struct DivisionShaderSourceDescriptor {
     pub shader_type: DivisionShaderType,
     pub entry_point_name: *const c_char,
     pub source: *const c_char,
-    pub source_size: i32
+    pub source_size: i32,
 }
 
 extern "C" {
@@ -35,5 +35,8 @@ extern "C" {
         out_shader_program_id: *mut u32,
     ) -> bool;
 
-    pub fn division_engine_shader_program_free(ctx: *mut DivisionContext, shader_program_id: u32);
+    pub fn division_engine_shader_program_free(
+        ctx: *mut DivisionContext,
+        shader_program_id: u32,
+    );
 }

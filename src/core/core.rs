@@ -6,12 +6,14 @@ use std::{
 pub type DivisionId = u32;
 
 use super::{
-    core_builder::CoreBuilder,
     c_interface::{
-        context::{division_engine_context_alloc, division_engine_context_free, DivisionContext},
+        context::{
+            division_engine_context_alloc, division_engine_context_free, DivisionContext,
+        },
         renderer::division_engine_renderer_run_loop,
         settings::DivisionSettings,
     },
+    core_builder::CoreBuilder,
     CoreDelegate,
 };
 
@@ -78,7 +80,10 @@ impl Core {
         (*core).delegate.update(&mut *core);
     }
 
-    pub(crate) unsafe extern "C" fn error_callback(error_code: i32, message: *const c_char) {
+    pub(crate) unsafe extern "C" fn error_callback(
+        error_code: i32,
+        message: *const c_char,
+    ) {
         let msg = CStr::from_ptr(message);
         eprintln!(
             "Error code: {}, error_message: {}",

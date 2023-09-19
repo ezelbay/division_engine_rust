@@ -5,7 +5,9 @@ use std::{
     slice,
 };
 
-use super::c_interface::stb::{stbi_image_free, stbi_load, stbi_load_from_memory, stbi_set_flip_vertically_on_load};
+use super::c_interface::stb::{
+    stbi_image_free, stbi_load, stbi_load_from_memory, stbi_set_flip_vertically_on_load,
+};
 
 pub struct Image {
     ptr: *mut u8,

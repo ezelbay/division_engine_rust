@@ -8,11 +8,11 @@ use super::{
         render_pass::{
             division_engine_render_pass_alloc, division_engine_render_pass_borrow,
             division_engine_render_pass_free, division_engine_render_pass_return,
-            DivisionAlphaBlendingOptions, DivisionColorMask, DivisionRenderPassCapabilityMask,
-            DivisionRenderPassDescriptor,
+            DivisionAlphaBlendingOptions, DivisionColorMask,
+            DivisionRenderPassCapabilityMask, DivisionRenderPassDescriptor,
         },
     },
-    Core, Error, DivisionId,
+    Core, DivisionId, Error,
 };
 
 pub use super::c_interface::render_pass::DivisionAlphaBlend as AlphaBlend;
@@ -59,12 +59,18 @@ impl Core {
         }
     }
 
-    pub fn borrow_render_pass_mut_ptr(&self, render_pass_id: DivisionId) -> BorrowedRenderPass {
+    pub fn borrow_render_pass_mut_ptr(
+        &self,
+        render_pass_id: DivisionId,
+    ) -> BorrowedRenderPass {
         unsafe {
             BorrowedRenderPass {
                 ctx: self.ctx,
                 render_pass_id,
-                render_pass: &mut *division_engine_render_pass_borrow(self.ctx, render_pass_id),
+                render_pass: &mut *division_engine_render_pass_borrow(
+                    self.ctx,
+                    render_pass_id,
+                ),
             }
         }
     }
@@ -103,14 +109,16 @@ impl RenderPassBuilder {
     }
 
     pub fn enable_instancing(mut self) -> Self {
-        self.descriptor.capabilities_mask |= DivisionRenderPassCapabilityMask::InstancedRendering;
+        self.descriptor.capabilities_mask |=
+            DivisionRenderPassCapabilityMask::InstancedRendering;
 
         self
     }
 
     pub fn instances(#[allow(unused_mut)] mut self, instance_count: usize) -> Self {
         self.descriptor.instance_count = instance_count as u64;
-        self.descriptor.capabilities_mask |= DivisionRenderPassCapabilityMask::InstancedRendering;
+        self.descriptor.capabilities_mask |=
+            DivisionRenderPassCapabilityMask::InstancedRendering;
 
         self
     }
@@ -158,7 +166,10 @@ impl RenderPassBuilder {
         self
     }
 
-    pub fn fragment_uniform_buffers(mut self, fragment_uniforms: &[IdWithBinding]) -> Self {
+    pub fn fragment_uniform_buffers(
+        mut self,
+        fragment_uniforms: &[IdWithBinding],
+    ) -> Self {
         self.descriptor.uniform_fragment_buffers = fragment_uniforms.as_ptr();
         self.descriptor.uniform_fragment_buffer_count = fragment_uniforms.len() as i32;
 
@@ -175,10 +186,9 @@ impl RenderPassBuilder {
     pub fn build(#[allow(unused_mut)] mut self) -> Result<DivisionId, Error> {
         let mut pass_id = 0;
         unsafe {
-            if !division_engine_render_pass_alloc(self.ctx, self.descriptor, &mut pass_id) {
-                return Err(Error::Core(
-                    "Failed to create a render pass".to_string(),
-                ));
+            if !division_engine_render_pass_alloc(self.ctx, self.descriptor, &mut pass_id)
+            {
+                return Err(Error::Core("Failed to create a render pass".to_string()));
             }
         }
 
@@ -202,7 +212,11 @@ fn has_constant_color(blend: AlphaBlend) -> bool {
 impl<'a> Drop for BorrowedRenderPass<'a> {
     fn drop(&mut self) {
         unsafe {
-            division_engine_render_pass_return(self.ctx, self.render_pass_id, self.render_pass);
+            division_engine_render_pass_return(
+                self.ctx,
+                self.render_pass_id,
+                self.render_pass,
+            );
         }
     }
 }

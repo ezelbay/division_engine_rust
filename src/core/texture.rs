@@ -44,7 +44,11 @@ impl Core {
         Ok(id)
     }
 
-    pub fn set_texture_buffer_data(&mut self, texture_buffer_id: DivisionId, data: &[u8]) {
+    pub fn set_texture_buffer_data(
+        &mut self,
+        texture_buffer_id: DivisionId,
+        data: &[u8],
+    ) {
         unsafe {
             division_engine_texture_set_data(
                 self.ctx,
@@ -54,11 +58,14 @@ impl Core {
         }
     }
 
-    pub fn create_texture_buffer_from_image(&mut self, image: &Image) -> Result<DivisionId, Error> {
+    pub fn create_texture_buffer_from_image(
+        &mut self,
+        image: &Image,
+    ) -> Result<DivisionId, Error> {
         self.create_texture_buffer_from_data(
             image.width(),
             image.height(),
-            channels_to_texture_format(image.channels())?,            
+            channels_to_texture_format(image.channels())?,
             image.data(),
         )
     }

@@ -1,7 +1,7 @@
 mod image;
 mod shader;
 
-use std::{path::PathBuf, env};
+use std::{env, path::PathBuf};
 
 pub use image::*;
 pub use shader::*;

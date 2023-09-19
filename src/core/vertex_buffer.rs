@@ -4,12 +4,14 @@ use super::{
     c_interface::{
         context::DivisionContext,
         vertex_buffer::{
-            division_engine_vertex_buffer_alloc, division_engine_vertex_buffer_borrow_data,
-            division_engine_vertex_buffer_free, division_engine_vertex_buffer_return_data,
-            DivisionVertexBufferBorrowedData, DivisionVertexBufferDescriptor,
+            division_engine_vertex_buffer_alloc,
+            division_engine_vertex_buffer_borrow_data,
+            division_engine_vertex_buffer_free,
+            division_engine_vertex_buffer_return_data, DivisionVertexBufferBorrowedData,
+            DivisionVertexBufferDescriptor,
         },
     },
-    Core, Error, DivisionId,
+    Core, DivisionId, Error,
 };
 
 pub use super::c_interface::{
@@ -90,8 +92,14 @@ impl Core {
                 ctx: self.ctx,
                 borrowed,
                 vertex_buffer_id,
-                per_vertex_data: std::slice::from_raw_parts_mut(per_vert_ptr, vertex_count),
-                per_instance_data: std::slice::from_raw_parts_mut(per_inst_ptr, instance_count),
+                per_vertex_data: std::slice::from_raw_parts_mut(
+                    per_vert_ptr,
+                    vertex_count,
+                ),
+                per_instance_data: std::slice::from_raw_parts_mut(
+                    per_inst_ptr,
+                    instance_count,
+                ),
                 vertex_indices: std::slice::from_raw_parts_mut(index_ptr, index_count),
             };
         }

@@ -44,12 +44,15 @@ extern "C" {
         out_vertex_buffer_id: *mut u32,
     ) -> bool;
 
-    pub fn division_engine_vertex_buffer_free(ctx: *mut DivisionContext, vertex_buffer_id: u32);
+    pub fn division_engine_vertex_buffer_free(
+        ctx: *mut DivisionContext,
+        vertex_buffer_id: u32,
+    );
 
     pub fn division_engine_vertex_buffer_borrow_data(
         ctx: *mut DivisionContext,
         vertex_buffer_id: u32,
-        out_borrow_info: *mut DivisionVertexBufferBorrowedData
+        out_borrow_info: *mut DivisionVertexBufferBorrowedData,
     ) -> bool;
 
     pub fn division_engine_vertex_buffer_return_data(

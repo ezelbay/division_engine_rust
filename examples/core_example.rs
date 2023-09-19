@@ -37,7 +37,9 @@ fn main() {
 impl CoreDelegate for MyDelegate {
     fn init(&mut self, core: &mut Core) {
         let shader_id = core
-            .create_bundled_shader_program(&Path::new("resources").join("shaders").join("test"))
+            .create_bundled_shader_program(
+                &Path::new("resources").join("shaders").join("test"),
+            )
             .unwrap();
 
         let vertices_data = [
@@ -104,11 +106,10 @@ impl CoreDelegate for MyDelegate {
         let texture_id = {
             let image = Image::create_bundled_image(
                 &Path::new("resources").join("images").join("nevsky.jpg"),
-            ).unwrap();
+            )
+            .unwrap();
 
-            let texture_id = core
-                .create_texture_buffer_from_image(&image)
-                .unwrap();
+            let texture_id = core.create_texture_buffer_from_image(&image).unwrap();
 
             texture_id
         };

@@ -3,8 +3,8 @@ use std::path::Path;
 use division_math::{Matrix4x4, Vector2, Vector4};
 
 use crate::core::{
-    Core, Error, DivisionId, RenderTopology,
-    VertexAttributeDescriptor, VertexBufferData, ShaderVariableType,
+    Core, DivisionId, Error, RenderTopology, ShaderVariableType,
+    VertexAttributeDescriptor, VertexBufferData,
 };
 
 use super::rect::Rect;
@@ -28,7 +28,7 @@ pub struct RectDrawer<'a> {
 #[derive(Clone, Copy)]
 #[allow(dead_code)]
 struct VertexData {
-    pos: Vector2
+    pos: Vector2,
 }
 
 #[repr(packed)]
@@ -43,9 +43,14 @@ pub const VERTEX_PER_RECT: usize = 4;
 pub const INDEX_PER_RECT: usize = 6;
 
 impl Core {
-    pub fn create_rect_drawer<'a>(&'a mut self, view_matrix: Matrix4x4) -> RectDrawer<'a> {
+    pub fn create_rect_drawer<'a>(
+        &'a mut self,
+        view_matrix: Matrix4x4,
+    ) -> RectDrawer<'a> {
         let shader_id = self
-            .create_bundled_shader_program(Path::new("resources/shaders/canvas/solid_shape"))
+            .create_bundled_shader_program(Path::new(
+                "resources/shaders/canvas/solid_shape",
+            ))
             .unwrap();
 
         let vertex_buffer_id = Self::make_vertex_buffer(self);
@@ -71,18 +76,14 @@ impl Core {
 
     fn make_vertex_buffer(core: &mut Core) -> DivisionId {
         core.create_vertex_buffer(
-            &[
-                VertexAttributeDescriptor {
-                    location: 1,
-                    field_type: ShaderVariableType::FVec2,
-                },
-            ],
-            &[
-                VertexAttributeDescriptor {
-                    location: 2,
-                    field_type: ShaderVariableType::FMat4x4,
-                },
-            ],
+            &[VertexAttributeDescriptor {
+                location: 1,
+                field_type: ShaderVariableType::FVec2,
+            }],
+            &[VertexAttributeDescriptor {
+                location: 2,
+                field_type: ShaderVariableType::FMat4x4,
+            }],
             VERTEX_PER_RECT,
             INDEX_PER_RECT,
             RECT_CAPACITY,
@@ -125,9 +126,7 @@ impl Core {
 impl<'a> RectDrawer<'a> {
     pub fn draw_rect(&mut self, solid_rect: SolidRect) -> Result<(), Error> {
         if self.instance_count >= RECT_CAPACITY {
-            return Err(Error::Core(
-                "Rect capacity limit exceed".to_string(),
-            ));
+            return Err(Error::Core("Rect capacity limit exceed".to_string()));
         }
 
         self.write_rect_data(solid_rect, self.instance_count);
@@ -145,10 +144,10 @@ impl<'a> RectDrawer<'a> {
         let size = solid_rect.rect.size();
         let center = solid_rect.rect.center;
         let transform = Matrix4x4::from_columns(
-            Vector4::new(size.x, 0., 0., 0.), 
-            Vector4::new(0., size.y, 0., 0.), 
-            Vector4::new(0., 0., 1.0, 1.), 
-            Vector4::new(center.x, center.y, 0., 1.)
+            Vector4::new(size.x, 0., 0., 0.),
+            Vector4::new(0., size.y, 0., 0.),
+            Vector4::new(0., 0., 1.0, 1.),
+            Vector4::new(center.x, center.y, 0., 1.),
         );
 
         let local_to_world = self.view_matrix * transform;

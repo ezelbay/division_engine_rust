@@ -1,6 +1,6 @@
 use std::{ffi::CString, ptr::null_mut};
 
-use super::{c_interface::settings::DivisionSettings, Core, Error, CoreDelegate};
+use super::{c_interface::settings::DivisionSettings, Core, CoreDelegate, Error};
 
 pub struct CoreBuilder {
     _title: CString,

@@ -109,5 +109,8 @@ extern "C" {
         render_pass: *const DivisionRenderPassDescriptor,
     );
 
-    pub fn division_engine_render_pass_free(ctx: *mut DivisionContext, render_pass_id: u32);
+    pub fn division_engine_render_pass_free(
+        ctx: *mut DivisionContext,
+        render_pass_id: u32,
+    );
 }
