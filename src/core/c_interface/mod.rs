@@ -1,4 +1,5 @@
 pub mod context;
+pub mod lifecycle;
 pub mod render_pass;
 pub mod renderer;
 pub mod settings;

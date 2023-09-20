@@ -10,7 +10,7 @@ mod texture;
 mod uniform_buffer;
 mod vertex_buffer;
 
-pub use core::*;
+pub use self::core::*;
 pub use core_builder::*;
 pub use core_delegate::*;
 pub use image::*;

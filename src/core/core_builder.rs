@@ -15,9 +15,6 @@ impl CoreBuilder {
                 window_width: 512,
                 window_height: 512,
                 window_title: null_mut(),
-                error_callback: Core::error_callback,
-                init_callback: Core::init_callback,
-                update_callback: Core::update_callback,
             },
         };
         builder

@@ -8,8 +8,10 @@ pub type DivisionId = u32;
 use super::{
     c_interface::{
         context::{
-            division_engine_context_alloc, division_engine_context_free, DivisionContext,
+            division_engine_context_alloc, division_engine_context_free,
+            division_engine_context_register_lifecycle, DivisionContext,
         },
+        lifecycle::DivisionLifecycle,
         renderer::division_engine_renderer_run_loop,
         settings::DivisionSettings,
     },
@@ -55,6 +57,15 @@ impl Core {
                     "Failed to create new division engine context",
                 )));
             }
+
+            division_engine_context_register_lifecycle(
+                core.ctx,
+                &DivisionLifecycle {
+                    init_callback: Core::init_callback,
+                    update_callback: Core::update_callback,
+                    error_callback: Core::error_callback,
+                },
+            )
         }
 
         unsafe {
@@ -66,7 +77,7 @@ impl Core {
 
     pub fn run(&self) {
         unsafe {
-            division_engine_renderer_run_loop(self.ctx, &self.settings);
+            division_engine_renderer_run_loop(self.ctx);
         }
     }
 
@@ -81,6 +92,7 @@ impl Core {
     }
 
     pub(crate) unsafe extern "C" fn error_callback(
+        _ctx: *mut DivisionContext,
         error_code: i32,
         message: *const c_char,
     ) {
