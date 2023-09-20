@@ -15,7 +15,7 @@ pub struct DivisionContext {
     pub texture_context: *const c_void,
     pub render_pass_context: *const c_void,
 
-    pub user_data: *const c_void,
+    pub user_data: *mut c_void,
 }
 
 extern "C" {

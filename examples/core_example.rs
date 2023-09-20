@@ -5,7 +5,9 @@ use division_engine_rust::core::{
 use division_math::{Matrix4x4, Vector2, Vector3, Vector4};
 use std::path::Path;
 
-pub struct MyDelegate {}
+pub struct MyDelegate {
+    core: Core
+}
 
 #[repr(packed)]
 #[derive(Clone, Copy)]
@@ -24,18 +26,20 @@ pub struct Inst {
 }
 
 fn main() {
-    let delegate = Box::new(MyDelegate {});
     let core = Core::builder()
         .window_size(1024, 1024)
         .window_title("Oh, my world")
-        .build(delegate)
+        .build()
         .unwrap();
 
-    core.run();
+    let mut delegate = MyDelegate { core };
+
+    delegate.run();
 }
 
 impl CoreDelegate for MyDelegate {
-    fn init(&mut self, core: &mut Core) {
+    fn init(&mut self) {
+        let core = self.core_mut();
         let shader_id = core
             .create_bundled_shader_program(
                 &Path::new("resources").join("shaders").join("test"),
@@ -133,5 +137,17 @@ impl CoreDelegate for MyDelegate {
             .unwrap();
     }
 
-    fn update(&mut self, _core: &mut Core) {}
+    fn update(&mut self) {}
+
+    fn error(&mut self, _error_code: i32, message: &str) {
+        panic!("{message}")
+    }
+
+    fn core(&self) -> &Core {
+        &self.core
+    }
+
+    fn core_mut(&mut self) -> &mut Core {
+        &mut self.core
+    }
 }

@@ -4,21 +4,24 @@ use division_engine_rust::{
 };
 use division_math::{Matrix4x4, Vector2, Vector4};
 
-struct MyDelegate {}
+struct MyDelegate {
+    core: Core,
+}
 
 fn main() {
-    let delegate = Box::new(MyDelegate {});
     let core = Core::builder()
         .window_size(1024, 1024)
         .window_title("Hello rect drawer")
-        .build(delegate)
+        .build()
         .unwrap();
 
-    core.run();
+    let mut delegate = MyDelegate { core };
+    delegate.run();
 }
 
 impl CoreDelegate for MyDelegate {
-    fn init(&mut self, core: &mut Core) {
+    fn init(&mut self) {
+        let core = &mut self.core;
         let view_matrix = Matrix4x4::ortho(0., 1024., 0., 1024.);
         let mut rect_drawer = Box::new(core.create_rect_drawer(view_matrix));
 
@@ -43,5 +46,17 @@ impl CoreDelegate for MyDelegate {
             .unwrap()
     }
 
-    fn update(&mut self, _core: &mut Core) {}
+    fn update(&mut self) {}
+
+    fn error(&mut self, _error_code: i32, message: &str) {
+        panic!("{message}");
+    }
+
+    fn core(&self) -> &Core {
+        &self.core
+    }
+
+    fn core_mut(&mut self) -> &mut Core {
+        &mut self.core
+    }
 }
