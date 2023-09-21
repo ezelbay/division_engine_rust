@@ -1,8 +1,8 @@
 use std::{env, fs, io, path::Path};
 
-use crate::core::{Core, DivisionId, Error, ShaderSourceDescriptor, ShaderType};
+use crate::core::{Context, DivisionId, Error, ShaderSourceDescriptor, ShaderType};
 
-impl Core {
+impl Context {
     /// Creates program with vertex and fragment bundled shaders with same names.
     /// [`shader_path`] should be relative to the executable folder.
     /// Not suitable for complex cases

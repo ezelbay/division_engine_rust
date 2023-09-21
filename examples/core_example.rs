@@ -1,12 +1,12 @@
 use division_engine_rust::core::{
-    Core, CoreDelegate, IdWithBinding, Image, RenderTopology, ShaderVariableType,
+    Context, LifecycleManager, IdWithBinding, Image, RenderTopology, ShaderVariableType,
     VertexAttributeDescriptor,
 };
 use division_math::{Matrix4x4, Vector2, Vector3, Vector4};
-use std::path::Path;
+use std::{path::Path, pin::Pin};
 
 pub struct MyDelegate {
-    core: Core
+    context: Pin<Box<Context>>,
 }
 
 #[repr(packed)]
@@ -26,21 +26,20 @@ pub struct Inst {
 }
 
 fn main() {
-    let core = Core::builder()
+    let context = Context::builder()
         .window_size(1024, 1024)
         .window_title("Oh, my world")
         .build()
         .unwrap();
 
-    let mut delegate = MyDelegate { core };
-
+    let mut delegate = MyDelegate { context };
     delegate.run();
 }
 
-impl CoreDelegate for MyDelegate {
+impl LifecycleManager for MyDelegate {
     fn init(&mut self) {
-        let core = self.core_mut();
-        let shader_id = core
+        let context = unsafe { self.context_mut() };
+        let shader_id = context
             .create_bundled_shader_program(
                 &Path::new("resources").join("shaders").join("test"),
             )
@@ -73,7 +72,7 @@ impl CoreDelegate for MyDelegate {
         }];
         let indices = [0, 1, 2, 2, 3, 0];
 
-        let vertex_buffer_id = core
+        let vertex_buffer_id = context
             .create_vertex_buffer(
                 &[
                     VertexAttributeDescriptor {
@@ -101,7 +100,7 @@ impl CoreDelegate for MyDelegate {
             .unwrap();
 
         {
-            let data = core.vertex_buffer_data::<Vert, Inst>(vertex_buffer_id);
+            let data = context.vertex_buffer_data::<Vert, Inst>(vertex_buffer_id);
             data.per_vertex_data.copy_from_slice(&vertices_data);
             data.per_instance_data.copy_from_slice(&instances_data);
             data.vertex_indices.copy_from_slice(&indices);
@@ -113,21 +112,22 @@ impl CoreDelegate for MyDelegate {
             )
             .unwrap();
 
-            let texture_id = core.create_texture_buffer_from_image(&image).unwrap();
+            let texture_id = context.create_texture_buffer_from_image(&image).unwrap();
 
             texture_id
         };
 
-        let buff_id = core
+        let buff_id = context
             .create_uniform_buffer_with_size_of::<Vector4>()
             .unwrap();
 
         {
-            let buff_data = core.uniform_buffer_data(buff_id);
+            let buff_data = context.uniform_buffer_data(buff_id);
             *buff_data.data = Vector4::one() * 0.5;
         }
 
-        core.render_pass_builder()
+        context
+            .render_pass_builder()
             .vertex_buffer(vertex_buffer_id, vertices_data.len(), indices.len())
             .instances(instances_data.len())
             .fragment_textures(&[IdWithBinding::new(texture_id, 0)])
@@ -143,11 +143,7 @@ impl CoreDelegate for MyDelegate {
         panic!("{message}")
     }
 
-    fn core(&self) -> &Core {
-        &self.core
-    }
-
-    fn core_mut(&mut self) -> &mut Core {
-        &mut self.core
+    fn pinned_context_mut(&mut self) -> &mut std::pin::Pin<Box<Context>> {
+        &mut self.context
     }
 }

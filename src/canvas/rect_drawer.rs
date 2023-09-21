@@ -3,7 +3,7 @@ use std::path::Path;
 use division_math::{Matrix4x4, Vector2, Vector4};
 
 use crate::core::{
-    Core, DivisionId, Error, RenderTopology, ShaderVariableType,
+    Context, DivisionId, Error, RenderTopology, ShaderVariableType,
     VertexAttributeDescriptor, VertexBufferData,
 };
 
@@ -15,7 +15,7 @@ pub struct SolidRect {
 }
 
 pub struct RectDrawer<'a> {
-    core: &'a mut Core,
+    core: &'a mut Context,
     shader_id: DivisionId,
     vertex_buffer_id: DivisionId,
     render_pass_id: DivisionId,
@@ -42,7 +42,7 @@ pub const RECT_CAPACITY: usize = 128;
 pub const VERTEX_PER_RECT: usize = 4;
 pub const INDEX_PER_RECT: usize = 6;
 
-impl Core {
+impl Context {
     pub fn create_rect_drawer<'a>(
         &'a mut self,
         view_matrix: Matrix4x4,
@@ -74,7 +74,7 @@ impl Core {
         }
     }
 
-    fn make_vertex_buffer(core: &mut Core) -> DivisionId {
+    fn make_vertex_buffer(core: &mut Context) -> DivisionId {
         core.create_vertex_buffer(
             &[VertexAttributeDescriptor {
                 location: 1,
@@ -156,4 +156,4 @@ impl<'a> RectDrawer<'a> {
     }
 }
 
-// TODO: Add drop functionality and proper ownment
+// TODO: Add drop functionality and proper ownership

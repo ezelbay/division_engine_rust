@@ -1,29 +1,29 @@
 use division_engine_rust::{
     canvas::{rect::Rect, rect_drawer::SolidRect},
-    core::{Core, CoreDelegate},
+    core::{Context, LifecycleManager, PinnedContext},
 };
 use division_math::{Matrix4x4, Vector2, Vector4};
 
 struct MyDelegate {
-    core: Core,
+    context: PinnedContext,
 }
 
 fn main() {
-    let core = Core::builder()
+    let context = Context::builder()
         .window_size(1024, 1024)
         .window_title("Hello rect drawer")
         .build()
         .unwrap();
 
-    let mut delegate = MyDelegate { core };
+    let mut delegate = MyDelegate { context };
     delegate.run();
 }
 
-impl CoreDelegate for MyDelegate {
+impl LifecycleManager for MyDelegate {
     fn init(&mut self) {
-        let core = &mut self.core;
+        let context = unsafe { self.context_mut() };
         let view_matrix = Matrix4x4::ortho(0., 1024., 0., 1024.);
-        let mut rect_drawer = Box::new(core.create_rect_drawer(view_matrix));
+        let mut rect_drawer = Box::new(context.create_rect_drawer(view_matrix));
 
         rect_drawer
             .draw_rect(SolidRect {
@@ -52,11 +52,7 @@ impl CoreDelegate for MyDelegate {
         panic!("{message}");
     }
 
-    fn core(&self) -> &Core {
-        &self.core
-    }
-
-    fn core_mut(&mut self) -> &mut Core {
-        &mut self.core
+    fn pinned_context_mut(&mut self) -> &mut PinnedContext {
+        &mut self.context
     }
 }

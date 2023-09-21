@@ -1,13 +1,13 @@
 use std::{ffi::CString, ptr::null_mut};
 
-use super::{c_interface::settings::DivisionSettings, Core, Error};
+use super::{c_interface::settings::DivisionSettings, Context, Error, PinnedContext};
 
-pub struct CoreBuilder {
+pub struct ContextBuilder {
     _title: CString,
     _settings: DivisionSettings,
 }
 
-impl CoreBuilder {
+impl ContextBuilder {
     pub fn new() -> Self {
         let builder = Self {
             _title: CString::new("New window").unwrap(),
@@ -32,7 +32,7 @@ impl CoreBuilder {
         self
     }
 
-    pub fn build(self) -> Result<Core, Error> {
-        Core::new(self._title, self._settings)
+    pub fn build(self) -> Result<PinnedContext, Error> {
+        Context::new(self._title, self._settings)
     }
 }

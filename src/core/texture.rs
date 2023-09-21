@@ -5,12 +5,12 @@ use super::{
         division_engine_texture_alloc, division_engine_texture_free,
         division_engine_texture_set_data, DivisionTextureDescriptor,
     },
-    Core, DivisionId, Error, Image,
+    Context, DivisionId, Error, Image,
 };
 
 pub use super::c_interface::texture::DivisionTextureFormat as TextureFormat;
 
-impl Core {
+impl Context {
     pub fn create_texture_buffer(
         &mut self,
         width: u32,
@@ -24,7 +24,11 @@ impl Core {
         };
         let mut texture_id = 0;
         unsafe {
-            if !division_engine_texture_alloc(self.ctx, &texture_desc, &mut texture_id) {
+            if !division_engine_texture_alloc(
+                &mut self.c_context,
+                &texture_desc,
+                &mut texture_id,
+            ) {
                 return Err(Error::Core("Failed to create texture".to_string()));
             }
         }
@@ -51,7 +55,7 @@ impl Core {
     ) {
         unsafe {
             division_engine_texture_set_data(
-                self.ctx,
+                &mut self.c_context,
                 texture_buffer_id,
                 data.as_ptr() as *const c_void,
             )
@@ -72,7 +76,7 @@ impl Core {
 
     pub fn delete_texture_buffer(&mut self, texture_buffer_id: DivisionId) {
         unsafe {
-            division_engine_texture_free(self.ctx, texture_buffer_id);
+            division_engine_texture_free(&mut self.c_context, texture_buffer_id);
         }
     }
 }

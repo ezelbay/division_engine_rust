@@ -19,9 +19,9 @@ pub struct DivisionContext {
 }
 
 extern "C" {
-    pub fn division_engine_context_alloc(
+    pub fn division_engine_context_initialize(
         settings: *const DivisionSettings,
-        out_context: *mut *mut DivisionContext,
+        context: *mut DivisionContext,
     ) -> bool;
 
     pub fn division_engine_context_register_lifecycle(
@@ -29,5 +29,5 @@ extern "C" {
         lifecycle: *const DivisionLifecycle,
     );
 
-    pub fn division_engine_context_free(ctx: *mut DivisionContext);
+    pub fn division_engine_context_finalize(ctx: *mut DivisionContext);
 }

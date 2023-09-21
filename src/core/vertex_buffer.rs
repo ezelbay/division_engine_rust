@@ -11,7 +11,7 @@ use super::{
             DivisionVertexBufferDescriptor,
         },
     },
-    Core, DivisionId, Error,
+    Context, DivisionId, Error,
 };
 
 pub use super::c_interface::{
@@ -32,7 +32,7 @@ pub struct VertexBufferData<'a, TVertexData, TInstanceData> {
     vertex_buffer_id: u32,
 }
 
-impl Core {
+impl Context {
     pub fn create_vertex_buffer(
         &mut self,
         per_vertex_attributes: &[VertexAttributeDescriptor],
@@ -46,7 +46,7 @@ impl Core {
 
         unsafe {
             if !division_engine_vertex_buffer_alloc(
-                self.ctx,
+                &mut self.c_context,
                 &DivisionVertexBufferDescriptor {
                     per_vertex_attributes: per_vertex_attributes.as_ptr(),
                     per_vertex_attribute_count: per_vertex_attributes.len() as i32,
@@ -75,7 +75,7 @@ impl Core {
         unsafe {
             let mut borrowed = MaybeUninit::uninit();
             division_engine_vertex_buffer_borrow_data(
-                self.ctx,
+                &mut self.c_context,
                 vertex_buffer_id,
                 borrowed.as_mut_ptr(),
             );
@@ -89,7 +89,7 @@ impl Core {
             let instance_count = borrowed.instance_count as usize;
 
             return VertexBufferData {
-                ctx: self.ctx,
+                ctx: &mut self.c_context,
                 borrowed,
                 vertex_buffer_id,
                 per_vertex_data: std::slice::from_raw_parts_mut(
@@ -107,7 +107,7 @@ impl Core {
 
     pub fn delete_vertex_buffer(&mut self, vertex_buffer_id: DivisionId) {
         unsafe {
-            division_engine_vertex_buffer_free(self.ctx, vertex_buffer_id);
+            division_engine_vertex_buffer_free(&mut self.c_context, vertex_buffer_id);
         }
     }
 }

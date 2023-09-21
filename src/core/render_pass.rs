@@ -12,7 +12,7 @@ use super::{
             DivisionRenderPassCapabilityMask, DivisionRenderPassDescriptor,
         },
     },
-    Core, DivisionId, Error,
+    Context, DivisionId, Error,
 };
 
 pub use super::c_interface::render_pass::DivisionAlphaBlend as AlphaBlend;
@@ -30,10 +30,10 @@ pub struct BorrowedRenderPass<'a> {
     pub render_pass: &'a mut DivisionRenderPassDescriptor,
 }
 
-impl Core {
-    pub fn render_pass_builder(&self) -> RenderPassBuilder {
+impl Context {
+    pub fn render_pass_builder(&mut self) -> RenderPassBuilder {
         RenderPassBuilder {
-            ctx: self.ctx,
+            ctx: &mut self.c_context,
             descriptor: DivisionRenderPassDescriptor {
                 alpha_blending_options: DivisionAlphaBlendingOptions {
                     src: AlphaBlend::One,
@@ -60,15 +60,15 @@ impl Core {
     }
 
     pub fn borrow_render_pass_mut_ptr(
-        &self,
+        &mut self,
         render_pass_id: DivisionId,
     ) -> BorrowedRenderPass {
         unsafe {
             BorrowedRenderPass {
-                ctx: self.ctx,
+                ctx: &mut self.c_context,
                 render_pass_id,
                 render_pass: &mut *division_engine_render_pass_borrow(
-                    self.ctx,
+                    &mut self.c_context,
                     render_pass_id,
                 ),
             }
@@ -78,7 +78,7 @@ impl Core {
     #[inline(always)]
     pub fn delete_render_pass(&mut self, render_pass_id: DivisionId) {
         unsafe {
-            division_engine_render_pass_free(self.ctx, render_pass_id);
+            division_engine_render_pass_free(&mut self.c_context, render_pass_id);
         }
     }
 }

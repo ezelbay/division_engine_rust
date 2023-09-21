@@ -11,7 +11,7 @@ use super::{
             DivisionUniformBufferDescriptor,
         },
     },
-    Core, DivisionId, Error,
+    Context, DivisionId, Error,
 };
 
 pub struct UniformBufferData<'a, T> {
@@ -21,7 +21,7 @@ pub struct UniformBufferData<'a, T> {
     id: DivisionId,
 }
 
-impl Core {
+impl Context {
     pub fn create_uniform_buffer(
         &mut self,
         size_bytes: usize,
@@ -31,7 +31,11 @@ impl Core {
             let desc = DivisionUniformBufferDescriptor {
                 data_bytes: size_bytes as c_ulong,
             };
-            if !division_engine_uniform_buffer_alloc(self.ctx, desc, &mut buffer_id) {
+            if !division_engine_uniform_buffer_alloc(
+                &mut self.c_context,
+                desc,
+                &mut buffer_id,
+            ) {
                 return Err(Error::Core(
                     "Failed to create an uniform buffer".to_string(),
                 ));
@@ -51,14 +55,14 @@ impl Core {
     ) -> UniformBufferData<T> {
         unsafe {
             let ptr = division_engine_uniform_buffer_borrow_data_pointer(
-                self.ctx,
+                &mut self.c_context,
                 uniform_buffer_id,
             );
             let ptr = ptr as *mut T;
 
             UniformBufferData {
                 data: ptr.as_mut().unwrap(),
-                ctx: self.ctx,
+                ctx: &mut self.c_context,
                 id: uniform_buffer_id,
             }
         }
@@ -66,7 +70,7 @@ impl Core {
 
     pub fn delete_uniform_buffer(&mut self, uniform_buffer_id: DivisionId) {
         unsafe {
-            division_engine_uniform_buffer_free(self.ctx, uniform_buffer_id);
+            division_engine_uniform_buffer_free(&mut self.c_context, uniform_buffer_id);
         }
     }
 }

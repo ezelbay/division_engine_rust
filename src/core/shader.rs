@@ -5,7 +5,7 @@ use super::{
         division_engine_shader_program_alloc, division_engine_shader_program_free,
         DivisionShaderSourceDescriptor,
     },
-    Core, DivisionId, Error,
+    Context, DivisionId, Error,
 };
 
 pub use super::c_interface::shader::DivisionShaderType as ShaderType;
@@ -17,7 +17,7 @@ pub struct ShaderSourceDescriptor {
     source: CString,
 }
 
-impl Core {
+impl Context {
     pub fn create_shader_program(
         &mut self,
         descriptors: &[ShaderSourceDescriptor],
@@ -35,7 +35,7 @@ impl Core {
         let mut shader_id = 0;
         unsafe {
             if !division_engine_shader_program_alloc(
-                self.ctx,
+                &mut self.c_context,
                 c_desc.as_ptr(),
                 c_desc.len() as i32,
                 &mut shader_id,
@@ -49,7 +49,7 @@ impl Core {
 
     pub fn delete_shader_program(&mut self, id: DivisionId) {
         unsafe {
-            division_engine_shader_program_free(self.ctx, id);
+            division_engine_shader_program_free(&mut self.c_context, id);
         }
     }
 }
