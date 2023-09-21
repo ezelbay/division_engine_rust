@@ -6,7 +6,7 @@ use super::{
         lifecycle::DivisionLifecycle,
         renderer::division_engine_renderer_run_loop,
     },
-    Context, PinnedContext,
+    PinnedContext, PinnedContextGetter,
 };
 
 pub trait LifecycleManager: Sized {
@@ -16,26 +16,13 @@ pub trait LifecycleManager: Sized {
 
     fn pinned_context_mut(&mut self) -> &mut PinnedContext;
 
-    unsafe fn context_mut(&mut self) -> &mut Context {
-        self.pinned_context_mut().as_mut().get_unchecked_mut()
-    }
-
-    unsafe fn c_context_ptr_mut(&mut self) -> *mut DivisionContext {
-        &mut self
-            .pinned_context_mut()
-            .as_mut()
-            .get_unchecked_mut()
-            .c_context
-    }
-
     fn run(&mut self) {
         unsafe {
-            let c_context = &mut *self.c_context_ptr_mut();
-
-            c_context.user_data = &*self as *const Self as *mut c_void;
+            let c_context = self.pinned_context_mut().c_context_ptr_mut();
+            (*c_context).user_data = self as *const Self as *mut c_void;
 
             division_engine_context_register_lifecycle(
-                c_context,
+                self.pinned_context_mut().c_context_ptr_mut(),
                 &DivisionLifecycle {
                     init_callback: init_callback::<Self>,
                     update_callback: update_callback::<Self>,
@@ -43,7 +30,9 @@ pub trait LifecycleManager: Sized {
                 },
             );
 
-            division_engine_renderer_run_loop(c_context);
+            division_engine_renderer_run_loop(
+                self.pinned_context_mut().c_context_ptr_mut(),
+            );
         }
     }
 }

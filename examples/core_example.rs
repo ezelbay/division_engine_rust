@@ -1,12 +1,12 @@
 use division_engine_rust::core::{
     Context, LifecycleManager, IdWithBinding, Image, RenderTopology, ShaderVariableType,
-    VertexAttributeDescriptor,
+    VertexAttributeDescriptor, PinnedContextGetter,
 };
 use division_math::{Matrix4x4, Vector2, Vector3, Vector4};
 use std::{path::Path, pin::Pin};
 
 pub struct MyDelegate {
-    context: Pin<Box<Context>>,
+    pinned_ctx: Pin<Box<Context>>,
 }
 
 #[repr(packed)]
@@ -32,13 +32,13 @@ fn main() {
         .build()
         .unwrap();
 
-    let mut delegate = MyDelegate { context };
+    let mut delegate = MyDelegate { pinned_ctx: context };
     delegate.run();
 }
 
 impl LifecycleManager for MyDelegate {
     fn init(&mut self) {
-        let context = unsafe { self.context_mut() };
+        let context = unsafe { self.pinned_ctx.context_mut() };
         let shader_id = context
             .create_bundled_shader_program(
                 &Path::new("resources").join("shaders").join("test"),
@@ -144,6 +144,6 @@ impl LifecycleManager for MyDelegate {
     }
 
     fn pinned_context_mut(&mut self) -> &mut std::pin::Pin<Box<Context>> {
-        &mut self.context
+        &mut self.pinned_ctx
     }
 }

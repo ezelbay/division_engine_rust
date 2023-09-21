@@ -36,21 +36,24 @@ impl Context {
         settings: DivisionSettings,
     ) -> Result<PinnedContext, Error> {
         let mut settings = settings;
-        let ctx = unsafe {
-            std::alloc::alloc(std::alloc::Layout::new::<Context>()) as *mut Context
-        };
-
-        settings.window_title = window_title.as_ptr();
 
         unsafe {
-            if !division_engine_context_initialize(&settings, &mut (*ctx).c_context) {
+            let ctx =
+                std::alloc::alloc(std::alloc::Layout::new::<Context>()) as *mut Context;
+            let mut ctx = Box::into_pin(Box::from_raw(ctx));
+
+            settings.window_title = window_title.as_ptr();
+            if !division_engine_context_initialize(
+                &settings,
+                ctx.c_context_ptr_mut(),
+            ) {
                 return Err(Error::Core(String::from(
                     "Failed to create new division engine context",
                 )));
             }
-        }
 
-        Ok(unsafe { Box::into_pin(Box::from_raw(ctx)) })
+            Ok(ctx)
+        }
     }
 }
 
@@ -59,5 +62,25 @@ impl Drop for Context {
         unsafe {
             division_engine_context_finalize(&mut self.c_context);
         }
+    }
+}
+
+pub trait PinnedContextGetter {
+    unsafe fn context_mut(&mut self) -> &mut Context;
+    unsafe fn c_context_ptr_mut(&mut self) -> *mut DivisionContext;
+    unsafe fn c_context_ref_mut(&mut self) -> &mut DivisionContext;
+}
+
+impl PinnedContextGetter for PinnedContext {
+    unsafe fn context_mut(&mut self) -> &mut Context {
+        self.as_mut().get_unchecked_mut()
+    }
+
+    unsafe fn c_context_ptr_mut(&mut self) -> *mut DivisionContext {
+        &mut self.context_mut().c_context as *mut DivisionContext
+    }
+
+    unsafe fn c_context_ref_mut(&mut self) -> &mut DivisionContext {
+        &mut self.context_mut().c_context
     }
 }

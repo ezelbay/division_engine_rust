@@ -25,9 +25,10 @@ pub struct RenderPassBuilder {
 }
 
 pub struct BorrowedRenderPass<'a> {
+    pub render_pass: &'a mut DivisionRenderPassDescriptor,
+
     ctx: *mut DivisionContext,
     render_pass_id: u32,
-    pub render_pass: &'a mut DivisionRenderPassDescriptor,
 }
 
 impl Context {

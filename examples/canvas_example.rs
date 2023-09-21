@@ -1,6 +1,6 @@
 use division_engine_rust::{
     canvas::{rect::Rect, rect_drawer::SolidRect},
-    core::{Context, LifecycleManager, PinnedContext},
+    core::{Context, LifecycleManager, PinnedContext, PinnedContextGetter},
 };
 use division_math::{Matrix4x4, Vector2, Vector4};
 
@@ -21,7 +21,7 @@ fn main() {
 
 impl LifecycleManager for MyDelegate {
     fn init(&mut self) {
-        let context = unsafe { self.context_mut() };
+        let context = unsafe { self.context.context_mut() };
         let view_matrix = Matrix4x4::ortho(0., 1024., 0., 1024.);
         let mut rect_drawer = Box::new(context.create_rect_drawer(view_matrix));
 
@@ -52,6 +52,7 @@ impl LifecycleManager for MyDelegate {
         panic!("{message}");
     }
 
+    #[inline(always)]
     fn pinned_context_mut(&mut self) -> &mut PinnedContext {
         &mut self.context
     }
