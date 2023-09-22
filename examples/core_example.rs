@@ -1,13 +1,11 @@
 use division_engine_rust::core::{
-    Context, LifecycleManager, IdWithBinding, Image, RenderTopology, ShaderVariableType,
+    Context, IdWithBinding, Image, LifecycleManager, RenderTopology, ShaderVariableType,
     VertexAttributeDescriptor,
 };
 use division_math::{Matrix4x4, Vector2, Vector3, Vector4};
 use std::path::Path;
 
-pub struct MyDelegate {
-    context: Box<Context>,
-}
+pub struct MyDelegate {}
 
 #[repr(packed)]
 #[derive(Clone, Copy)]
@@ -26,19 +24,20 @@ pub struct Inst {
 }
 
 fn main() {
-    let context = Context::builder()
+    let mut delegate = MyDelegate { };
+
+    let mut context = Context::builder()
         .window_size(1024, 1024)
         .window_title("Oh, my world")
-        .build()
+        .build(&mut delegate)
         .unwrap();
 
-    let mut delegate = MyDelegate { context };
-    delegate.run();
+    context.run();
 }
 
 impl LifecycleManager for MyDelegate {
-    fn init(&mut self) {
-        let shader_id = self.context
+    fn init(&mut self, context: &mut Context) {
+        let shader_id = context
             .create_bundled_shader_program(
                 &Path::new("resources").join("shaders").join("test"),
             )
@@ -71,7 +70,7 @@ impl LifecycleManager for MyDelegate {
         }];
         let indices = [0, 1, 2, 2, 3, 0];
 
-        let vertex_buffer_id = self.context
+        let vertex_buffer_id = context
             .create_vertex_buffer(
                 &[
                     VertexAttributeDescriptor {
@@ -99,7 +98,8 @@ impl LifecycleManager for MyDelegate {
             .unwrap();
 
         {
-            let data = self.context.vertex_buffer_data::<Vert, Inst>(vertex_buffer_id);
+            let data = context
+                .vertex_buffer_data::<Vert, Inst>(vertex_buffer_id);
             data.per_vertex_data.copy_from_slice(&vertices_data);
             data.per_instance_data.copy_from_slice(&instances_data);
             data.vertex_indices.copy_from_slice(&indices);
@@ -111,21 +111,23 @@ impl LifecycleManager for MyDelegate {
             )
             .unwrap();
 
-            let texture_id = self.context.create_texture_buffer_from_image(&image).unwrap();
+            let texture_id = context
+                .create_texture_buffer_from_image(&image)
+                .unwrap();
 
             texture_id
         };
 
-        let buff_id = self.context
+        let buff_id = context
             .create_uniform_buffer_with_size_of::<Vector4>()
             .unwrap();
 
         {
-            let buff_data = self.context.uniform_buffer_data(buff_id);
+            let buff_data = context.uniform_buffer_data(buff_id);
             *buff_data.data = Vector4::one() * 0.5;
         }
 
-        self.context
+        context
             .render_pass_builder()
             .vertex_buffer(vertex_buffer_id, vertices_data.len(), indices.len())
             .instances(instances_data.len())
@@ -136,13 +138,11 @@ impl LifecycleManager for MyDelegate {
             .unwrap();
     }
 
-    fn update(&mut self) {}
+    fn update(&mut self, _context: &mut Context) {}
 
-    fn error(&mut self, _error_code: i32, message: &str) {
+    fn error(&mut self, _context: &mut Context, _error_code: i32, message: &str) {
         panic!("{message}")
     }
 
-    fn context_mut(&mut self) -> &mut Context {
-        &mut self.context
-    }
+    fn cleanup(&mut self, _context: &mut Context) {}
 }

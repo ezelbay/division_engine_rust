@@ -14,7 +14,7 @@ pub struct SolidRect {
     pub color: Vector4,
 }
 
-pub struct RectDrawer {
+pub struct RectDrawSystem {
     shader_id: DivisionId,
     vertex_buffer_id: DivisionId,
     render_pass_id: DivisionId,
@@ -41,8 +41,12 @@ pub const RECT_CAPACITY: usize = 128;
 pub const VERTEX_PER_RECT: usize = 4;
 pub const INDEX_PER_RECT: usize = 6;
 
-impl RectDrawer {
-    pub fn new(context: &mut Context, view_matrix: Matrix4x4) -> RectDrawer {
+impl RectDrawSystem {
+    pub fn new() -> RectDrawSystem {
+        unsafe { std::mem::zeroed::<RectDrawSystem>() }
+    }
+
+    pub fn init(&mut self, context: &mut Context, view_matrix: Matrix4x4) {
         let shader_id = context
             .create_bundled_shader_program(Path::new(
                 "resources/shaders/canvas/solid_shape",
@@ -60,13 +64,17 @@ impl RectDrawer {
             .build()
             .unwrap();
 
-        RectDrawer {
-            shader_id,
-            vertex_buffer_id,
-            render_pass_id,
-            instance_count: 0,
-            view_matrix,
-        }
+        self.shader_id = shader_id;
+        self.vertex_buffer_id = vertex_buffer_id;
+        self.render_pass_id = render_pass_id;
+        self.instance_count = 0;
+        self.view_matrix = view_matrix;
+    }
+
+    pub fn cleanup(&mut self, context: &mut Context) {
+        context.delete_render_pass(self.render_pass_id);
+        context.delete_vertex_buffer(self.vertex_buffer_id);
+        context.delete_shader_program(self.shader_id);
     }
 
     fn make_vertex_buffer(context: &mut Context) -> DivisionId {
@@ -113,14 +121,6 @@ impl RectDrawer {
         data.per_vertex_data.copy_from_slice(&vertex_data);
     }
 
-    #[inline(always)]
-    fn get_rect_drawer_data(
-        context: &mut Context,
-        vertex_buffer_id: DivisionId,
-    ) -> VertexBufferData<VertexData, InstanceData> {
-        context.vertex_buffer_data(vertex_buffer_id)
-    }
-
     pub fn draw_rect(
         &mut self,
         context: &mut Context,
@@ -161,9 +161,11 @@ impl RectDrawer {
         data.per_instance_data[instance_index] = InstanceData { local_to_world };
     }
 
-    pub fn delete(&mut self, context: &mut Context) {
-        context.delete_render_pass(self.render_pass_id);
-        context.delete_vertex_buffer(self.vertex_buffer_id);
-        context.delete_shader_program(self.shader_id);
+    #[inline(always)]
+    fn get_rect_drawer_data(
+        context: &mut Context,
+        vertex_buffer_id: DivisionId,
+    ) -> VertexBufferData<VertexData, InstanceData> {
+        context.vertex_buffer_data(vertex_buffer_id)
     }
 }

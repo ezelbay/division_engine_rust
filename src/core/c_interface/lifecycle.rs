@@ -9,5 +9,6 @@ pub type DivisionLifecycleFunc = unsafe extern "C" fn(*mut DivisionContext);
 pub struct DivisionLifecycle {
     pub init_callback: DivisionLifecycleFunc,
     pub update_callback: DivisionLifecycleFunc,
+    pub free_callback: DivisionLifecycleFunc,
     pub error_callback: DivisionErrorFunc,
 }

@@ -5,7 +5,7 @@ pub type DivisionId = u32;
 use super::{
     c_interface::{
         context::{
-            division_engine_context_finalize, division_engine_context_initialize,
+            division_engine_context_initialize,
             DivisionContext,
         },
         settings::DivisionSettings,
@@ -47,14 +47,6 @@ impl Context {
             }
 
             Ok(Box::from_raw(ctx))
-        }
-    }
-}
-
-impl Drop for Context {
-    fn drop(&mut self) {
-        unsafe {
-            division_engine_context_finalize(&mut *self);
         }
     }
 }

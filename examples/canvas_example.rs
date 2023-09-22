@@ -1,33 +1,34 @@
 use division_engine_rust::{
-    canvas::{rect::Rect, rect_drawer::{SolidRect, RectDrawer}},
+    canvas::{rect::Rect, rect_drawer::{SolidRect, RectDrawSystem}},
     core::{Context, LifecycleManager},
 };
 use division_math::{Matrix4x4, Vector2, Vector4};
 
 struct MyDelegate {
-    context: Box<Context>,
-    rect_drawer: Option<RectDrawer>
+    rect_drawer: RectDrawSystem
 }
 
 fn main() {
-    let context = Context::builder()
+    let mut delegate = MyDelegate {
+        rect_drawer: RectDrawSystem::new()
+    };
+    let mut context = Context::builder()
         .window_size(1024, 1024)
         .window_title("Hello rect drawer")
-        .build()
+        .build(&mut delegate)
         .unwrap();
 
-    let mut delegate = MyDelegate { context, rect_drawer: None };
-    delegate.run();
+    context.run();
 }
 
 impl LifecycleManager for MyDelegate {
-    fn init(&mut self) {
+    fn init(&mut self, context: &mut Context ) {
         let view_matrix = Matrix4x4::ortho(0., 1024., 0., 1024.);
-        let mut rect_drawer = RectDrawer::new(&mut self.context, view_matrix);
+        self.rect_drawer.init(context, view_matrix);
 
-        rect_drawer
+        self.rect_drawer
             .draw_rect(
-                &mut self.context,
+                context,
                 SolidRect {
                 rect: Rect::from_center_and_size(
                     Vector2::new(100., 100.),
@@ -37,9 +38,9 @@ impl LifecycleManager for MyDelegate {
             })
             .unwrap();
 
-        rect_drawer
+        self.rect_drawer
             .draw_rect(
-                &mut self.context,
+                context,
                 SolidRect {
                 rect: Rect::from_center_and_size(
                     Vector2::new(1., 1.),
@@ -48,26 +49,15 @@ impl LifecycleManager for MyDelegate {
                 color: Vector4::new(1., 0., 0., 1.),
             })
             .unwrap();
-
-        self.rect_drawer = Some(rect_drawer);
     }
 
-    fn update(&mut self) {}
+    fn update(&mut self, _context: &mut Context) {}
 
-    fn error(&mut self, _error_code: i32, message: &str) {
+    fn error(&mut self, _context: &mut Context, _error_code: i32, message: &str) {
         panic!("{message}");
     }
 
-    #[inline(always)]
-    fn context_mut(&mut self) -> &mut Context {
-        &mut self.context
-    }
-}
-
-impl Drop for MyDelegate {
-    fn drop(&mut self) {
-        if let Some(rd) = &mut self.rect_drawer {
-            rd.delete(&mut self.context);
-        }
+    fn cleanup(&mut self, context: &mut Context) {
+        self.rect_drawer.cleanup(context);
     }
 }
