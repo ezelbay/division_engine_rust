@@ -1,28 +1,24 @@
 use std::ffi::{c_char, c_void, CStr};
 
-use super::{
-    c_interface::{
+use super::{c_interface::{
         context::{division_engine_context_register_lifecycle, DivisionContext},
         lifecycle::DivisionLifecycle,
         renderer::division_engine_renderer_run_loop,
-    },
-    PinnedContext, PinnedContextGetter,
-};
+    }, Context};
 
 pub trait LifecycleManager: Sized {
     fn init(&mut self);
     fn update(&mut self);
     fn error(&mut self, error_code: i32, message: &str);
 
-    fn pinned_context_mut(&mut self) -> &mut PinnedContext;
-
+    fn context_mut(&mut self) -> &mut Context;
+    
     fn run(&mut self) {
-        unsafe {
-            let c_context = self.pinned_context_mut().c_context_ptr_mut();
-            (*c_context).user_data = self as *const Self as *mut c_void;
+        self.context_mut().user_data = self as *const Self as *const c_void;
 
+        unsafe {
             division_engine_context_register_lifecycle(
-                self.pinned_context_mut().c_context_ptr_mut(),
+                self.context_mut(),
                 &DivisionLifecycle {
                     init_callback: init_callback::<Self>,
                     update_callback: update_callback::<Self>,
@@ -31,7 +27,7 @@ pub trait LifecycleManager: Sized {
             );
 
             division_engine_renderer_run_loop(
-                self.pinned_context_mut().c_context_ptr_mut(),
+                self.context_mut(),
             );
         }
     }

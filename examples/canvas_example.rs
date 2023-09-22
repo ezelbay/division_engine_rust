@@ -1,12 +1,12 @@
 use division_engine_rust::{
     canvas::{rect::Rect, rect_drawer::{SolidRect, RectDrawer}},
-    core::{Context, LifecycleManager, PinnedContext, PinnedContextGetter},
+    core::{Context, LifecycleManager},
 };
 use division_math::{Matrix4x4, Vector2, Vector4};
 
 struct MyDelegate {
-    context: PinnedContext,
-    rect_drawer: Option<Box<RectDrawer>>
+    context: Box<Context>,
+    rect_drawer: Option<RectDrawer>
 }
 
 fn main() {
@@ -22,13 +22,12 @@ fn main() {
 
 impl LifecycleManager for MyDelegate {
     fn init(&mut self) {
-        let context = unsafe { self.context.context_mut() };
         let view_matrix = Matrix4x4::ortho(0., 1024., 0., 1024.);
-        let mut rect_drawer = Box::new(RectDrawer::new(context, view_matrix));
+        let mut rect_drawer = RectDrawer::new(&mut self.context, view_matrix);
 
         rect_drawer
             .draw_rect(
-                context,
+                &mut self.context,
                 SolidRect {
                 rect: Rect::from_center_and_size(
                     Vector2::new(100., 100.),
@@ -39,7 +38,8 @@ impl LifecycleManager for MyDelegate {
             .unwrap();
 
         rect_drawer
-            .draw_rect(context,
+            .draw_rect(
+                &mut self.context,
                 SolidRect {
                 rect: Rect::from_center_and_size(
                     Vector2::new(1., 1.),
@@ -59,7 +59,7 @@ impl LifecycleManager for MyDelegate {
     }
 
     #[inline(always)]
-    fn pinned_context_mut(&mut self) -> &mut PinnedContext {
+    fn context_mut(&mut self) -> &mut Context {
         &mut self.context
     }
 }
@@ -67,7 +67,7 @@ impl LifecycleManager for MyDelegate {
 impl Drop for MyDelegate {
     fn drop(&mut self) {
         if let Some(rd) = &mut self.rect_drawer {
-            rd.delete(unsafe { self.context.context_mut() });
+            rd.delete(&mut self.context);
         }
     }
 }

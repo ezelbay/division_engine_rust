@@ -34,7 +34,7 @@ pub struct BorrowedRenderPass<'a> {
 impl Context {
     pub fn render_pass_builder(&mut self) -> RenderPassBuilder {
         RenderPassBuilder {
-            ctx: &mut self.c_context,
+            ctx: &mut *self,
             descriptor: DivisionRenderPassDescriptor {
                 alpha_blending_options: DivisionAlphaBlendingOptions {
                     src: AlphaBlend::One,
@@ -66,10 +66,10 @@ impl Context {
     ) -> BorrowedRenderPass {
         unsafe {
             BorrowedRenderPass {
-                ctx: &mut self.c_context,
+                ctx: &mut *self,
                 render_pass_id,
                 render_pass: &mut *division_engine_render_pass_borrow(
-                    &mut self.c_context,
+                    &mut *self,
                     render_pass_id,
                 ),
             }
@@ -79,7 +79,7 @@ impl Context {
     #[inline(always)]
     pub fn delete_render_pass(&mut self, render_pass_id: DivisionId) {
         unsafe {
-            division_engine_render_pass_free(&mut self.c_context, render_pass_id);
+            division_engine_render_pass_free(&mut *self, render_pass_id);
         }
     }
 }

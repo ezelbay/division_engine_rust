@@ -46,7 +46,7 @@ impl Context {
 
         unsafe {
             if !division_engine_vertex_buffer_alloc(
-                &mut self.c_context,
+                &mut *self,
                 &DivisionVertexBufferDescriptor {
                     per_vertex_attributes: per_vertex_attributes.as_ptr(),
                     per_vertex_attribute_count: per_vertex_attributes.len() as i32,
@@ -75,7 +75,7 @@ impl Context {
         unsafe {
             let mut borrowed = MaybeUninit::uninit();
             division_engine_vertex_buffer_borrow_data(
-                &mut self.c_context,
+                &mut *self,
                 vertex_buffer_id,
                 borrowed.as_mut_ptr(),
             );
@@ -89,7 +89,7 @@ impl Context {
             let instance_count = borrowed.instance_count as usize;
 
             return VertexBufferData {
-                ctx: &mut self.c_context,
+                ctx: &mut *self,
                 borrowed,
                 vertex_buffer_id,
                 per_vertex_data: std::slice::from_raw_parts_mut(
@@ -107,7 +107,7 @@ impl Context {
 
     pub fn delete_vertex_buffer(&mut self, vertex_buffer_id: DivisionId) {
         unsafe {
-            division_engine_vertex_buffer_free(&mut self.c_context, vertex_buffer_id);
+            division_engine_vertex_buffer_free(&mut *self, vertex_buffer_id);
         }
     }
 }

@@ -32,7 +32,7 @@ impl Context {
                 data_bytes: size_bytes as c_ulong,
             };
             if !division_engine_uniform_buffer_alloc(
-                &mut self.c_context,
+                &mut *self,
                 desc,
                 &mut buffer_id,
             ) {
@@ -55,14 +55,14 @@ impl Context {
     ) -> UniformBufferData<T> {
         unsafe {
             let ptr = division_engine_uniform_buffer_borrow_data_pointer(
-                &mut self.c_context,
+                &mut *self,
                 uniform_buffer_id,
             );
             let ptr = ptr as *mut T;
 
             UniformBufferData {
                 data: ptr.as_mut().unwrap(),
-                ctx: &mut self.c_context,
+                ctx: &mut *self,
                 id: uniform_buffer_id,
             }
         }
@@ -70,7 +70,7 @@ impl Context {
 
     pub fn delete_uniform_buffer(&mut self, uniform_buffer_id: DivisionId) {
         unsafe {
-            division_engine_uniform_buffer_free(&mut self.c_context, uniform_buffer_id);
+            division_engine_uniform_buffer_free(&mut *self, uniform_buffer_id);
         }
     }
 }

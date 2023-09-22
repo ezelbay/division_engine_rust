@@ -1,6 +1,6 @@
 use std::{ffi::CString, ptr::null_mut};
 
-use super::{c_interface::settings::DivisionSettings, Context, Error, PinnedContext};
+use super::{c_interface::settings::DivisionSettings, Context, Error};
 
 pub struct ContextBuilder {
     _title: CString,
@@ -32,7 +32,7 @@ impl ContextBuilder {
         self
     }
 
-    pub fn build(self) -> Result<PinnedContext, Error> {
+    pub fn build(self) -> Result<Box<Context>, Error> {
         Context::new(self._title, self._settings)
     }
 }

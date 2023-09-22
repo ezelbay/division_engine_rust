@@ -35,7 +35,7 @@ impl Context {
         let mut shader_id = 0;
         unsafe {
             if !division_engine_shader_program_alloc(
-                &mut self.c_context,
+                &mut *self,
                 c_desc.as_ptr(),
                 c_desc.len() as i32,
                 &mut shader_id,
@@ -49,7 +49,7 @@ impl Context {
 
     pub fn delete_shader_program(&mut self, id: DivisionId) {
         unsafe {
-            division_engine_shader_program_free(&mut self.c_context, id);
+            division_engine_shader_program_free(&mut *self, id);
         }
     }
 }

@@ -25,7 +25,7 @@ impl Context {
         let mut texture_id = 0;
         unsafe {
             if !division_engine_texture_alloc(
-                &mut self.c_context,
+                &mut *self,
                 &texture_desc,
                 &mut texture_id,
             ) {
@@ -55,7 +55,7 @@ impl Context {
     ) {
         unsafe {
             division_engine_texture_set_data(
-                &mut self.c_context,
+                &mut *self,
                 texture_buffer_id,
                 data.as_ptr() as *const c_void,
             )
@@ -76,7 +76,7 @@ impl Context {
 
     pub fn delete_texture_buffer(&mut self, texture_buffer_id: DivisionId) {
         unsafe {
-            division_engine_texture_free(&mut self.c_context, texture_buffer_id);
+            division_engine_texture_free(&mut *self, texture_buffer_id);
         }
     }
 }
