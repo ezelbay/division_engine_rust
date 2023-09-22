@@ -1,16 +1,16 @@
 use division_engine_rust::{
-    canvas::{rect::Rect, rect_drawer::{SolidRect, RectDrawSystem}},
+    canvas::{decoration::Decoration, rect::Rect, rect_draw_system::RectDrawSystem, color::Color32},
     core::{Context, LifecycleManager},
 };
-use division_math::{Matrix4x4, Vector2, Vector4};
+use division_math::{Matrix4x4, Vector2};
 
 struct MyDelegate {
-    rect_drawer: RectDrawSystem
+    rect_draw_system: RectDrawSystem,
 }
 
 fn main() {
     let mut delegate = MyDelegate {
-        rect_drawer: RectDrawSystem::new()
+        rect_draw_system: RectDrawSystem::new(),
     };
     let mut context = Context::builder()
         .window_size(1024, 1024)
@@ -22,42 +22,41 @@ fn main() {
 }
 
 impl LifecycleManager for MyDelegate {
-    fn init(&mut self, context: &mut Context ) {
-        let view_matrix = Matrix4x4::ortho(0., 1024., 0., 1024.);
-        self.rect_drawer.init(context, view_matrix);
+    fn init(&mut self, context: &mut Context) {
+        self.rect_draw_system.init(context);
 
-        self.rect_drawer
-            .draw_rect(
-                context,
-                SolidRect {
-                rect: Rect::from_center_and_size(
-                    Vector2::new(100., 100.),
-                    Vector2::new(1024., 1024.),
-                ),
-                color: Vector4::one(),
-            })
-            .unwrap();
+        let red_brush = Decoration { color: Color32::red() };
+        let purple_brush = Decoration { color: Color32::purple() };
 
-        self.rect_drawer
-            .draw_rect(
-                context,
-                SolidRect {
-                rect: Rect::from_center_and_size(
-                    Vector2::new(1., 1.),
-                    Vector2::new(50., 50.),
-                ),
-                color: Vector4::new(1., 0., 0., 1.),
-            })
-            .unwrap();
+        let red_rects = [
+            Rect::from_center_and_size(Vector2::new(100., 100.), Vector2::new(100., 100.)),
+            Rect::from_center_and_size(Vector2::new(0., 0.), Vector2::new(50., 50.)),
+        ];
+
+        let purple_rects = [
+            Rect::from_center_and_size(Vector2::new(512., 512.), Vector2::new(200., 200.))
+        ];
+
+        for r in red_rects {
+            self.rect_draw_system.draw_rect(context, r, red_brush);
+        }
+
+        for r in purple_rects {
+            self.rect_draw_system.draw_rect(context, r, purple_brush);
+        }
     }
 
-    fn update(&mut self, _context: &mut Context) {}
+    fn update(&mut self, context: &mut Context) {
+        let size = context.get_window_size();
+        self.rect_draw_system
+            .set_view_matrix(context, Matrix4x4::ortho(0., size.x, 0., size.y));
+    }
 
     fn error(&mut self, _context: &mut Context, _error_code: i32, message: &str) {
         panic!("{message}");
     }
 
     fn cleanup(&mut self, context: &mut Context) {
-        self.rect_drawer.cleanup(context);
+        self.rect_draw_system.cleanup(context);
     }
 }

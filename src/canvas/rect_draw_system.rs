@@ -3,38 +3,40 @@ use std::path::Path;
 use division_math::{Matrix4x4, Vector2, Vector4};
 
 use crate::core::{
-    Context, DivisionId, Error, RenderTopology, ShaderVariableType,
-    VertexAttributeDescriptor, VertexBufferData,
+    Context, DivisionId, IdWithBinding, RenderTopology, ShaderVariableType,
+    TextureFormat, VertexAttributeDescriptor, VertexBufferData,
 };
 
-use super::rect::Rect;
-
-pub struct SolidRect {
-    pub rect: Rect,
-    pub color: Vector4,
-}
+use super::{rect::Rect, decoration::Decoration, color::Color32};
 
 pub struct RectDrawSystem {
     shader_id: DivisionId,
+    uniform_buffer_id: DivisionId,
     vertex_buffer_id: DivisionId,
     render_pass_id: DivisionId,
+    texture_buffer_id: DivisionId,
 
-    view_matrix: Matrix4x4,
     instance_count: usize,
 }
 
-#[repr(packed)]
+#[repr(C, packed)]
 #[derive(Clone, Copy)]
-#[allow(dead_code)]
 struct VertexData {
-    pos: Vector2,
+    uv: Vector2,
 }
 
-#[repr(packed)]
+#[repr(C, packed)]
+#[derive(Clone, Copy)]
+struct InstanceData {
+    color: Color32,
+    transform: Matrix4x4,
+}
+
+#[repr(transparent)]
 #[derive(Clone, Copy)]
 #[allow(dead_code)]
-struct InstanceData {
-    local_to_world: Matrix4x4,
+struct UniformData {
+    view: Matrix4x4,
 }
 
 pub const RECT_CAPACITY: usize = 128;
@@ -46,33 +48,44 @@ impl RectDrawSystem {
         unsafe { std::mem::zeroed::<RectDrawSystem>() }
     }
 
-    pub fn init(&mut self, context: &mut Context, view_matrix: Matrix4x4) {
-        let shader_id = context
-            .create_bundled_shader_program(Path::new(
-                "resources/shaders/canvas/solid_shape",
-            ))
+    pub fn set_view_matrix(&mut self, context: &mut Context, view: Matrix4x4) {
+        let data = context.uniform_buffer_data::<UniformData>(self.uniform_buffer_id);
+        *(data.data) = UniformData { view };
+    }
+
+    pub fn init(&mut self, context: &mut Context) {
+        self.instance_count = 0;
+
+        self.shader_id = context
+            .create_bundled_shader_program(Path::new("resources/shaders/canvas/rect"))
             .unwrap();
 
-        let vertex_buffer_id = Self::make_vertex_buffer(context);
-        Self::generate_rect_drawer_vertex_data(context, vertex_buffer_id);
+        self.vertex_buffer_id = Self::make_vertex_buffer(context);
+        Self::generate_rect_drawer_vertex_data(context, self.vertex_buffer_id);
 
-        let render_pass_id = context
+        self.uniform_buffer_id = context
+            .create_uniform_buffer_with_size_of::<UniformData>()
+            .unwrap();
+
+        self.texture_buffer_id = context
+            .create_texture_buffer_from_data(1, 1, TextureFormat::RGBA32Uint, &[255u8; 4])
+            .unwrap();
+
+        self.render_pass_id = context
             .render_pass_builder()
-            .shader(shader_id)
-            .vertex_buffer(vertex_buffer_id, VERTEX_PER_RECT, INDEX_PER_RECT)
+            .shader(self.shader_id)
+            .fragment_textures(&[IdWithBinding::new(self.texture_buffer_id, 0)])
+            .vertex_uniform_buffers(&[IdWithBinding::new(self.uniform_buffer_id, 1)])
+            .vertex_buffer(self.vertex_buffer_id, VERTEX_PER_RECT, INDEX_PER_RECT)
             .enable_instancing()
             .build()
             .unwrap();
-
-        self.shader_id = shader_id;
-        self.vertex_buffer_id = vertex_buffer_id;
-        self.render_pass_id = render_pass_id;
-        self.instance_count = 0;
-        self.view_matrix = view_matrix;
     }
 
     pub fn cleanup(&mut self, context: &mut Context) {
         context.delete_render_pass(self.render_pass_id);
+        context.delete_texture_buffer(self.texture_buffer_id);
+        context.delete_uniform_buffer(self.uniform_buffer_id);
         context.delete_vertex_buffer(self.vertex_buffer_id);
         context.delete_shader_program(self.shader_id);
     }
@@ -81,13 +94,19 @@ impl RectDrawSystem {
         context
             .create_vertex_buffer(
                 &[VertexAttributeDescriptor {
-                    location: 1,
+                    location: 0,
                     field_type: ShaderVariableType::FVec2,
                 }],
-                &[VertexAttributeDescriptor {
-                    location: 2,
-                    field_type: ShaderVariableType::FMat4x4,
-                }],
+                &[
+                    VertexAttributeDescriptor {
+                        location: 1,
+                        field_type: ShaderVariableType::FVec4,
+                    },
+                    VertexAttributeDescriptor {
+                        location: 2,
+                        field_type: ShaderVariableType::FMat4x4,
+                    },
+                ],
                 VERTEX_PER_RECT,
                 INDEX_PER_RECT,
                 RECT_CAPACITY,
@@ -103,16 +122,16 @@ impl RectDrawSystem {
         let data = Self::get_rect_drawer_data(context, vertex_buffer_id);
         let vertex_data = [
             VertexData {
-                pos: Vector2::new(0., 1.),
+                uv: Vector2::new(0., 1.),
             },
             VertexData {
-                pos: Vector2::new(0., 0.),
+                uv: Vector2::new(0., 0.),
             },
             VertexData {
-                pos: Vector2::new(1., 0.),
+                uv: Vector2::new(1., 0.),
             },
             VertexData {
-                pos: Vector2::new(1., 1.),
+                uv: Vector2::new(1., 1.),
             },
         ];
         let indices = [0, 1, 2, 2, 3, 0];
@@ -124,41 +143,40 @@ impl RectDrawSystem {
     pub fn draw_rect(
         &mut self,
         context: &mut Context,
-        solid_rect: SolidRect,
-    ) -> Result<(), Error> {
-        if self.instance_count >= RECT_CAPACITY {
-            return Err(Error::Core("Rect capacity limit exceed".to_string()));
-        }
+        rect: Rect,
+        decoration: Decoration
+    ) {
+        assert!(self.instance_count < RECT_CAPACITY);
 
-        self.write_rect_data(context, solid_rect, self.instance_count);
+        self.write_rect_data(context, rect, decoration, self.instance_count);
 
         self.instance_count += 1;
 
         let borrowed_pass = context.borrow_render_pass_mut_ptr(self.render_pass_id);
         borrowed_pass.render_pass.instance_count = self.instance_count as u64;
-
-        Ok(())
     }
 
     fn write_rect_data(
         &mut self,
         context: &mut Context,
-        solid_rect: SolidRect,
+        rect: Rect,
+        paint: Decoration,
         instance_index: usize,
     ) {
         let data = Self::get_rect_drawer_data(context, self.vertex_buffer_id);
-        let size = solid_rect.rect.size();
-        let center = solid_rect.rect.center;
+        let size = rect.size();
+        let center = rect.center;
         let transform = Matrix4x4::from_columns(
             Vector4::new(size.x, 0., 0., 0.),
             Vector4::new(0., size.y, 0., 0.),
             Vector4::new(0., 0., 1.0, 1.),
             Vector4::new(center.x, center.y, 0., 1.),
         );
-
-        let local_to_world = self.view_matrix * transform;
-
-        data.per_instance_data[instance_index] = InstanceData { local_to_world };
+        
+        data.per_instance_data[instance_index] = InstanceData {
+            transform,
+            color: paint.color,
+        };
     }
 
     #[inline(always)]
