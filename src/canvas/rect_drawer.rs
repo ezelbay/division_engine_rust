@@ -14,8 +14,7 @@ pub struct SolidRect {
     pub color: Vector4,
 }
 
-pub struct RectDrawer<'a> {
-    core: &'a mut Context,
+pub struct RectDrawer {
     shader_id: DivisionId,
     vertex_buffer_id: DivisionId,
     render_pass_id: DivisionId,
@@ -42,21 +41,18 @@ pub const RECT_CAPACITY: usize = 128;
 pub const VERTEX_PER_RECT: usize = 4;
 pub const INDEX_PER_RECT: usize = 6;
 
-impl Context {
-    pub fn create_rect_drawer<'a>(
-        &'a mut self,
-        view_matrix: Matrix4x4,
-    ) -> RectDrawer<'a> {
-        let shader_id = self
+impl RectDrawer {
+    pub fn new(context: &mut Context, view_matrix: Matrix4x4) -> RectDrawer {
+        let shader_id = context
             .create_bundled_shader_program(Path::new(
                 "resources/shaders/canvas/solid_shape",
             ))
             .unwrap();
 
-        let vertex_buffer_id = Self::make_vertex_buffer(self);
-        self.generate_rect_drawer_vertex_data(vertex_buffer_id);
+        let vertex_buffer_id = Self::make_vertex_buffer(context);
+        Self::generate_rect_drawer_vertex_data(context, vertex_buffer_id);
 
-        let render_pass_id = self
+        let render_pass_id = context
             .render_pass_builder()
             .shader(shader_id)
             .vertex_buffer(vertex_buffer_id, VERTEX_PER_RECT, INDEX_PER_RECT)
@@ -65,7 +61,6 @@ impl Context {
             .unwrap();
 
         RectDrawer {
-            core: self,
             shader_id,
             vertex_buffer_id,
             render_pass_id,
@@ -74,26 +69,30 @@ impl Context {
         }
     }
 
-    fn make_vertex_buffer(core: &mut Context) -> DivisionId {
-        core.create_vertex_buffer(
-            &[VertexAttributeDescriptor {
-                location: 1,
-                field_type: ShaderVariableType::FVec2,
-            }],
-            &[VertexAttributeDescriptor {
-                location: 2,
-                field_type: ShaderVariableType::FMat4x4,
-            }],
-            VERTEX_PER_RECT,
-            INDEX_PER_RECT,
-            RECT_CAPACITY,
-            RenderTopology::Triangles,
-        )
-        .unwrap()
+    fn make_vertex_buffer(context: &mut Context) -> DivisionId {
+        context
+            .create_vertex_buffer(
+                &[VertexAttributeDescriptor {
+                    location: 1,
+                    field_type: ShaderVariableType::FVec2,
+                }],
+                &[VertexAttributeDescriptor {
+                    location: 2,
+                    field_type: ShaderVariableType::FMat4x4,
+                }],
+                VERTEX_PER_RECT,
+                INDEX_PER_RECT,
+                RECT_CAPACITY,
+                RenderTopology::Triangles,
+            )
+            .unwrap()
     }
 
-    fn generate_rect_drawer_vertex_data(&mut self, vertex_buffer_id: DivisionId) {
-        let data = self.get_rect_drawer_data(vertex_buffer_id);
+    fn generate_rect_drawer_vertex_data(
+        context: &mut Context,
+        vertex_buffer_id: DivisionId,
+    ) {
+        let data = Self::get_rect_drawer_data(context, vertex_buffer_id);
         let vertex_data = [
             VertexData {
                 pos: Vector2::new(0., 1.),
@@ -116,31 +115,38 @@ impl Context {
 
     #[inline(always)]
     fn get_rect_drawer_data(
-        &mut self,
+        context: &mut Context,
         vertex_buffer_id: DivisionId,
     ) -> VertexBufferData<VertexData, InstanceData> {
-        self.vertex_buffer_data(vertex_buffer_id)
+        context.vertex_buffer_data(vertex_buffer_id)
     }
-}
 
-impl<'a> RectDrawer<'a> {
-    pub fn draw_rect(&mut self, solid_rect: SolidRect) -> Result<(), Error> {
+    pub fn draw_rect(
+        &mut self,
+        context: &mut Context,
+        solid_rect: SolidRect,
+    ) -> Result<(), Error> {
         if self.instance_count >= RECT_CAPACITY {
             return Err(Error::Core("Rect capacity limit exceed".to_string()));
         }
 
-        self.write_rect_data(solid_rect, self.instance_count);
+        self.write_rect_data(context, solid_rect, self.instance_count);
 
         self.instance_count += 1;
 
-        let borrowed_pass = self.core.borrow_render_pass_mut_ptr(self.render_pass_id);
+        let borrowed_pass = context.borrow_render_pass_mut_ptr(self.render_pass_id);
         borrowed_pass.render_pass.instance_count = self.instance_count as u64;
 
         Ok(())
     }
 
-    fn write_rect_data(&mut self, solid_rect: SolidRect, instance_index: usize) {
-        let data = self.core.get_rect_drawer_data(self.vertex_buffer_id);
+    fn write_rect_data(
+        &mut self,
+        context: &mut Context,
+        solid_rect: SolidRect,
+        instance_index: usize,
+    ) {
+        let data = Self::get_rect_drawer_data(context, self.vertex_buffer_id);
         let size = solid_rect.rect.size();
         let center = solid_rect.rect.center;
         let transform = Matrix4x4::from_columns(
@@ -154,6 +160,10 @@ impl<'a> RectDrawer<'a> {
 
         data.per_instance_data[instance_index] = InstanceData { local_to_world };
     }
-}
 
-// TODO: Add drop functionality and proper ownership
+    pub fn delete(&mut self, context: &mut Context) {
+        context.delete_render_pass(self.render_pass_id);
+        context.delete_vertex_buffer(self.vertex_buffer_id);
+        context.delete_shader_program(self.shader_id);
+    }
+}
