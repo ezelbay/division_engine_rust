@@ -1,13 +1,13 @@
 use std::path::Path;
 
-use division_math::{Matrix4x4, Vector2, Vector4};
+use division_math::Vector2;
 
 use crate::core::{
-    Context, DivisionId, IdWithBinding, RenderTopology, ShaderVariableType,
-    TextureFormat, VertexAttributeDescriptor, VertexBufferData,
+    AlphaBlend, AlphaBlendOperation, Context, DivisionId, IdWithBinding, RenderTopology,
+    ShaderVariableType, TextureFormat, VertexAttributeDescriptor, VertexBufferData,
 };
 
-use super::{rect::Rect, decoration::Decoration, color::Color32};
+use super::{color::Color32, decoration::Decoration, rect::Rect};
 
 pub struct RectDrawSystem {
     shader_id: DivisionId,
@@ -28,15 +28,17 @@ struct VertexData {
 #[repr(C, packed)]
 #[derive(Clone, Copy)]
 struct InstanceData {
+    border_radius: f32,
+    size: Vector2,
+    position: Vector2,
     color: Color32,
-    transform: Matrix4x4,
 }
 
 #[repr(transparent)]
 #[derive(Clone, Copy)]
 #[allow(dead_code)]
 struct UniformData {
-    view: Matrix4x4,
+    size: Vector2,
 }
 
 pub const RECT_CAPACITY: usize = 128;
@@ -48,9 +50,9 @@ impl RectDrawSystem {
         unsafe { std::mem::zeroed::<RectDrawSystem>() }
     }
 
-    pub fn set_view_matrix(&mut self, context: &mut Context, view: Matrix4x4) {
+    pub fn set_canvas_size(&mut self, context: &mut Context, size: Vector2) {
         let data = context.uniform_buffer_data::<UniformData>(self.uniform_buffer_id);
-        *(data.data) = UniformData { view };
+        *(data.data) = UniformData { size };
     }
 
     pub fn init(&mut self, context: &mut Context) {
@@ -78,6 +80,11 @@ impl RectDrawSystem {
             .vertex_uniform_buffers(&[IdWithBinding::new(self.uniform_buffer_id, 1)])
             .vertex_buffer(self.vertex_buffer_id, VERTEX_PER_RECT, INDEX_PER_RECT)
             .enable_instancing()
+            .alpha_blending(
+                AlphaBlend::SrcAlpha,
+                AlphaBlend::OneMinusSrcAlpha,
+                AlphaBlendOperation::Add,
+            )
             .build()
             .unwrap();
     }
@@ -100,11 +107,19 @@ impl RectDrawSystem {
                 &[
                     VertexAttributeDescriptor {
                         location: 1,
-                        field_type: ShaderVariableType::FVec4,
+                        field_type: ShaderVariableType::Float,
                     },
                     VertexAttributeDescriptor {
                         location: 2,
-                        field_type: ShaderVariableType::FMat4x4,
+                        field_type: ShaderVariableType::FVec2,
+                    },
+                    VertexAttributeDescriptor {
+                        location: 3,
+                        field_type: ShaderVariableType::FVec2,
+                    },
+                    VertexAttributeDescriptor {
+                        location: 4,
+                        field_type: ShaderVariableType::FVec4,
                     },
                 ],
                 VERTEX_PER_RECT,
@@ -144,7 +159,7 @@ impl RectDrawSystem {
         &mut self,
         context: &mut Context,
         rect: Rect,
-        decoration: Decoration
+        decoration: Decoration,
     ) {
         assert!(self.instance_count < RECT_CAPACITY);
 
@@ -160,22 +175,16 @@ impl RectDrawSystem {
         &mut self,
         context: &mut Context,
         rect: Rect,
-        paint: Decoration,
+        decoration: Decoration,
         instance_index: usize,
     ) {
         let data = Self::get_rect_drawer_data(context, self.vertex_buffer_id);
-        let size = rect.size();
-        let center = rect.center;
-        let transform = Matrix4x4::from_columns(
-            Vector4::new(size.x, 0., 0., 0.),
-            Vector4::new(0., size.y, 0., 0.),
-            Vector4::new(0., 0., 1.0, 1.),
-            Vector4::new(center.x, center.y, 0., 1.),
-        );
-        
+
         data.per_instance_data[instance_index] = InstanceData {
-            transform,
-            color: paint.color,
+            size: rect.size(),
+            position: rect.bottom_left(),
+            color: decoration.color,
+            border_radius: decoration.border_radius,
         };
     }
 

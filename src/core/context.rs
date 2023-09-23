@@ -2,11 +2,11 @@ use std::ffi::CString;
 
 pub type DivisionId = u32;
 
-use division_math::Vector2;
+use division_math::{Vector2, Vector4};
 
 use super::{
     c_interface::{
-        context::{division_engine_context_initialize, DivisionContext},
+        context::{division_engine_context_initialize, DivisionContext, DivisionColor},
         settings::DivisionSettings,
     },
     context_builder::ContextBuilder,
@@ -56,4 +56,36 @@ impl Context {
             )
         }
     }
+
+    #[inline]
+    pub fn get_clear_color(&self) -> Vector4 {
+        let ctx = self.render_context;
+        unsafe {
+            (*ctx).clear_color.into()
+        }
+    }
+
+    #[inline]
+    pub fn set_clear_color(&mut self, color: Vector4) {
+        let ctx = self.render_context;
+        unsafe {
+            (*ctx).clear_color = color.into();
+        }
+    }
+}
+
+impl From<DivisionColor> for Vector4 {
+    fn from(value: DivisionColor) -> Self {
+        unsafe {
+            std::mem::transmute(value)
+        }
+    }
+}
+
+impl From<Vector4> for DivisionColor {
+    fn from(value: Vector4) -> Self {
+        unsafe {
+            std::mem::transmute(value)
+        }
+    }   
 }

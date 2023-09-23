@@ -204,10 +204,10 @@ impl IdWithBinding {
 }
 
 fn has_constant_color(blend: AlphaBlend) -> bool {
-    blend != AlphaBlend::ConstantAlpha
-        && blend != AlphaBlend::ConstantColor
-        && blend != AlphaBlend::OneMinusConstantAlpha
-        && blend != AlphaBlend::OneMinusConstantColor
+    blend == AlphaBlend::ConstantAlpha
+        || blend == AlphaBlend::ConstantColor
+        || blend == AlphaBlend::OneMinusConstantAlpha
+        || blend == AlphaBlend::OneMinusConstantColor
 }
 
 impl<'a> Drop for BorrowedRenderPass<'a> {

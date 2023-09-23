@@ -4,11 +4,12 @@ use super::state::DivisionState;
 use std::ffi::{c_void, c_float, c_int};
 
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub struct DivisionColor {
-    r: c_float,
-    g: c_float,
-    b: c_float,
-    a: c_float
+    pub r: c_float,
+    pub g: c_float,
+    pub b: c_float,
+    pub a: c_float
 }
 
 #[repr(C)]
@@ -25,7 +26,7 @@ pub struct DivisionContext {
     pub state: DivisionState,
     pub lifecycle: DivisionLifecycle,
 
-    pub render_context: *const DivisionRendererSystemContext,
+    pub render_context: *mut DivisionRendererSystemContext,
     pub shader_context: *const c_void,
     pub vertex_buffer_context: *const c_void,
     pub uniform_buffer_context: *const c_void,
