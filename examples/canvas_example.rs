@@ -40,17 +40,13 @@ impl LifecycleManager for MyLifecycleManager {
         };
 
         let red_rects = [
-            Rect::from_bottom_left(
-                Vector2::new(100., 100.),
-                Vector2::new(100., 100.),
-            ),
+            Rect::from_bottom_left(Vector2::new(100., 100.), Vector2::new(100., 100.)),
             Rect::from_bottom_left(Vector2::new(0., 0.), Vector2::new(50., 50.)),
         ];
 
-        let purple_rects = [Rect::from_center(
-            Vector2::new(512., 512.),
-            Vector2::new(200., 100.),
-        )];
+        let purple_rects = [
+            Rect::from_center(Vector2::new(512., 512.), Vector2::new(200., 100.))
+        ];
 
         for r in red_rects {
             self.rect_draw_system.draw_rect(context, r, red_brush);

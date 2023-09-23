@@ -18,18 +18,6 @@ float sdRoundedBox( in vec2 p, in vec2 b, in vec4 r )
     return min(max(q.x,q.y),0.0) + length(max(q,0.0)) - r.x;
 }
 
-float circle(vec2 position, float radius) {
-    return length(position) - radius;
-}
-
-float rectange(vec2 position, vec2 halfSize) {
-    return (abs(position) - halfSize).x;
-}
-
-float testSDF(vec2 position) {
-    return rectange(position, vec2(50.0, 50.0));
-}
-
 void main() {
     vec4 texColor = texture(Tex, UV);
     vec2 extents = Size * 0.5;
