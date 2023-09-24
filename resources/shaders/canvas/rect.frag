@@ -10,10 +10,19 @@ layout (location = 0) out vec4 ResultColor;
 
 layout (binding = 0) uniform sampler2D Tex;
 
+float select(bool selector, float a, float b) {
+    return float(selector) * a + float(!selector) * b;
+}
+
+vec2 select(bool selector, vec2 a, vec2 b) {
+    return float(selector) * a + float(!selector) * b;
+}
+
 float sdRoundedBox(in vec2 p, in vec2 b, in vec4 r)
 {
-    r.xy = (p.x>0.0)?r.xy : r.zw;
-    r.x  = (p.y>0.0)?r.x  : r.y;
+    r.xy = select(p.x > 0.0, r.xy, r.zw);
+    r.x  = select(p.y > 0.0, r.x, r.y);
+    
     vec2 q = abs(p)-b+r.x;
     return min(max(q.x,q.y),0.0) + length(max(q,0.0)) - r.x;
 }
