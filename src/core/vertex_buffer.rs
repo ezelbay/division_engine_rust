@@ -22,6 +22,8 @@ pub use super::c_interface::{
     },
 };
 
+pub use division_engine_rust_macro::*;
+
 pub trait VertexData {
     fn vertex_attributes() -> Vec<VertexAttributeDescriptor>;
 }

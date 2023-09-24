@@ -1,6 +1,6 @@
 use division_engine_rust::core::{
     Context, IdWithBinding, Image, LifecycleManager, RenderTopology, ShaderVariableType,
-    VertexAttributeDescriptor,
+    VertexAttributeDescriptor, VertexData,
 };
 use division_math::{Matrix4x4, Vector2, Vector3, Vector4};
 use std::path::Path;
@@ -8,23 +8,27 @@ use std::path::Path;
 pub struct MyDelegate {}
 
 #[repr(packed)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, VertexData)]
 #[allow(dead_code)]
 pub struct Vert {
+    #[location(0)]
     pos: Vector3,
+    #[location(1)]
     color: Vector4,
+    #[location(2)]
     uv: Vector2,
 }
 
 #[repr(packed)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, VertexData)]
 #[allow(dead_code)]
 pub struct Inst {
+    #[location(3)]
     local_to_world: Matrix4x4,
 }
 
 fn main() {
-    let mut delegate = MyDelegate { };
+    let mut delegate = MyDelegate {};
 
     let mut context = Context::builder()
         .window_size(1024, 1024)
@@ -71,25 +75,7 @@ impl LifecycleManager for MyDelegate {
         let indices = [0, 1, 2, 2, 3, 0];
 
         let vertex_buffer_id = context
-            .create_vertex_buffer_with_attributes(
-                &[
-                    VertexAttributeDescriptor {
-                        location: 0,
-                        field_type: ShaderVariableType::FVec3,
-                    },
-                    VertexAttributeDescriptor {
-                        location: 1,
-                        field_type: ShaderVariableType::FVec4,
-                    },
-                    VertexAttributeDescriptor {
-                        location: 2,
-                        field_type: ShaderVariableType::FVec2,
-                    },
-                ],
-                &[VertexAttributeDescriptor {
-                    location: 3,
-                    field_type: ShaderVariableType::FMat4x4,
-                }],
+            .create_vertex_buffer::<Vert, Inst>(
                 vertices_data.len(),
                 indices.len(),
                 instances_data.len(),
@@ -98,8 +84,7 @@ impl LifecycleManager for MyDelegate {
             .unwrap();
 
         {
-            let data = context
-                .vertex_buffer_data::<Vert, Inst>(vertex_buffer_id);
+            let data = context.vertex_buffer_data::<Vert, Inst>(vertex_buffer_id);
             data.per_vertex_data.copy_from_slice(&vertices_data);
             data.per_instance_data.copy_from_slice(&instances_data);
             data.vertex_indices.copy_from_slice(&indices);
@@ -111,9 +96,7 @@ impl LifecycleManager for MyDelegate {
             )
             .unwrap();
 
-            let texture_id = context
-                .create_texture_buffer_from_image(&image)
-                .unwrap();
+            let texture_id = context.create_texture_buffer_from_image(&image).unwrap();
 
             texture_id
         };

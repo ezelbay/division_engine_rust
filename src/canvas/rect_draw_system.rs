@@ -1,12 +1,10 @@
 use std::path::Path;
 
-use division_engine_rust_macro::{location, VertexData};
 use division_math::{Vector2, Vector4};
 
 use crate::core::{
     AlphaBlend, AlphaBlendOperation, Context, DivisionId, IdWithBinding, RenderTopology,
-    ShaderVariableType, TextureFormat, VertexAttributeDescriptor, VertexBufferData,
-    VertexData,
+    ShaderVariableType, TextureFormat, VertexAttributeDescriptor, VertexBufferData, VertexData,
 };
 
 use super::{decoration::Decoration, rect::Rect};
