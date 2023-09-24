@@ -7,7 +7,7 @@ pub struct BorderRadius {
 }
 
 impl BorderRadius {
-    pub fn without() -> BorderRadius {
+    pub fn none() -> BorderRadius {
         BorderRadius { tr_br_tl_bl: Vector4::zero() }
     }
 
