@@ -10,22 +10,24 @@ layout (location = 4) in vec4 in_TRBRTLBL_BorderRadius;
 layout (location = 0) out vec4 outColor;
 layout (location = 1) out vec4 out_TRBRTLBL_BorderRadius;
 layout (location = 2) out vec2 outUV;
-layout (location = 3) out vec2 outWorldPosition;
+layout (location = 3) out vec2 outPosition;
 layout (location = 4) out vec2 outSize;
+layout (location = 5) out vec2 outVertPos;
 
 layout (std140, binding = 1) uniform Uniforms {
     vec2 screenSize;
 };
 
 void main() {
-    vec2 worldPosition = inUV * inSize + inPosition; 
-    vec2 normPos = worldPosition / screenSize;
+    vec2 vertWorldPos = inUV * inSize + inPosition; 
+    vec2 normPos = vertWorldPos / screenSize;
 
     outColor = inColor;
     out_TRBRTLBL_BorderRadius = in_TRBRTLBL_BorderRadius;
     outUV = inUV;
-    outWorldPosition = inPosition;
+    outPosition = inPosition;
     outSize = inSize;
+    outVertPos = vertWorldPos;
 
-    gl_Position = vec4(normPos * 2 - vec2(1), 0, 1);
+    gl_Position = vec4(mix(vec2(-1,-1), vec2(1,1), normPos), 0, 1);
 }

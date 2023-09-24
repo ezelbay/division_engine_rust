@@ -133,8 +133,7 @@ fn compile_shaders_to_msl() {
             match shader_compiler.compile_glsl_to_metal(&glsl_src, entry_point, shader_type) {
                 Ok(v) => v,
                 Err(_) => {
-                    eprint!("Failed to compile the shader by path: {:?}", path);
-                    continue;
+                    panic!("Failed to compile the shader by path: {:?}", path);
                 }
             };
 
