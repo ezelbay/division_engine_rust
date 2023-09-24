@@ -1,16 +1,16 @@
 #version 450 core
 
 layout (location = 0) in vec4 Color;
-layout (location = 1) in vec2 UV;
-layout (location = 2) in vec2 Position;
-layout (location = 3) in vec2 Size;
-layout (location = 4) in float BorderRadius;
+layout (location = 1) in vec4 TRBRTLBL_BorderRadius;
+layout (location = 2) in vec2 UV;
+layout (location = 3) in vec2 Position;
+layout (location = 4) in vec2 Size;
 
 layout (location = 0) out vec4 ResultColor;
 
 layout (binding = 0) uniform sampler2D Tex;
 
-float sdRoundedBox( in vec2 p, in vec2 b, in vec4 r )
+float sdRoundedBox(in vec2 p, in vec2 b, in vec4 r)
 {
     r.xy = (p.x>0.0)?r.xy : r.zw;
     r.x  = (p.y>0.0)?r.x  : r.y;
@@ -26,6 +26,6 @@ void main() {
     ResultColor.a = -sdRoundedBox(
         gl_FragCoord.xy - Position - extents, 
         extents, 
-        vec4(BorderRadius)
+        TRBRTLBL_BorderRadius
     );
 }

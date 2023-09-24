@@ -28,10 +28,10 @@ struct RectVertexData {
 #[repr(C, packed)]
 #[derive(Clone, Copy, VertexData)]
 struct RectInstanceData {
-    #[location(1)] border_radius: f32,
-    #[location(2)] size: Vector2,
-    #[location(3)] position: Vector2,
-    #[location(4)] color: Vector4,
+    #[location(1)] size: Vector2,
+    #[location(2)] position: Vector2,
+    #[location(3)] color: Vector4,
+    #[location(4)] trbl_border_radius: Vector4,
 }
 
 #[repr(transparent)]
@@ -162,7 +162,7 @@ impl RectDrawSystem {
             size: rect.size(),
             position: rect.bottom_left(),
             color: decoration.color.into(),
-            border_radius: decoration.border_radius,
+            trbl_border_radius: decoration.border_radius.into(),
         };
     }
 

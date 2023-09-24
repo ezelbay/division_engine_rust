@@ -1,7 +1,7 @@
 use division_engine_rust::{
     canvas::{
         color::Color32, decoration::Decoration, rect::Rect,
-        rect_draw_system::RectDrawSystem,
+        rect_draw_system::RectDrawSystem, border_radius::BorderRadius,
     },
     core::{
         Context, LifecycleManager,
@@ -35,11 +35,11 @@ impl LifecycleManager for MyLifecycleManager {
 
         let red_brush = Decoration {
             color: Color32::red(),
-            border_radius: 0.,
+            border_radius: BorderRadius::without(),
         };
         let purple_brush = Decoration {
             color: Color32::purple(),
-            border_radius: 50.,
+            border_radius: BorderRadius::top_bottom(50., 30.),
         };
 
         let red_rects = [

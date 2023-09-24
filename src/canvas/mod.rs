@@ -1,3 +1,4 @@
+pub mod border_radius;
 pub mod color;
 pub mod decoration;
 pub mod rect;
