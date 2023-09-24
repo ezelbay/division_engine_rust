@@ -35,7 +35,7 @@ impl LifecycleManager for MyLifecycleManager {
 
         let red_brush = Decoration {
             color: Color32::red(),
-            border_radius: BorderRadius::none(),
+            border_radius: BorderRadius::all(1.),
         };
         let purple_brush = Decoration {
             color: Color32::purple(),

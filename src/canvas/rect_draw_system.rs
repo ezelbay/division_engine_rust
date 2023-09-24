@@ -78,6 +78,7 @@ impl RectDrawSystem {
             .shader(self.shader_id)
             .fragment_textures(&[IdWithBinding::new(self.texture_buffer_id, 0)])
             .vertex_uniform_buffers(&[IdWithBinding::new(self.uniform_buffer_id, 1)])
+            .fragment_uniform_buffers(&[IdWithBinding::new(self.uniform_buffer_id, 1)])
             .vertex_buffer(self.vertex_buffer_id, VERTEX_PER_RECT, INDEX_PER_RECT)
             .enable_instancing()
             .alpha_blending(
