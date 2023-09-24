@@ -71,7 +71,7 @@ impl LifecycleManager for MyDelegate {
         let indices = [0, 1, 2, 2, 3, 0];
 
         let vertex_buffer_id = context
-            .create_vertex_buffer(
+            .create_vertex_buffer_with_attributes(
                 &[
                     VertexAttributeDescriptor {
                         location: 0,

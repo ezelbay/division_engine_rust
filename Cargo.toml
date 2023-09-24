@@ -19,6 +19,7 @@ division_math = { git = "https://github.com/Den163/division_math", tag="v0.1.5",
 
 [dependencies]
 bitflags="2.3.1"
+division_engine_rust_macro = { path = "./macro" }
 
 [dev-dependencies]
 walkdir="2.3.3"

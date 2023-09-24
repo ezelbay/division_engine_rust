@@ -1,13 +1,15 @@
 use std::path::Path;
 
-use division_math::Vector2;
+use division_engine_rust_macro::{location, VertexData};
+use division_math::{Vector2, Vector4};
 
 use crate::core::{
     AlphaBlend, AlphaBlendOperation, Context, DivisionId, IdWithBinding, RenderTopology,
     ShaderVariableType, TextureFormat, VertexAttributeDescriptor, VertexBufferData,
+    VertexData,
 };
 
-use super::{color::Color32, decoration::Decoration, rect::Rect};
+use super::{decoration::Decoration, rect::Rect};
 
 pub struct RectDrawSystem {
     shader_id: DivisionId,
@@ -20,18 +22,18 @@ pub struct RectDrawSystem {
 }
 
 #[repr(C, packed)]
-#[derive(Clone, Copy)]
-struct VertexData {
-    uv: Vector2,
+#[derive(Clone, Copy, VertexData)]
+struct RectVertexData {
+    #[location(0)] uv: Vector2,
 }
 
 #[repr(C, packed)]
-#[derive(Clone, Copy)]
-struct InstanceData {
-    border_radius: f32,
-    size: Vector2,
-    position: Vector2,
-    color: Color32,
+#[derive(Clone, Copy, VertexData)]
+struct RectInstanceData {
+    #[location(1)] border_radius: f32,
+    #[location(2)] size: Vector2,
+    #[location(3)] position: Vector2,
+    #[location(4)] color: Vector4,
 }
 
 #[repr(transparent)]
@@ -99,29 +101,7 @@ impl RectDrawSystem {
 
     fn make_vertex_buffer(context: &mut Context) -> DivisionId {
         context
-            .create_vertex_buffer(
-                &[VertexAttributeDescriptor {
-                    location: 0,
-                    field_type: ShaderVariableType::FVec2,
-                }],
-                &[
-                    VertexAttributeDescriptor {
-                        location: 1,
-                        field_type: ShaderVariableType::Float,
-                    },
-                    VertexAttributeDescriptor {
-                        location: 2,
-                        field_type: ShaderVariableType::FVec2,
-                    },
-                    VertexAttributeDescriptor {
-                        location: 3,
-                        field_type: ShaderVariableType::FVec2,
-                    },
-                    VertexAttributeDescriptor {
-                        location: 4,
-                        field_type: ShaderVariableType::FVec4,
-                    },
-                ],
+            .create_vertex_buffer::<RectVertexData, RectInstanceData>(
                 VERTEX_PER_RECT,
                 INDEX_PER_RECT,
                 RECT_CAPACITY,
@@ -136,16 +116,16 @@ impl RectDrawSystem {
     ) {
         let data = Self::get_rect_drawer_data(context, vertex_buffer_id);
         let vertex_data = [
-            VertexData {
+            RectVertexData {
                 uv: Vector2::new(0., 1.),
             },
-            VertexData {
+            RectVertexData {
                 uv: Vector2::new(0., 0.),
             },
-            VertexData {
+            RectVertexData {
                 uv: Vector2::new(1., 0.),
             },
-            VertexData {
+            RectVertexData {
                 uv: Vector2::new(1., 1.),
             },
         ];
@@ -180,10 +160,10 @@ impl RectDrawSystem {
     ) {
         let data = Self::get_rect_drawer_data(context, self.vertex_buffer_id);
 
-        data.per_instance_data[instance_index] = InstanceData {
+        data.per_instance_data[instance_index] = RectInstanceData {
             size: rect.size(),
             position: rect.bottom_left(),
-            color: decoration.color,
+            color: decoration.color.into(),
             border_radius: decoration.border_radius,
         };
     }
@@ -192,7 +172,7 @@ impl RectDrawSystem {
     fn get_rect_drawer_data(
         context: &mut Context,
         vertex_buffer_id: DivisionId,
-    ) -> VertexBufferData<VertexData, InstanceData> {
+    ) -> VertexBufferData<RectVertexData, RectInstanceData> {
         context.vertex_buffer_data(vertex_buffer_id)
     }
 }

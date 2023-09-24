@@ -22,6 +22,10 @@ pub use super::c_interface::{
     },
 };
 
+pub trait VertexData {
+    fn vertex_attributes() -> Vec<VertexAttributeDescriptor>;
+}
+
 pub struct VertexBufferData<'a, TVertexData, TInstanceData> {
     pub per_vertex_data: &'a mut [TVertexData],
     pub per_instance_data: &'a mut [TInstanceData],
@@ -33,7 +37,24 @@ pub struct VertexBufferData<'a, TVertexData, TInstanceData> {
 }
 
 impl Context {
-    pub fn create_vertex_buffer(
+    pub fn create_vertex_buffer<TVertexData: VertexData, TInstanceData: VertexData>(
+        &mut self,
+        vertex_count: usize,
+        index_count: usize,
+        instance_count: usize,
+        topology: RenderTopology,
+    ) -> Result<DivisionId, Error> {
+        self.create_vertex_buffer_with_attributes(
+            &TVertexData::vertex_attributes(),
+            &TInstanceData::vertex_attributes(),
+            vertex_count,
+            index_count,
+            instance_count,
+            topology,
+        )
+    }
+
+    pub fn create_vertex_buffer_with_attributes(
         &mut self,
         per_vertex_attributes: &[VertexAttributeDescriptor],
         per_instance_attributes: &[VertexAttributeDescriptor],
