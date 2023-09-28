@@ -4,5 +4,4 @@
         "repr",
         "uninit"
     ],
-    "cmake.sourceDirectory": "/home/denis/CLionProjects/division_engine_rust/division_engine_core/tests",
 }
