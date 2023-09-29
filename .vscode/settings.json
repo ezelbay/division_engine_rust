@@ -4,4 +4,5 @@
         "repr",
         "uninit"
     ],
+    "cmake.sourceDirectory": "${workspaceFolder}/division_engine_core"
 }
