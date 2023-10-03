@@ -7,6 +7,14 @@
         {
             "type": "lldb",
             "request": "launch",
+            "name": "Debug c example",
+            "program": "${workspaceFolder}/build/example/division_example",
+            "args": [],
+            "cwd": "${workspaceFolder}/build/example"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
             "name": "Debug example 'core_example'",
             "cargo": {
                 "args": [

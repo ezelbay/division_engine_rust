@@ -74,7 +74,7 @@ fn build_with_osx_metal() -> DivisionBuildOptions {
 
 fn build_with_glfw() -> DivisionBuildOptions {
     DivisionBuildOptions {
-        dynamic_libs: make_strings_vec(vec!["X11"]),
+        dynamic_libs: make_strings_vec(vec!["X11", "freetype"]),
         static_libs: make_strings_vec(vec!["glfw3", "glfw_internal"]),
         frameworks: vec![],
     }
