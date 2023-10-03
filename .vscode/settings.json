@@ -6,6 +6,7 @@
     ],
     "cmake.sourceDirectory": "${workspaceFolder}/division_engine_core",
     "cmake.configureEnvironment": {
-        "DIVISION_BUILD_EXAMPLE": "1"
+        "DIVISION_BUILD_EXAMPLE": "1",
+        "DIVISION_BUILD_TESTS": "1"
     },
 }

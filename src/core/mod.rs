@@ -2,6 +2,7 @@ pub mod c_interface;
 
 mod context;
 mod context_builder;
+mod font;
 mod lifecycle_manager;
 mod image;
 mod render_pass;
@@ -10,8 +11,9 @@ mod texture;
 mod uniform_buffer;
 mod vertex_buffer;
 
-pub use self::context::*;
+pub use context::*;
 pub use context_builder::*;
+pub use font::*;
 pub use lifecycle_manager::*;
 pub use image::*;
 pub use render_pass::*;

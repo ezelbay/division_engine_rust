@@ -94,7 +94,7 @@ pub struct DivisionRenderPassDescriptor {
 extern "C" {
     pub fn division_engine_render_pass_alloc(
         ctx: *mut DivisionContext,
-        descriptor: DivisionRenderPassDescriptor,
+        descriptor: *const DivisionRenderPassDescriptor,
         out_render_pass_id: *mut u32,
     ) -> bool;
 

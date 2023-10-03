@@ -4,7 +4,8 @@ use division_math::{Vector2, Vector4};
 
 use crate::core::{
     AlphaBlend, AlphaBlendOperation, Context, DivisionId, IdWithBinding, RenderTopology,
-    ShaderVariableType, TextureFormat, VertexAttributeDescriptor, VertexBufferData, VertexData,
+    ShaderVariableType, TextureFormat, VertexAttributeDescriptor, VertexBufferData,
+    VertexData,
 };
 
 use super::{decoration::Decoration, rect::Rect};
@@ -22,16 +23,21 @@ pub struct RectDrawSystem {
 #[repr(C, packed)]
 #[derive(Clone, Copy, VertexData)]
 struct RectVertexData {
-    #[location(0)] uv: Vector2,
+    #[location(0)]
+    uv: Vector2,
 }
 
 #[repr(C, packed)]
 #[derive(Clone, Copy, VertexData)]
 struct RectInstanceData {
-    #[location(1)] size: Vector2,
-    #[location(2)] position: Vector2,
-    #[location(3)] color: Vector4,
-    #[location(4)] trbl_border_radius: Vector4,
+    #[location(1)]
+    size: Vector2,
+    #[location(2)]
+    position: Vector2,
+    #[location(3)]
+    color: Vector4,
+    #[location(4)]
+    trbl_border_radius: Vector4,
 }
 
 #[repr(transparent)]
@@ -56,6 +62,18 @@ impl RectDrawSystem {
     }
 
     pub fn init(&mut self, context: &mut Context) {
+        let white_texture = context
+            .create_texture_buffer_from_data(1, 1, TextureFormat::RGBA32Uint, &[255u8; 4])
+            .unwrap();
+
+        self.init_with_texture(context, white_texture)
+    }
+
+    pub fn init_with_texture(
+        &mut self,
+        context: &mut Context,
+        texture_buffer_id: DivisionId,
+    ) {
         self.instance_count = 0;
 
         self.shader_id = context
@@ -69,9 +87,7 @@ impl RectDrawSystem {
             .create_uniform_buffer_with_size_of::<UniformData>()
             .unwrap();
 
-        self.texture_buffer_id = context
-            .create_texture_buffer_from_data(1, 1, TextureFormat::RGBA32Uint, &[255u8; 4])
-            .unwrap();
+        self.texture_buffer_id = texture_buffer_id;
 
         self.render_pass_id = context
             .render_pass_builder()
