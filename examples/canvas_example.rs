@@ -39,7 +39,7 @@ impl LifecycleManager for MyLifecycleManager {
 
         let font = context.create_font(&font_path, 16).unwrap();
 
-        let glyph = context.get_font_glyph(font, 'X').unwrap();
+        let glyph = context.get_font_glyph(font, 'A').unwrap();
         let font_bitmap = context.rasterize_glyph(font, glyph).unwrap();
         let image = unsafe {
             Image::create_from_raw_in_memory(
