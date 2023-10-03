@@ -25,7 +25,10 @@ division_engine_rust_macro = { path = "src/macro" }
 walkdir="2.3.3"
 
 [profile.dev]
-rpath=true
+rpath = true
 
 [profile.release]
-rpath=true
+rpath = true
+opt-level = 'z'
+lto = true
+codegen-units = 1

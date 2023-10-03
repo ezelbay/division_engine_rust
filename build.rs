@@ -57,16 +57,30 @@ fn main() {
 }
 
 fn get_build_options() -> DivisionBuildOptions {
-    if cfg!(target_os = "macos") {
+    let platform_opts = if cfg!(target_os = "macos") {
         build_with_osx_metal()
     } else {
         build_with_glfw()
+    };
+
+    let common_opts = build_common();
+
+    DivisionBuildOptions { 
+        static_libs: Vec::from_iter(
+            platform_opts.static_libs.into_iter().chain(common_opts.static_libs.into_iter())
+        ), 
+        dynamic_libs: Vec::from_iter(
+            platform_opts.dynamic_libs.into_iter().chain(common_opts.dynamic_libs.into_iter())
+        ), 
+        frameworks: Vec::from_iter(
+            platform_opts.frameworks
+        )
     }
 }
 
 fn build_with_osx_metal() -> DivisionBuildOptions {
     DivisionBuildOptions {
-        dynamic_libs: Vec::new(),
+        dynamic_libs: make_strings_vec(vec!["z"]),
         static_libs: make_strings_vec(vec!["osx_metal_internal"]),
         frameworks: make_strings_vec(vec!["Metal", "MetalKit", "AppKit"]),
     }
@@ -74,14 +88,30 @@ fn build_with_osx_metal() -> DivisionBuildOptions {
 
 fn build_with_glfw() -> DivisionBuildOptions {
     DivisionBuildOptions {
-        dynamic_libs: make_strings_vec(vec!["X11", "freetype"]),
+        dynamic_libs: make_strings_vec(vec!["X11"]),
         static_libs: make_strings_vec(vec!["glfw3", "glfw_internal"]),
         frameworks: vec![],
     }
 }
 
+fn build_common() -> DivisionBuildOptions {
+    DivisionBuildOptions { 
+        static_libs: vec![ freetype_name() ], 
+        dynamic_libs: make_strings_vec(vec!["z"]), 
+        frameworks: Vec::new()
+    }
+}
+
 fn make_strings_vec(strings: Vec<&str>) -> Vec<String> {
     strings.into_iter().map(|m| m.to_string()).collect()
+}
+
+fn freetype_name() -> String {
+    let profile = env::var("PROFILE");
+    match profile {
+        Ok(p) if p.as_str() == "debug"  => "freetyped",
+        _ => "freetype",
+    }.to_string()
 }
 
 fn compile_shaders_to_msl() {
