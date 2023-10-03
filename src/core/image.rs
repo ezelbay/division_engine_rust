@@ -102,7 +102,7 @@ impl Image {
         }
     }
 
-    pub fn wirte_to_file_jpg(&self, path: &Path) -> Result<(), Error> {
+    pub fn write_to_file_jpg(&self, path: &Path) -> Result<(), Error> {
         self.write_to_file_jpg_with_quality(path, 80)
     }
 

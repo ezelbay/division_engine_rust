@@ -41,8 +41,6 @@ impl LifecycleManager for MyLifecycleManager {
 
         let glyph = context.get_font_glyph(font, 'X').unwrap();
         let font_bitmap = context.rasterize_glyph(font, glyph).unwrap();
-
-        context.delete_font(font);
         let image = unsafe {
             Image::create_from_raw_in_memory(
                 font_bitmap.clone(),
@@ -51,7 +49,8 @@ impl LifecycleManager for MyLifecycleManager {
                 1,
             )
         };
-        image.wirte_to_file_jpg(Path::new("fuck.jpg")).unwrap();
+
+        context.delete_font(font);
 
         let texture = context.create_texture_buffer_from_image(&image).unwrap();
 
