@@ -5,19 +5,42 @@ use std::{
     slice,
 };
 
-use super::c_interface::stb::{
-    stbi_image_free, stbi_load, stbi_load_from_memory, stbi_set_flip_vertically_on_load,
+use super::{
+    c_interface::stb::{
+        stbi_image_free, stbi_load, stbi_load_from_memory,
+        stbi_set_flip_vertically_on_load, stbi_write_jpg,
+    },
+    Error,
 };
 
+enum ImageImpl {
+    Stb(*mut u8),
+    Raw(Vec<u8>),
+}
+
 pub struct Image {
-    ptr: *mut u8,
+    imp: ImageImpl,
     width: u32,
     height: u32,
     channels: u32,
 }
 
 impl Image {
-    pub fn create_from_memory(buffer: Vec<u8>) -> Option<Image> {
+    pub unsafe fn create_from_raw_in_memory(
+        buffer: Vec<u8>,
+        width: u32,
+        height: u32,
+        channels: u32,
+    ) -> Image {
+        Image {
+            imp: ImageImpl::Raw(buffer),
+            width,
+            height,
+            channels,
+        }
+    }
+
+    pub fn create_from_compressed_in_memory(buffer: Vec<u8>) -> Option<Image> {
         unsafe {
             let mut width = MaybeUninit::uninit();
             let mut height = MaybeUninit::uninit();
@@ -38,7 +61,7 @@ impl Image {
             }
 
             return Some(Image {
-                ptr,
+                imp: ImageImpl::Stb(ptr),
                 width: width.assume_init() as u32,
                 height: height.assume_init() as u32,
                 channels: channels.assume_init() as u32,
@@ -71,7 +94,7 @@ impl Image {
             }
 
             return Some(Image {
-                ptr,
+                imp: ImageImpl::Stb(ptr),
                 width: width.assume_init() as u32,
                 height: height.assume_init() as u32,
                 channels: channels.assume_init() as u32,
@@ -79,12 +102,46 @@ impl Image {
         }
     }
 
+    pub fn wirte_to_file_jpg(&self, path: &Path) -> Result<(), Error> {
+        self.write_to_file_jpg_with_quality(path, 80)
+    }
+
+    pub fn write_to_file_jpg_with_quality(
+        &self,
+        path: &Path,
+        quality: u32,
+    ) -> Result<(), Error> {
+        let c_str = CString::new(path.to_str().unwrap()).unwrap();
+        let result = unsafe {
+            stbi_write_jpg(
+                c_str.as_ptr(),
+                self.width as c_int,
+                self.height as c_int,
+                self.channels as c_int,
+                self.data().as_ptr(),
+                quality as c_int,
+            )
+        };
+        
+        if result {
+            Ok(())
+        } else {
+            Err(Error::Core("Failed to write an image to file".to_string()))
+        }
+    }
+
     pub fn data(&self) -> &[u8] {
-        unsafe { slice::from_raw_parts(self.ptr, self.len()) }
+        match self.imp {
+            ImageImpl::Raw(ref buf) => buf,
+            ImageImpl::Stb(ptr) => unsafe { slice::from_raw_parts(ptr, self.len()) },
+        }
     }
 
     pub fn data_mut(&mut self) -> &mut [u8] {
-        unsafe { slice::from_raw_parts_mut(self.ptr, self.len()) }
+        match self.imp {
+            ImageImpl::Raw(ref mut buf) => buf,
+            ImageImpl::Stb(ptr) => unsafe { slice::from_raw_parts_mut(ptr, self.len()) },
+        }
     }
 
     #[inline]
@@ -110,8 +167,8 @@ impl Image {
 
 impl Drop for Image {
     fn drop(&mut self) {
-        unsafe {
-            stbi_image_free(self.ptr);
+        if let ImageImpl::Stb(ptr) = self.imp {
+            unsafe { stbi_image_free(ptr) }
         }
     }
 }

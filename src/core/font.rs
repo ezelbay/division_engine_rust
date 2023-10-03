@@ -75,9 +75,10 @@ impl Context {
     ) -> Result<Vec<u8>, Error> {
         let buffer_len = (glyph.width * glyph.height) as usize;
         let mut buffer = Vec::with_capacity(buffer_len);
-        
+
         unsafe {
-            self.rasterize_glyph_to_buffer(font_id, glyph, buffer.as_mut_slice())?;
+            buffer.set_len(buffer_len);
+            self.rasterize_glyph_to_buffer(font_id, glyph, &mut buffer)?;
         }
 
         Ok(buffer)

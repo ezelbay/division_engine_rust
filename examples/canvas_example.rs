@@ -5,7 +5,7 @@ use division_engine_rust::{
         border_radius::BorderRadius, color::Color32, decoration::Decoration, rect::Rect,
         rect_draw_system::RectDrawSystem,
     },
-    core::{Context, LifecycleManager, TextureFormat},
+    core::{Context, Image, LifecycleManager},
 };
 
 use division_math::Vector2;
@@ -43,15 +43,17 @@ impl LifecycleManager for MyLifecycleManager {
         let font_bitmap = context.rasterize_glyph(font, glyph).unwrap();
 
         context.delete_font(font);
-
-        let texture = context
-            .create_texture_buffer_from_data(
+        let image = unsafe {
+            Image::create_from_raw_in_memory(
+                font_bitmap.clone(),
                 glyph.width,
                 glyph.height,
-                TextureFormat::R8Uint,
-                &font_bitmap,
+                1,
             )
-            .unwrap();
+        };
+        image.wirte_to_file_jpg(Path::new("fuck.jpg")).unwrap();
+
+        let texture = context.create_texture_buffer_from_image(&image).unwrap();
 
         self.rect_draw_system.init(context);
         self.text_draw_system.init_with_texture(context, texture);
