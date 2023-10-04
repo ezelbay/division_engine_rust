@@ -41,7 +41,7 @@ void main()
     vec2 extents = Size * 0.5;
 
     ResultColor = texColor * Color;
-    ResultColor.a = -sdRoundedBox(
+    ResultColor.a *= -sdRoundedBox(
         VertPos - Position - extents,
         extents, 
         TRBRTLBL_BorderRadius

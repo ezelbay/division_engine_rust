@@ -79,8 +79,6 @@ impl Image {
             let path = CString::new(path);
             let path = path.ok()?;
 
-            stbi_set_flip_vertically_on_load(1);
-
             let ptr = stbi_load(
                 path.as_ptr(),
                 width.as_mut_ptr(),

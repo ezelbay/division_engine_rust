@@ -51,22 +51,22 @@ impl LifecycleManager for MyDelegate {
             Vert {
                 pos: Vector3::new(100., 500., 0.),
                 color: Vector4::one(),
-                uv: Vector2::new(0., 1.),
+                uv: Vector2::new(0., 0.),
             },
             Vert {
                 pos: Vector3::new(100., 100., 0.),
                 color: Vector4::one(),
-                uv: Vector2::new(0., 0.),
+                uv: Vector2::new(0., 1.),
             },
             Vert {
                 pos: Vector3::new(500., 100., 0.),
                 color: Vector4::one(),
-                uv: Vector2::new(1., 0.),
+                uv: Vector2::new(1., 1.),
             },
             Vert {
                 pos: Vector3::new(500., 500., 0.),
                 color: Vector4::one(),
-                uv: Vector2::new(1., 1.),
+                uv: Vector2::new(1., 0.),
             },
         ];
         let instances_data = [Inst {

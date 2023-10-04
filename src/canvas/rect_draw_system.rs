@@ -24,19 +24,21 @@ pub struct RectDrawSystem {
 #[derive(Clone, Copy, VertexData)]
 struct RectVertexData {
     #[location(0)]
+    vert_pos: Vector2,
+    #[location(1)]
     uv: Vector2,
 }
 
 #[repr(C, packed)]
 #[derive(Clone, Copy, VertexData)]
 struct RectInstanceData {
-    #[location(1)]
-    size: Vector2,
     #[location(2)]
-    position: Vector2,
+    size: Vector2,
     #[location(3)]
-    color: Vector4,
+    position: Vector2,
     #[location(4)]
+    color: Vector4,
+    #[location(5)]
     trbl_border_radius: Vector4,
 }
 
@@ -66,22 +68,25 @@ impl RectDrawSystem {
             .create_texture_buffer_from_data(1, 1, TextureFormat::RGBA32Uint, &[255u8; 4])
             .unwrap();
 
-        self.init_with_texture(context, white_texture)
+        self.init_with_texture(context, white_texture, false)
     }
 
     pub fn init_with_texture(
         &mut self,
         context: &mut Context,
         texture_buffer_id: DivisionId,
+        flip_vertical: bool,
     ) {
-        self.instance_count = 0;
-
         self.shader_id = context
             .create_bundled_shader_program(Path::new("resources/shaders/canvas/rect"))
             .unwrap();
 
         self.vertex_buffer_id = Self::make_vertex_buffer(context);
-        Self::generate_rect_drawer_vertex_data(context, self.vertex_buffer_id);
+        Self::generate_rect_drawer_vertex_data(
+            context,
+            self.vertex_buffer_id,
+            flip_vertical,
+        );
 
         self.uniform_buffer_id = context
             .create_uniform_buffer_with_size_of::<UniformData>()
@@ -128,20 +133,27 @@ impl RectDrawSystem {
     fn generate_rect_drawer_vertex_data(
         context: &mut Context,
         vertex_buffer_id: DivisionId,
+        flip_vertical: bool,
     ) {
         let data = Self::get_rect_drawer_data(context, vertex_buffer_id);
+        let (uv_top, uv_bottom) = if flip_vertical { (0., 1.) } else { (1., 0.) };
+
         let vertex_data = [
             RectVertexData {
-                uv: Vector2::new(0., 1.),
+                vert_pos: Vector2::new(0., 1.),
+                uv: Vector2::new(0., uv_top),
             },
             RectVertexData {
-                uv: Vector2::new(0., 0.),
+                vert_pos: Vector2::new(0., 0.),
+                uv: Vector2::new(0., uv_bottom),
             },
             RectVertexData {
-                uv: Vector2::new(1., 0.),
+                vert_pos: Vector2::new(1., 0.),
+                uv: Vector2::new(1., uv_bottom),
             },
             RectVertexData {
-                uv: Vector2::new(1., 1.),
+                vert_pos: Vector2::new(1., 1.),
+                uv: Vector2::new(1., uv_top),
             },
         ];
         let indices = [0, 1, 2, 2, 3, 0];

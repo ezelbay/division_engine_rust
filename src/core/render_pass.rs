@@ -15,9 +15,10 @@ use super::{
     Context, DivisionId, Error,
 };
 
-pub use super::c_interface::render_pass::DivisionAlphaBlend as AlphaBlend;
-pub use super::c_interface::render_pass::DivisionAlphaBlendOperation as AlphaBlendOperation;
-pub use super::c_interface::render_pass::DivisionIdWithBinding as IdWithBinding;
+pub use super::c_interface::render_pass::{
+    DivisionAlphaBlend as AlphaBlend, DivisionAlphaBlendOperation as AlphaBlendOperation,
+    DivisionColorMask as ColorMask, DivisionIdWithBinding as IdWithBinding,
+};
 
 pub struct RenderPassBuilder {
     ctx: *mut DivisionContext,
@@ -160,6 +161,12 @@ impl RenderPassBuilder {
         self
     }
 
+    pub fn color_mask(mut self, color_mask: DivisionColorMask) -> Self {
+        self.descriptor.color_mask = color_mask;
+
+        self
+    }
+
     pub fn vertex_uniform_buffers(mut self, vertex_uniforms: &[IdWithBinding]) -> Self {
         self.descriptor.uniform_vertex_buffers = vertex_uniforms.as_ptr();
         self.descriptor.uniform_vertex_buffer_count = vertex_uniforms.len() as i32;
@@ -187,8 +194,11 @@ impl RenderPassBuilder {
     pub fn build(#[allow(unused_mut)] mut self) -> Result<DivisionId, Error> {
         let mut pass_id = 0;
         unsafe {
-            if !division_engine_render_pass_alloc(self.ctx, &self.descriptor, &mut pass_id)
-            {
+            if !division_engine_render_pass_alloc(
+                self.ctx,
+                &self.descriptor,
+                &mut pass_id,
+            ) {
                 return Err(Error::Core("Failed to create a render pass".to_string()));
             }
         }
