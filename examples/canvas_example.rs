@@ -39,7 +39,7 @@ impl LifecycleManager for MyLifecycleManager {
 
         let font = context.create_font(&font_path, 64).unwrap();
 
-        let glyph = context.get_font_glyph(font, 'F').unwrap();
+        let glyph = context.get_font_glyph(font, 'B').unwrap();
         let font_bitmap = context.rasterize_glyph(font, glyph).unwrap();
         let image = unsafe {
             Image::create_from_raw_in_memory(
@@ -55,7 +55,8 @@ impl LifecycleManager for MyLifecycleManager {
         let texture = context.create_texture_buffer_from_image(&image).unwrap();
 
         self.rect_draw_system.init(context);
-        self.text_draw_system.init_with_texture(context, texture, true);
+        self.text_draw_system
+            .init_with_texture(context, texture, true);
 
         let red_brush = Decoration {
             color: Color32::red(),
@@ -86,7 +87,10 @@ impl LifecycleManager for MyLifecycleManager {
 
         self.text_draw_system.draw_rect(
             context,
-            Rect::from_center(Vector2::new(200., 200.), Vector2::new((glyph.width * 2) as f32, (glyph.height * 2) as f32)),
+            Rect::from_center(
+                Vector2::new(200., 200.),
+                Vector2::new((glyph.width) as f32, (glyph.height) as f32),
+            ),
             Decoration {
                 color: Color32::blue(),
                 border_radius: BorderRadius::none(),
