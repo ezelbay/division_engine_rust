@@ -5,10 +5,7 @@ use division_engine_rust::{
         border_radius::BorderRadius, color::Color32, decoration::Decoration, rect::Rect,
         rect_draw_system::RectDrawSystem,
     },
-    core::{
-        Context, Image, LifecycleManager, TextureChannelSwizzleVariant,
-        TextureChannelsSwizzle,
-    },
+    core::{Context, FontTexture, LifecycleManager},
 };
 
 use division_math::Vector2;
@@ -36,35 +33,18 @@ impl LifecycleManager for MyLifecycleManager {
     fn init(&mut self, context: &mut Context) {
         context.set_clear_color(Color32::white().into());
 
-        let font_path = Path::new("resources")
-            .join("fonts")
-            .join("Roboto-Regular.ttf");
-
-        let font = context.create_font(&font_path, 64).unwrap();
-
-        let glyph = context.get_font_glyph(font, 'B').unwrap();
-        let font_bitmap = context.rasterize_glyph(font, glyph).unwrap();
-        let image = unsafe {
-            Image::create_from_raw_in_memory(
-                font_bitmap.clone(),
-                glyph.width,
-                glyph.height,
-                1,
-            )
-        };
-
-        context.delete_font(font);
-
-        let texture = context
-            .create_texture_buffer_from_image_with_channels_swizzle(
-                &image,
-                Some(TextureChannelsSwizzle::all(TextureChannelSwizzleVariant::Red)),
-            )
-            .unwrap();
+        let font_texture = FontTexture::new(
+            context,
+            &Path::new("resources")
+                .join("fonts")
+                .join("Roboto-Medium.ttf"),
+            64,
+            ['A'..='X', '0'..='9', 'А'..='Я','а'..='я',].into_iter().flatten(),
+        );
 
         self.rect_draw_system.init(context);
         self.text_draw_system
-            .init_with_texture(context, texture, true);
+            .init_with_texture(context, font_texture.texture_id(), true);
 
         let red_brush = Decoration {
             color: Color32::red(),
@@ -95,10 +75,7 @@ impl LifecycleManager for MyLifecycleManager {
 
         self.text_draw_system.draw_rect(
             context,
-            Rect::from_center(
-                Vector2::new(200., 200.),
-                Vector2::new((glyph.width) as f32, (glyph.height) as f32),
-            ),
+            Rect::from_bottom_left(Vector2::new(200., 200.), Vector2::new(500., 500.)),
             Decoration {
                 color: Color32::blue(),
                 border_radius: BorderRadius::none(),
