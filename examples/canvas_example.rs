@@ -5,7 +5,10 @@ use division_engine_rust::{
         border_radius::BorderRadius, color::Color32, decoration::Decoration, rect::Rect,
         rect_draw_system::RectDrawSystem,
     },
-    core::{Context, Image, LifecycleManager},
+    core::{
+        Context, Image, LifecycleManager, TextureChannelSwizzleVariant,
+        TextureChannelsSwizzle,
+    },
 };
 
 use division_math::Vector2;
@@ -52,7 +55,12 @@ impl LifecycleManager for MyLifecycleManager {
 
         context.delete_font(font);
 
-        let texture = context.create_texture_buffer_from_image(&image).unwrap();
+        let texture = context
+            .create_texture_buffer_from_image_with_channels_swizzle(
+                &image,
+                Some(TextureChannelsSwizzle::all(TextureChannelSwizzleVariant::Red)),
+            )
+            .unwrap();
 
         self.rect_draw_system.init(context);
         self.text_draw_system
