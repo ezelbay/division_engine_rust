@@ -77,7 +77,7 @@ impl LifecycleManager for MyLifecycleManager {
             context,
             Rect::from_bottom_left(Vector2::new(200., 200.), Vector2::new(500., 500.)),
             Decoration {
-                color: Color32::blue(),
+                color: Color32::black(),
                 border_radius: BorderRadius::none(),
             },
         );

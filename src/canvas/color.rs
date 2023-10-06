@@ -21,6 +21,10 @@ impl Color32 {
         Self::from_rgb(0., 0., 0.)
     }
 
+    pub fn gray() -> Color32 {
+        Self::from_rgb(0.5, 0.5, 0.5)
+    }
+
     pub fn red() -> Color32 {
         Self::from_rgb(1., 0., 0.)
     }
