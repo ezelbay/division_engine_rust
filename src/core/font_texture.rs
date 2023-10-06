@@ -5,23 +5,27 @@ use super::{
     TextureFormat,
 };
 
+#[derive(Clone, Copy)]
 pub struct GlyphLayout {
-    glyph: FontGlyph,
     x: usize,
     y: usize,
-    character: char,
+    u: f32,
+    v: f32,
+    glyph: FontGlyph,
 }
 
 pub struct FontTexture {
     glyph_layouts: Vec<GlyphLayout>,
+    characters: Vec<char>,
     width: usize,
     height: usize,
     texture_id: DivisionId,
 }
 
 struct GlyphMetrics {
-    max_glyph_bytes: usize,
     glyph_layouts: Vec<GlyphLayout>,
+    characters: Vec<char>,
+    max_glyph_bytes: usize,
 }
 
 impl FontTexture {
@@ -75,6 +79,7 @@ impl FontTexture {
         FontTexture {
             texture_id,
             glyph_layouts: metrics.glyph_layouts,
+            characters: metrics.characters,
             width,
             height,
         }
@@ -92,15 +97,16 @@ fn get_glyph_metrics<T: Iterator<Item = char>>(
     width: usize,
     height: usize,
 ) -> GlyphMetrics {
-    let mut glyph_layouts = Vec::with_capacity(50);
+    let characters = characters.collect::<Vec<char>>();
+    let mut glyph_layouts = Vec::with_capacity(characters.len());
 
     let mut curr_x: usize = 0;
     let mut curr_y: usize = 0;
     let mut max_glyph_bytes = 0;
     let mut max_glyph_per_row_height = 0;
 
-    for c in characters {
-        let glyph = context.get_font_glyph(font, c).unwrap();
+    for c in &characters {
+        let glyph = context.get_font_glyph(font, *c).unwrap();
 
         if curr_x + glyph.width as usize > width {
             if curr_y + glyph.height as usize > height {
@@ -111,22 +117,27 @@ fn get_glyph_metrics<T: Iterator<Item = char>>(
             curr_y += max_glyph_per_row_height;
             max_glyph_per_row_height = 0;
         }
-
-        glyph_layouts.push(GlyphLayout {
+        
+        let width = glyph.width as usize;
+        let height = glyph.height as usize;
+        let layout = GlyphLayout {
             x: curr_x,
             y: curr_y,
+            u: curr_x as f32 / width as f32,
+            v: curr_y as f32 / height as f32,
             glyph,
-            character: c,
-        });
+        };
+        glyph_layouts.push(layout);
 
-        curr_x += glyph.width as usize;
-        max_glyph_bytes = max_glyph_bytes.max((glyph.width * glyph.height) as usize);
-        max_glyph_per_row_height = max_glyph_per_row_height.max(glyph.height as usize);
+        curr_x += width;
+        max_glyph_bytes = max_glyph_bytes.max(width * height);
+        max_glyph_per_row_height = max_glyph_per_row_height.max(height);
     }
 
     GlyphMetrics {
         max_glyph_bytes,
         glyph_layouts,
+        characters,
     }
 }
 
@@ -142,22 +153,23 @@ fn rasterize_glyphs(
         glyph_buff.set_len(metrics.max_glyph_bytes);
     }
 
-    for glyph_layout in &metrics.glyph_layouts {
-        let glyph = glyph_layout.glyph;
+    for (layout, c) in metrics.glyph_layouts.iter().zip(metrics.characters.iter()) {
         unsafe {
             context
-                .rasterize_glyph_to_buffer(font, glyph_layout.glyph, &mut glyph_buff)
+                .rasterize_glyph_to_buffer(font, *c, &mut glyph_buff)
                 .unwrap();
         }
 
-        for h in 0..glyph.height {
+        for h in 0..layout.glyph.height {
             let h = h as usize;
-            let src_row_start = h * glyph.width as usize;
-            let src_row_end = src_row_start + glyph.width as usize;
+            let glyph_width = layout.glyph.width as usize;
+
+            let src_row_start = h * glyph_width;
+            let src_row_end = src_row_start + glyph_width;
             let src = &glyph_buff[src_row_start..src_row_end];
 
-            let dst_row_start = glyph_layout.x + (glyph_layout.y + h) * tex_width;
-            let dst_row_end = dst_row_start + glyph.width as usize;
+            let dst_row_start = layout.x + (layout.y + h) * tex_width;
+            let dst_row_end = dst_row_start + glyph_width;
             let dst = &mut tex_data[dst_row_start..dst_row_end];
 
             dst.copy_from_slice(src);

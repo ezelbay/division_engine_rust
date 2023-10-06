@@ -68,33 +68,17 @@ impl Context {
         }
     }
 
-    pub fn rasterize_glyph(
-        &mut self,
-        font_id: DivisionId,
-        glyph: FontGlyph,
-    ) -> Result<Vec<u8>, Error> {
-        let buffer_len = (glyph.width * glyph.height) as usize;
-        let mut buffer = Vec::with_capacity(buffer_len);
-
-        unsafe {
-            buffer.set_len(buffer_len);
-            self.rasterize_glyph_to_buffer(font_id, glyph, &mut buffer)?;
-        }
-
-        Ok(buffer)
-    }
-
     pub unsafe fn rasterize_glyph_to_buffer(
         &mut self,
         font_id: DivisionId,
-        glyph: FontGlyph,
+        glyph_char: char,
         buffer: &mut [u8],
     ) -> Result<(), Error> {
         let ok = unsafe {
             division_engine_font_rasterize_glyph(
                 self,
                 font_id,
-                &glyph,
+                glyph_char as i32,
                 buffer.as_mut_ptr(),
             )
         };

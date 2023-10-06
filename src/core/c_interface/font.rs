@@ -5,9 +5,15 @@ use super::context::DivisionContext;
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct DivisionFontGlyph {
-    pub glyph_id: u32,
     pub width: u32,
     pub height: u32,
+
+    pub hor_advance: u32,
+    pub hor_bearing_x: u32,
+    pub hor_bearing_y: u32,
+    pub vert_advcance: u32,
+    pub vert_bearing_x: u32,
+    pub vert_bearing_y: u32,
 }
 
 extern "C" {
@@ -30,7 +36,7 @@ extern "C" {
     pub fn division_engine_font_rasterize_glyph(
         ctx: *mut DivisionContext,
         font_id: u32,
-        glyph: *const DivisionFontGlyph,
+        character: i32,
         bitmap: *mut u8
     ) -> bool;
 }

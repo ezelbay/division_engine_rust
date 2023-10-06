@@ -39,7 +39,7 @@ impl LifecycleManager for MyLifecycleManager {
                 .join("fonts")
                 .join("Roboto-Medium.ttf"),
             64,
-            ['A'..='X', '0'..='9', 'А'..='Я','а'..='я',].into_iter().flatten(),
+            [' '..='~',].into_iter().flatten(),
         );
 
         self.rect_draw_system.init(context);
@@ -75,9 +75,9 @@ impl LifecycleManager for MyLifecycleManager {
 
         self.text_draw_system.draw_rect(
             context,
-            Rect::from_bottom_left(Vector2::new(200., 200.), Vector2::new(500., 500.)),
+            Rect::from_bottom_left(Vector2::new(0., 0.), Vector2::new(512., 512.)),
             Decoration {
-                color: Color32::black(),
+                color: Color32::blue(),
                 border_radius: BorderRadius::none(),
             },
         );
