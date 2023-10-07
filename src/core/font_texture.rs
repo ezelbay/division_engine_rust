@@ -7,11 +7,11 @@ use super::{
 
 #[derive(Clone, Copy)]
 pub struct GlyphLayout {
-    x: usize,
-    y: usize,
-    u: f32,
-    v: f32,
-    glyph: FontGlyph,
+    pub x: usize,
+    pub y: usize,
+    pub u: f32,
+    pub v: f32,
+    pub glyph: FontGlyph,
 }
 
 pub struct FontTexture {
@@ -87,8 +87,26 @@ impl FontTexture {
         }
     }
 
+    #[inline]
     pub fn texture_id(&self) -> DivisionId {
         self.texture_id
+    }
+
+    #[inline]
+    pub fn width(&self) -> usize {
+        self.width
+    }
+
+    #[inline]
+    pub fn height(&self) -> usize {
+        self.height
+    }
+
+    pub fn find_glyph_layout(&self, glyph_char: char) -> Option<&GlyphLayout> {
+        match self.characters.binary_search(&glyph_char) {
+            Ok(i) => Some(&self.glyph_layouts[i]),
+            Err(_) => None,
+        }
     }
 }
 
@@ -106,6 +124,7 @@ fn get_glyph_metrics<T: Iterator<Item = char>>(
     let mut curr_y: usize = 0;
     let mut max_glyph_bytes = 0;
     let mut max_glyph_per_row_height = 0;
+    const GLYPH_GAP: usize = 1;
 
     for c in &characters {
         let glyph = context.get_font_glyph(font, *c).unwrap();
@@ -116,7 +135,7 @@ fn get_glyph_metrics<T: Iterator<Item = char>>(
             }
 
             curr_x = 0;
-            curr_y += max_glyph_per_row_height;
+            curr_y += max_glyph_per_row_height + GLYPH_GAP;
             max_glyph_per_row_height = 0;
         }
 
@@ -131,7 +150,7 @@ fn get_glyph_metrics<T: Iterator<Item = char>>(
         };
         glyph_layouts.push(layout);
 
-        curr_x += width;
+        curr_x += width + GLYPH_GAP;
         max_glyph_bytes = max_glyph_bytes.max(width * height);
         max_glyph_per_row_height = max_glyph_per_row_height.max(height);
     }

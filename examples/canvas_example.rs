@@ -75,7 +75,7 @@ impl LifecycleManager for MyLifecycleManager {
 
         self.text_draw_system.draw_rect(
             context,
-            Rect::from_bottom_left(Vector2::new(0., 0.), Vector2::new(512., 512.)),
+            Rect::from_bottom_left(Vector2::new(0., 0.), Vector2::new(1024., 512.)),
             Decoration {
                 color: Color32::blue(),
                 border_radius: BorderRadius::none(),
