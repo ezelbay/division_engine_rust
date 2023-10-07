@@ -11,6 +11,7 @@ layout (location = 6) in vec2 glyphInTexSize;
 
 layout (location = 0) out vec4 outColor;
 layout (location = 1) out vec2 outTexelCoord;
+layout (location = 2) out vec2 outUV;
 
 layout (std140, binding = 1) uniform Uniforms {
     vec2 screenSize;
@@ -22,6 +23,7 @@ void main() {
     
     outColor = inColor;
     outTexelCoord = inTexelCoord + glyphInTexSize * inUV;
+    outUV = inUV;
 
     gl_Position = vec4(mix(vec2(-1,-1), vec2(1,1), normPos), 0, 1);
 }
