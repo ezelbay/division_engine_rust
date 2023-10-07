@@ -3,7 +3,7 @@ use std::ffi::c_void;
 use super::{
     c_interface::texture::{
         division_engine_texture_alloc, division_engine_texture_free,
-        division_engine_texture_set_data, DivisionTextureDescriptor,
+        division_engine_texture_set_data,
     },
     Context, DivisionId, Error, Image,
 };
@@ -11,45 +11,23 @@ use super::{
 pub use super::c_interface::texture::{
     DivisionTextureChannelSwizzleVariant as TextureChannelSwizzleVariant,
     DivisionTextureChannelsSwizzle as TextureChannelsSwizzle,
+    DivisionTextureDescriptor as TextureDescriptor,
     DivisionTextureFormat as TextureFormat,
+    DivisionTextureMinMagFilter as TextureMinMagFilter,
 };
 
 impl Context {
     pub fn create_texture_buffer(
         &mut self,
-        width: u32,
-        height: u32,
-        texture_format: TextureFormat,
+        texture_descriptor: &TextureDescriptor,
     ) -> Result<DivisionId, Error> {
-        self.create_texture_buffer_with_channels_swizzle(
-            width,
-            height,
-            texture_format,
-            None,
-        )
-    }
-
-    pub fn create_texture_buffer_with_channels_swizzle(
-        &mut self,
-        width: u32,
-        height: u32,
-        texture_format: TextureFormat,
-        channels_swizzle: Option<TextureChannelsSwizzle>,
-    ) -> Result<DivisionId, Error> {
-        let texture_desc = DivisionTextureDescriptor {
-            width,
-            height,
-            texture_format,
-            has_channels_swizzle: channels_swizzle.is_some(),
-            channels_swizzle: match channels_swizzle {
-                Some(v) => v,
-                None => TextureChannelsSwizzle::default(),
-            },
-        };
         let mut texture_id = 0;
         unsafe {
-            if !division_engine_texture_alloc(&mut *self, &texture_desc, &mut texture_id)
-            {
+            if !division_engine_texture_alloc(
+                &mut *self,
+                texture_descriptor,
+                &mut texture_id,
+            ) {
                 return Err(Error::Core("Failed to create texture".to_string()));
             }
         }
@@ -59,34 +37,10 @@ impl Context {
 
     pub fn create_texture_buffer_from_data(
         &mut self,
-        width: u32,
-        height: u32,
-        texture_format: TextureFormat,
+        texture_descriptor: &TextureDescriptor,
         data: &[u8],
     ) -> Result<DivisionId, Error> {
-        self.create_texture_buffer_from_data_with_channels_swizzle(
-            width,
-            height,
-            texture_format,
-            None,
-            data,
-        )
-    }
-
-    pub fn create_texture_buffer_from_data_with_channels_swizzle(
-        &mut self,
-        width: u32,
-        height: u32,
-        texture_format: TextureFormat,
-        channels_swizzle: Option<TextureChannelsSwizzle>,
-        data: &[u8],
-    ) -> Result<DivisionId, Error> {
-        let id = self.create_texture_buffer_with_channels_swizzle(
-            width,
-            height,
-            texture_format,
-            channels_swizzle,
-        )?;
+        let id = self.create_texture_buffer(texture_descriptor)?;
         self.set_texture_buffer_data(id, data);
         Ok(id)
     }
@@ -109,21 +63,34 @@ impl Context {
         &mut self,
         image: &Image,
     ) -> Result<DivisionId, Error> {
-        self.create_texture_buffer_from_image_with_channels_swizzle(image, None)
+        self.create_texture_buffer_from_image_advanced(
+            image,
+            None,
+            TextureMinMagFilter::Nearest,
+            TextureMinMagFilter::Nearest,
+        )
     }
 
-    pub fn create_texture_buffer_from_image_with_channels_swizzle(
+    pub fn create_texture_buffer_from_image_advanced(
         &mut self,
         image: &Image,
         channels_swizzle: Option<TextureChannelsSwizzle>,
+        min_filter: TextureMinMagFilter,
+        mag_filter: TextureMinMagFilter,
     ) -> Result<DivisionId, Error> {
-        self.create_texture_buffer_from_data_with_channels_swizzle(
+        let mut desc = TextureDescriptor::new(
             image.width(),
             image.height(),
             channels_to_texture_format(image.channels())?,
-            channels_swizzle,
-            image.data(),
         )
+        .with_min_mag_filter(min_filter, mag_filter);
+
+        if let Some(s) = channels_swizzle {
+            desc.channels_swizzle = s;
+            desc.has_channels_swizzle = true;
+        }
+
+        self.create_texture_buffer_from_data(&desc, image.data())
     }
 
     pub fn delete_texture_buffer(&mut self, texture_buffer_id: DivisionId) {
@@ -134,7 +101,7 @@ impl Context {
 }
 
 #[inline]
-fn channels_to_texture_format(channels: u32) -> Result<TextureFormat, Error> {
+fn channels_to_texture_format(channels: usize) -> Result<TextureFormat, Error> {
     Ok(match channels {
         1 => TextureFormat::R8Uint,
         3 => TextureFormat::RGB24Uint,
@@ -166,5 +133,40 @@ impl Default for TextureChannelsSwizzle {
             blue: TextureChannelSwizzleVariant::Blue,
             alpha: TextureChannelSwizzleVariant::Alpha,
         }
+    }
+}
+
+impl TextureDescriptor {
+    pub fn new(width: usize, height: usize, texture_format: TextureFormat) -> Self {
+        Self {
+            width: width as u32,
+            height: height as u32,
+            texture_format,
+            has_channels_swizzle: false,
+            channels_swizzle: TextureChannelsSwizzle::default(),
+            min_filter: TextureMinMagFilter::Nearest,
+            mag_filter: TextureMinMagFilter::Nearest,
+        }
+    }
+
+    pub fn with_channels_swizzle(
+        mut self,
+        channels_swizzle: TextureChannelsSwizzle,
+    ) -> Self {
+        self.has_channels_swizzle = true;
+        self.channels_swizzle = channels_swizzle;
+
+        self
+    }
+
+    pub fn with_min_mag_filter(
+        mut self,
+        min_filter: TextureMinMagFilter,
+        mag_filter: TextureMinMagFilter,
+    ) -> Self {
+        self.min_filter = min_filter;
+        self.mag_filter = mag_filter;
+
+        self
     }
 }

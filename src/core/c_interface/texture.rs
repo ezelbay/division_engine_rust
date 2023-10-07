@@ -21,6 +21,13 @@ pub enum DivisionTextureChannelSwizzleVariant {
     Alpha = 5,
 }
 
+#[repr(i32)]
+#[derive(Clone, Copy)]
+pub enum DivisionTextureMinMagFilter {
+    Nearest = 1,
+    Linear = 2
+}
+
 #[repr(C)]
 pub struct DivisionTextureChannelsSwizzle {
     pub red: DivisionTextureChannelSwizzleVariant,
@@ -33,6 +40,8 @@ pub struct DivisionTextureChannelsSwizzle {
 pub struct DivisionTextureDescriptor {
     pub channels_swizzle: DivisionTextureChannelsSwizzle,
     pub texture_format: DivisionTextureFormat,
+    pub min_filter: DivisionTextureMinMagFilter,
+    pub mag_filter: DivisionTextureMinMagFilter,
     pub width: u32,
     pub height: u32,
     pub has_channels_swizzle: bool,

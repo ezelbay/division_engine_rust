@@ -20,17 +20,17 @@ enum ImageImpl {
 
 pub struct Image {
     imp: ImageImpl,
-    width: u32,
-    height: u32,
-    channels: u32,
+    width: usize,
+    height: usize,
+    channels: usize,
 }
 
 impl Image {
     pub unsafe fn create_from_raw_in_memory(
         buffer: Vec<u8>,
-        width: u32,
-        height: u32,
-        channels: u32,
+        width: usize,
+        height: usize,
+        channels: usize,
     ) -> Image {
         Image {
             imp: ImageImpl::Raw(buffer),
@@ -62,9 +62,9 @@ impl Image {
 
             return Some(Image {
                 imp: ImageImpl::Stb(ptr),
-                width: width.assume_init() as u32,
-                height: height.assume_init() as u32,
-                channels: channels.assume_init() as u32,
+                width: width.assume_init() as usize,
+                height: height.assume_init() as usize,
+                channels: channels.assume_init() as usize,
             });
         }
     }
@@ -93,9 +93,9 @@ impl Image {
 
             return Some(Image {
                 imp: ImageImpl::Stb(ptr),
-                width: width.assume_init() as u32,
-                height: height.assume_init() as u32,
-                channels: channels.assume_init() as u32,
+                width: width.assume_init() as usize,
+                height: height.assume_init() as usize,
+                channels: channels.assume_init() as usize,
             });
         }
     }
@@ -148,17 +148,17 @@ impl Image {
     }
 
     #[inline]
-    pub fn channels(&self) -> u32 {
+    pub fn channels(&self) -> usize {
         self.channels
     }
 
     #[inline]
-    pub fn width(&self) -> u32 {
+    pub fn width(&self) -> usize {
         self.width
     }
 
     #[inline]
-    pub fn height(&self) -> u32 {
+    pub fn height(&self) -> usize {
         self.height
     }
 }

@@ -2,7 +2,7 @@ use std::path::Path;
 
 use super::{
     Context, DivisionId, FontGlyph, TextureChannelSwizzleVariant, TextureChannelsSwizzle,
-    TextureFormat,
+    TextureDescriptor, TextureFormat, TextureMinMagFilter,
 };
 
 #[derive(Clone, Copy)]
@@ -65,13 +65,15 @@ impl FontTexture {
         context.delete_font(font);
 
         let texture_id = context
-            .create_texture_buffer_from_data_with_channels_swizzle(
-                width as u32,
-                height as u32,
-                TextureFormat::R8Uint,
-                Some(TextureChannelsSwizzle::all(
-                    TextureChannelSwizzleVariant::Red,
-                )),
+            .create_texture_buffer_from_data(
+                &TextureDescriptor::new(width, height, TextureFormat::R8Uint)
+                    .with_channels_swizzle(TextureChannelsSwizzle::all(
+                        TextureChannelSwizzleVariant::Red,
+                    ))
+                    .with_min_mag_filter(
+                        TextureMinMagFilter::Linear,
+                        TextureMinMagFilter::Linear,
+                    ),
                 &tex_data,
             )
             .unwrap();
@@ -117,7 +119,7 @@ fn get_glyph_metrics<T: Iterator<Item = char>>(
             curr_y += max_glyph_per_row_height;
             max_glyph_per_row_height = 0;
         }
-        
+
         let width = glyph.width as usize;
         let height = glyph.height as usize;
         let layout = GlyphLayout {

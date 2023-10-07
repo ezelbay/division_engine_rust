@@ -4,8 +4,8 @@ use division_math::{Vector2, Vector4};
 
 use crate::core::{
     AlphaBlend, AlphaBlendOperation, Context, DivisionId, IdWithBinding, RenderTopology,
-    ShaderVariableType, TextureFormat, VertexAttributeDescriptor, VertexBufferData,
-    VertexData,
+    ShaderVariableType, TextureDescriptor, TextureFormat, VertexAttributeDescriptor,
+    VertexBufferData, VertexData,
 };
 
 use super::{decoration::Decoration, rect::Rect};
@@ -65,7 +65,10 @@ impl RectDrawSystem {
 
     pub fn init(&mut self, context: &mut Context) {
         let white_texture = context
-            .create_texture_buffer_from_data(1, 1, TextureFormat::RGBA32Uint, &[255u8; 4])
+            .create_texture_buffer_from_data(
+                &TextureDescriptor::new(1, 1, TextureFormat::RGBA32Uint),
+                &[255u8; 4],
+            )
             .unwrap();
 
         self.init_with_texture(context, white_texture, false)

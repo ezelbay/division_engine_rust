@@ -1,4 +1,4 @@
-pub mod c_interface;
+pub(crate) mod c_interface;
 
 mod context;
 mod context_builder;
