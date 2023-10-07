@@ -11,11 +11,6 @@ layout (location = 0) out vec4 ResultColor;
 
 layout (binding = 0) uniform sampler2D Tex;
 
-layout (std140, binding = 1) uniform Uniforms 
-{
-    vec2 screenSize;
-};
-
 float select(bool selector, float a, float b) 
 {
     return float(selector) * a + float(!selector) * b;

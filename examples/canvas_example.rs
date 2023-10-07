@@ -3,22 +3,22 @@ use std::path::Path;
 use division_engine_rust::{
     canvas::{
         border_radius::BorderRadius, color::Color32, decoration::Decoration, rect::Rect,
-        rect_draw_system::RectDrawSystem,
+        rect_draw_system::RectDrawSystem, text_draw_system::TextDrawSystem,
     },
-    core::{Context, FontTexture, LifecycleManager},
+    core::{Context, LifecycleManager},
 };
 
 use division_math::Vector2;
 
 struct MyLifecycleManager {
     rect_draw_system: RectDrawSystem,
-    text_draw_system: RectDrawSystem,
+    text_draw_system: Option<TextDrawSystem>,
 }
 
 fn main() {
     let mut lifecycle_manager = MyLifecycleManager {
         rect_draw_system: RectDrawSystem::new(),
-        text_draw_system: RectDrawSystem::new(),
+        text_draw_system: None,
     };
     let mut context = Context::builder()
         .window_size(1024, 1024)
@@ -33,18 +33,21 @@ impl LifecycleManager for MyLifecycleManager {
     fn init(&mut self, context: &mut Context) {
         context.set_clear_color(Color32::white().into());
 
-        let font_texture = FontTexture::new(
+        self.rect_draw_system.init(context);
+        let mut sys = TextDrawSystem::new(
             context,
             &Path::new("resources")
                 .join("fonts")
                 .join("Roboto-Medium.ttf"),
-            64,
-            [' '..='~',].into_iter().flatten(),
         );
 
-        self.rect_draw_system.init(context);
-        self.text_draw_system
-            .init_with_texture(context, font_texture.texture_id(), true);
+        sys.draw_text(
+            context,
+            "Lorem ipsum",
+            32.,
+            Vector2::new(512., 512.),
+            Color32::from_rgb_hex(0x007192),
+        );
 
         let red_brush = Decoration {
             color: Color32::red(),
@@ -73,20 +76,16 @@ impl LifecycleManager for MyLifecycleManager {
             self.rect_draw_system.draw_rect(context, r, purple_brush);
         }
 
-        self.text_draw_system.draw_rect(
-            context,
-            Rect::from_bottom_left(Vector2::new(0., 0.), Vector2::new(1024., 512.)),
-            Decoration {
-                color: Color32::from_rgb_hex(0x455A64),
-                border_radius: BorderRadius::none(),
-            },
-        );
+        self.text_draw_system = Some(sys);
     }
 
     fn update(&mut self, context: &mut Context) {
         let size = context.get_window_size();
         self.rect_draw_system.set_canvas_size(context, size);
-        self.text_draw_system.set_canvas_size(context, size);
+
+        if let Some(ref mut text_sys) = self.text_draw_system {
+            text_sys.set_canvas_size(context, size)
+        }
     }
 
     fn error(&mut self, _context: &mut Context, _error_code: i32, message: &str) {
@@ -95,6 +94,8 @@ impl LifecycleManager for MyLifecycleManager {
 
     fn cleanup(&mut self, context: &mut Context) {
         self.rect_draw_system.cleanup(context);
-        self.text_draw_system.cleanup(context);
+        if let Some(ref mut text_sys) = self.text_draw_system {
+            text_sys.cleanup(context);
+        }
     }
 }

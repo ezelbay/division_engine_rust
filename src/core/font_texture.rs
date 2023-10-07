@@ -1,9 +1,8 @@
 use std::path::Path;
 
-use super::{
-    Context, DivisionId, FontGlyph, TextureChannelSwizzleVariant, TextureChannelsSwizzle,
-    TextureDescriptor, TextureFormat, TextureMinMagFilter,
-};
+use division_math::Vector2;
+
+use super::{Context, DivisionId, FontGlyph, TextureDescriptor, TextureFormat};
 
 #[derive(Clone, Copy)]
 pub struct GlyphLayout {
@@ -66,14 +65,7 @@ impl FontTexture {
 
         let texture_id = context
             .create_texture_buffer_from_data(
-                &TextureDescriptor::new(width, height, TextureFormat::R8Uint)
-                    .with_channels_swizzle(TextureChannelsSwizzle::all(
-                        TextureChannelSwizzleVariant::Red,
-                    ))
-                    .with_min_mag_filter(
-                        TextureMinMagFilter::Linear,
-                        TextureMinMagFilter::Linear,
-                    ),
+                &TextureDescriptor::new(width, height, TextureFormat::R8Uint),
                 &tex_data,
             )
             .unwrap();
@@ -93,13 +85,8 @@ impl FontTexture {
     }
 
     #[inline]
-    pub fn width(&self) -> usize {
-        self.width
-    }
-
-    #[inline]
-    pub fn height(&self) -> usize {
-        self.height
+    pub fn size(&self) -> Vector2 {
+        Vector2::new(self.width as f32, self.height as f32)
     }
 
     pub fn find_glyph_layout(&self, glyph_char: char) -> Option<&GlyphLayout> {
@@ -107,6 +94,10 @@ impl FontTexture {
             Ok(i) => Some(&self.glyph_layouts[i]),
             Err(_) => None,
         }
+    }
+
+    pub fn delete(&mut self, context: &mut Context) {
+        context.delete_texture_buffer(self.texture_id);
     }
 }
 
@@ -139,8 +130,8 @@ fn get_glyph_metrics<T: Iterator<Item = char>>(
             max_glyph_per_row_height = 0;
         }
 
-        let width = glyph.width as usize;
-        let height = glyph.height as usize;
+        let glyph_width = glyph.width as usize;
+        let glyph_height = glyph.height as usize;
         let layout = GlyphLayout {
             x: curr_x,
             y: curr_y,
@@ -150,9 +141,9 @@ fn get_glyph_metrics<T: Iterator<Item = char>>(
         };
         glyph_layouts.push(layout);
 
-        curr_x += width + GLYPH_GAP;
-        max_glyph_bytes = max_glyph_bytes.max(width * height);
-        max_glyph_per_row_height = max_glyph_per_row_height.max(height);
+        curr_x += glyph_width + GLYPH_GAP;
+        max_glyph_bytes = max_glyph_bytes.max(glyph_width * glyph_height);
+        max_glyph_per_row_height = max_glyph_per_row_height.max(glyph_height);
     }
 
     GlyphMetrics {

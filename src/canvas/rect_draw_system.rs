@@ -81,7 +81,12 @@ impl RectDrawSystem {
         flip_vertical: bool,
     ) {
         self.shader_id = context
-            .create_bundled_shader_program(Path::new("resources/shaders/canvas/rect"))
+            .create_bundled_shader_program(
+                &Path::new("resources")
+                    .join("shaders")
+                    .join("canvas")
+                    .join("rect"),
+            )
             .unwrap();
 
         self.vertex_buffer_id = Self::make_vertex_buffer(context);
