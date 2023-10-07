@@ -116,56 +116,67 @@ impl TextDrawSystem {
         position: Vector2,
         color: Color32,
     ) {
-        let mut char_count = 0;
-        let scale_mod = font_size / RASTERIZED_FONT_SIZE as f32;
-
-        {
-            let data = context
-                .vertex_buffer_data::<TextVertex, TextInstance>(self.vertex_buffer_id);
-
-            let font_atlas_size = self.font_texture.size();
-
-            let mut x = position.x;
-
-            for (i, ch) in text.chars().enumerate() {
-                let glyph_layout = self.font_texture.find_glyph_layout(ch).unwrap();
-                let glyph = glyph_layout.glyph;
-                let scaled_advance = glyph.hor_advance as f32 * scale_mod;
-
-                if glyph_layout.glyph.width > 0 {
-                    let scaled_width = glyph.width as f32 * scale_mod;
-                    let scaled_height = glyph.height as f32 * scale_mod;
-                    let scaled_bearing_x = glyph.hor_bearing_x as f32 * scale_mod;
-                    let scaled_bearing_y = glyph.hor_bearing_y as f32 * scale_mod;
-                    let y_offset = scaled_height - scaled_bearing_y;
-
-                    data.per_instance_data[self.instance_count + i] = TextInstance {
-                        texel_coord: Vector2::new(
-                            glyph_layout.x as f32,
-                            glyph_layout.y as f32,
-                        ),
-                        size: Vector2::new(scaled_width, scaled_height),
-                        position: Vector2::new(x + scaled_bearing_x, position.y - y_offset),
-                        color: color.into(),
-                        glyph_in_tex_size: Vector2::new(
-                            glyph.width as f32,
-                            glyph.height as f32,
-                        ),
-                        tex_size: font_atlas_size,
-                    };
-                }
-
-                x += scaled_advance as f32;
-                char_count += 1;
-                debug_assert!(self.instance_count + char_count < RECT_CAPACITY);
-            }
-        }
+        let font_scale = font_size / RASTERIZED_FONT_SIZE as f32;
+        let char_count =
+            self.write_text_instance_data(context, text, font_scale, position, color);
 
         let borrowed_render_pass =
             context.borrow_render_pass_mut_ptr(self.render_pass_id);
         borrowed_render_pass.render_pass.instance_count += char_count as u64;
 
         self.instance_count += char_count;
+    }
+
+    fn write_text_instance_data(
+        &mut self,
+        context: &mut Context,
+        text: &str,
+        font_scale: f32,
+        position: Vector2,
+        color: Color32,
+    ) -> usize {
+        let data =
+            context.vertex_buffer_data::<TextVertex, TextInstance>(self.vertex_buffer_id);
+
+        let font_atlas_size = self.font_texture.size();
+
+        let mut char_count = 0;
+        let mut x = position.x;
+
+        for (i, ch) in text.chars().enumerate() {
+            let glyph_layout = self.font_texture.find_glyph_layout(ch).unwrap();
+            let glyph = glyph_layout.glyph;
+            let scaled_advance = glyph.hor_advance as f32 * font_scale;
+
+            if glyph_layout.glyph.width > 0 {
+                let scaled_width = glyph.width as f32 * font_scale;
+                let scaled_height = glyph.height as f32 * font_scale;
+                let scaled_bearing_x = glyph.hor_bearing_x as f32 * font_scale;
+                let scaled_bearing_y = glyph.hor_bearing_y as f32 * font_scale;
+                let y_offset = scaled_height - scaled_bearing_y;
+
+                data.per_instance_data[self.instance_count + i] = TextInstance {
+                    texel_coord: Vector2::new(
+                        glyph_layout.x as f32,
+                        glyph_layout.y as f32,
+                    ),
+                    size: Vector2::new(scaled_width, scaled_height),
+                    position: Vector2::new(x + scaled_bearing_x, position.y - y_offset),
+                    color: color.into(),
+                    glyph_in_tex_size: Vector2::new(
+                        glyph.width as f32,
+                        glyph.height as f32,
+                    ),
+                    tex_size: font_atlas_size,
+                };
+            }
+
+            x += scaled_advance as f32;
+            char_count += 1;
+            debug_assert!(self.instance_count + char_count < RECT_CAPACITY);
+        }
+
+        char_count
     }
 
     pub fn set_canvas_size(&mut self, context: &mut Context, size: Vector2) {
