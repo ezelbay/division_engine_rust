@@ -43,7 +43,7 @@ impl LifecycleManager for MyLifecycleManager {
 
         sys.draw_text(
             context,
-            "Pizdec suka-!",
+            "Lorem ipsum",
             128.,
             Vector2::new(256., 256.),
             Color32::from_rgb_hex(0x007192),
