@@ -141,19 +141,19 @@ impl TextDrawSystem {
         let font_atlas_size = self.font_texture.size();
 
         let mut char_count = 0;
-        let mut x = position.x;
+        let mut pen_x = position.x;
+        let pen_y = position.y;
 
         for (i, ch) in text.chars().enumerate() {
             let glyph_layout = self.font_texture.find_glyph_layout(ch).unwrap();
             let glyph = glyph_layout.glyph;
-            let scaled_advance = glyph.hor_advance as f32 * font_scale;
+            let scaled_advance = glyph.advance_x as f32 * font_scale;
 
             if glyph_layout.glyph.width > 0 {
                 let scaled_width = glyph.width as f32 * font_scale;
                 let scaled_height = glyph.height as f32 * font_scale;
-                let scaled_bearing_x = glyph.hor_bearing_x as f32 * font_scale;
-                let scaled_bearing_y = glyph.hor_bearing_y as f32 * font_scale;
-                let y_offset = scaled_height - scaled_bearing_y;
+                let x_offset = glyph.left as f32 * font_scale;
+                let y_offset = (glyph.top as f32 - glyph.height as f32) * font_scale;
 
                 data.per_instance_data[self.instance_count + i] = TextInstance {
                     texel_coord: Vector2::new(
@@ -161,7 +161,7 @@ impl TextDrawSystem {
                         glyph_layout.y as f32,
                     ),
                     size: Vector2::new(scaled_width, scaled_height),
-                    position: Vector2::new(x + scaled_bearing_x, position.y - y_offset),
+                    position: Vector2::new(pen_x + x_offset, pen_y + y_offset),
                     color: color.into(),
                     glyph_in_tex_size: Vector2::new(
                         glyph.width as f32,
@@ -171,7 +171,7 @@ impl TextDrawSystem {
                 };
             }
 
-            x += scaled_advance as f32;
+            pen_x += scaled_advance as f32;
             char_count += 1;
             debug_assert!(self.instance_count + char_count < RECT_CAPACITY);
         }

@@ -27,12 +27,12 @@ impl Color32 {
     }
 
     pub fn from_rgba_hex(hex: u32) -> Color32 {
-        let mask = 0x00_00_00_ff;
+        const HEX_MASK: u32 = 0x00_00_00_ff;
 
-        let r = (hex >> 24) & mask;
-        let g = (hex >> 16) & mask;
-        let b = (hex >> 8) & mask;
-        let a = (hex >> 0) & mask;
+        let r = (hex >> 24) & HEX_MASK;
+        let g = (hex >> 16) & HEX_MASK;
+        let b = (hex >> 8) & HEX_MASK;
+        let a = (hex >> 0) & HEX_MASK;
 
         let r = r as f32 / 255.;
         let g = g as f32 / 255.;

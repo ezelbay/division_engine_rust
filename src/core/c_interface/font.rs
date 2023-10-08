@@ -7,13 +7,9 @@ use super::context::DivisionContext;
 pub struct DivisionFontGlyph {
     pub width: u32,
     pub height: u32,
-
-    pub hor_advance: u32,
-    pub hor_bearing_x: u32,
-    pub hor_bearing_y: u32,
-    pub vert_advcance: u32,
-    pub vert_bearing_x: u32,
-    pub vert_bearing_y: u32,
+    pub advance_x: u32,
+    pub left: u32,
+    pub top: u32
 }
 
 extern "C" {

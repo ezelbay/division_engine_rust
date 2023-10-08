@@ -133,7 +133,7 @@ fn get_glyph_metrics<T: Iterator<Item = char>>(
         let glyph_width = glyph.width as usize;
         let glyph_height = glyph.height as usize;
         let layout = GlyphLayout {
-            x: curr_x,
+            x: curr_x as usize,
             y: curr_y,
             u: curr_x as f32 / width as f32,
             v: curr_y as f32 / height as f32,

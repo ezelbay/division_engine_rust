@@ -11,7 +11,7 @@ layout (location = 6) in vec2 glyphInTexSize;
 
 layout (location = 0) out vec4 outColor;
 layout (location = 1) out vec2 outTexelCoord;
-layout (location = 2) out vec2 outUV;
+layout (location = 2) out centroid vec2 outUV;
 
 layout (std140, binding = 1) uniform Uniforms {
     vec2 screenSize;
