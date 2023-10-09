@@ -1,6 +1,5 @@
-use std::path::Path;
-
 use division_math::Vector2;
+use std::path::Path;
 
 use super::{Context, DivisionId, FontGlyph, TextureDescriptor, TextureFormat};
 
@@ -16,15 +15,13 @@ pub struct GlyphLayout {
 pub struct FontTexture {
     glyph_layouts: Vec<GlyphLayout>,
     characters: Vec<char>,
+    pixel_buffer: Vec<u8>,
+    rasterizer_buffer: Vec<u8>,
     width: usize,
     height: usize,
+    font_size: usize,
+    font_id: DivisionId,
     texture_id: DivisionId,
-}
-
-struct GlyphMetrics {
-    glyph_layouts: Vec<GlyphLayout>,
-    characters: Vec<char>,
-    max_glyph_bytes: usize,
 }
 
 impl FontTexture {
@@ -34,13 +31,13 @@ impl FontTexture {
     pub fn new<T: Iterator<Item = char>>(
         context: &mut Context,
         font_path: &Path,
-        font_height: usize,
+        font_size: usize,
         characters: T,
     ) -> Self {
         Self::new_with_resolution(
             context,
             font_path,
-            font_height,
+            font_size,
             characters,
             Self::DEFAULT_WIDTH,
             Self::DEFAULT_HEIGHT,
@@ -50,33 +47,46 @@ impl FontTexture {
     pub fn new_with_resolution<T: Iterator<Item = char>>(
         context: &mut Context,
         font_path: &Path,
-        font_height: usize,
+        font_size: usize,
         characters: T,
         width: usize,
         height: usize,
     ) -> Self {
-        let mut tex_data = Vec::with_capacity(width * height);
-        unsafe { tex_data.set_len(tex_data.capacity()) };
-
-        let font = context.create_font(&font_path, font_height as u32).unwrap();
-        let metrics = get_glyph_metrics(context, font, characters, width, height);
-        rasterize_glyphs(context, font, &metrics, &mut tex_data, width);
-        context.delete_font(font);
+        let font_id = context.create_font(&font_path, font_size as u32).unwrap();
 
         let texture_id = context
-            .create_texture_buffer_from_data(
-                &TextureDescriptor::new(width, height, TextureFormat::R8Uint),
-                &tex_data,
-            )
+            .create_texture_buffer(&TextureDescriptor::new(
+                width,
+                height,
+                TextureFormat::R8Uint,
+            ))
             .unwrap();
 
-        FontTexture {
-            texture_id,
-            glyph_layouts: metrics.glyph_layouts,
-            characters: metrics.characters,
+        let pixel_buffer = unsafe {
+            let mut v = Vec::with_capacity(width * height);
+            v.set_len(v.capacity());
+            v
+        };
+
+        let mut font_texture = FontTexture {
+            glyph_layouts: Vec::new(),
+            characters: Vec::new(),
+            rasterizer_buffer: Vec::new(),
+            pixel_buffer,
             width,
             height,
-        }
+            font_size,
+            font_id,
+            texture_id,
+        };
+
+        font_texture.calculate_glyph_metrics(context, characters);
+        font_texture.rasterize_glyphs(context);
+
+        context
+            .set_texture_buffer_data(font_texture.texture_id, &font_texture.pixel_buffer);
+
+        font_texture
     }
 
     #[inline]
@@ -98,93 +108,87 @@ impl FontTexture {
 
     pub fn delete(&mut self, context: &mut Context) {
         context.delete_texture_buffer(self.texture_id);
+        context.delete_font(self.font_id);
     }
-}
 
-fn get_glyph_metrics<T: Iterator<Item = char>>(
-    context: &mut Context,
-    font: DivisionId,
-    characters: T,
-    width: usize,
-    height: usize,
-) -> GlyphMetrics {
-    let characters = characters.collect::<Vec<char>>();
-    let mut glyph_layouts = Vec::with_capacity(characters.len());
+    fn calculate_glyph_metrics<T: Iterator<Item = char>>(
+        &mut self,
+        context: &mut Context,
+        characters: T,
+    ) {
+        let characters = characters.collect::<Vec<char>>();
+        let mut glyph_layouts = Vec::with_capacity(characters.len());
 
-    let mut curr_x: usize = 0;
-    let mut curr_y: usize = 0;
-    let mut max_glyph_bytes = 0;
-    let mut max_glyph_per_row_height = 0;
-    const GLYPH_GAP: usize = 1;
+        let mut curr_x: usize = 0;
+        let mut curr_y: usize = 0;
+        let mut max_glyph_bytes = 0;
+        let mut max_glyph_per_row_height = 0;
+        const GLYPH_GAP: usize = 1;
 
-    for c in &characters {
-        let glyph = context.get_font_glyph(font, *c).unwrap();
+        for c in &characters {
+            let glyph = context.get_font_glyph(self.font_id, *c).unwrap();
 
-        if curr_x + glyph.width as usize > width {
-            if curr_y + glyph.height as usize > height {
-                panic!("Texture bounds exceeded");
+            if curr_x + glyph.width as usize > self.width {
+                if curr_y + glyph.height as usize > self.height {
+                    panic!("Texture bounds exceeded");
+                }
+
+                curr_x = 0;
+                curr_y += max_glyph_per_row_height + GLYPH_GAP;
+                max_glyph_per_row_height = 0;
             }
 
-            curr_x = 0;
-            curr_y += max_glyph_per_row_height + GLYPH_GAP;
-            max_glyph_per_row_height = 0;
+            let glyph_width = glyph.width as usize;
+            let glyph_height = glyph.height as usize;
+            let layout = GlyphLayout {
+                x: curr_x as usize,
+                y: curr_y,
+                u: curr_x as f32 / self.width as f32,
+                v: curr_y as f32 / self.height as f32,
+                glyph,
+            };
+            glyph_layouts.push(layout);
+
+            curr_x += glyph_width + GLYPH_GAP;
+            max_glyph_bytes = max_glyph_bytes.max(glyph_width * glyph_height);
+            max_glyph_per_row_height = max_glyph_per_row_height.max(glyph_height);
         }
 
-        let glyph_width = glyph.width as usize;
-        let glyph_height = glyph.height as usize;
-        let layout = GlyphLayout {
-            x: curr_x as usize,
-            y: curr_y,
-            u: curr_x as f32 / width as f32,
-            v: curr_y as f32 / height as f32,
-            glyph,
-        };
-        glyph_layouts.push(layout);
-
-        curr_x += glyph_width + GLYPH_GAP;
-        max_glyph_bytes = max_glyph_bytes.max(glyph_width * glyph_height);
-        max_glyph_per_row_height = max_glyph_per_row_height.max(glyph_height);
-    }
-
-    GlyphMetrics {
-        max_glyph_bytes,
-        glyph_layouts,
-        characters,
-    }
-}
-
-fn rasterize_glyphs(
-    context: &mut Context,
-    font: DivisionId,
-    metrics: &GlyphMetrics,
-    tex_data: &mut [u8],
-    tex_width: usize,
-) {
-    let mut glyph_buff = Vec::with_capacity(metrics.max_glyph_bytes);
-    unsafe {
-        glyph_buff.set_len(metrics.max_glyph_bytes);
-    }
-
-    for (layout, c) in metrics.glyph_layouts.iter().zip(metrics.characters.iter()) {
+        self.characters = characters;
+        self.glyph_layouts = glyph_layouts;
+        self.rasterizer_buffer.reserve(max_glyph_bytes);
         unsafe {
-            context
-                .rasterize_glyph_to_buffer(font, *c, &mut glyph_buff)
-                .unwrap();
+            self.rasterizer_buffer
+                .set_len(self.rasterizer_buffer.capacity());
         }
+    }
 
-        for h in 0..layout.glyph.height {
-            let h = h as usize;
-            let glyph_width = layout.glyph.width as usize;
+    fn rasterize_glyphs(&mut self, context: &mut Context) {
+        for (layout, c) in self.glyph_layouts.iter().zip(self.characters.iter()) {
+            unsafe {
+                context
+                    .rasterize_glyph_to_buffer(
+                        self.font_id,
+                        *c,
+                        &mut self.rasterizer_buffer,
+                    )
+                    .unwrap();
+            }
 
-            let src_row_start = h * glyph_width;
-            let src_row_end = src_row_start + glyph_width;
-            let src = &glyph_buff[src_row_start..src_row_end];
+            for h in 0..layout.glyph.height {
+                let h = h as usize;
+                let glyph_width = layout.glyph.width as usize;
 
-            let dst_row_start = layout.x + (layout.y + h) * tex_width;
-            let dst_row_end = dst_row_start + glyph_width;
-            let dst = &mut tex_data[dst_row_start..dst_row_end];
+                let src_row_start = h * glyph_width;
+                let src_row_end = src_row_start + glyph_width;
+                let src = &self.rasterizer_buffer[src_row_start..src_row_end];
 
-            dst.copy_from_slice(src);
+                let dst_row_start = layout.x + (layout.y + h) * self.width;
+                let dst_row_end = dst_row_start + glyph_width;
+                let dst = &mut self.pixel_buffer[dst_row_start..dst_row_end];
+
+                dst.copy_from_slice(src);
+            }
         }
     }
 }
