@@ -43,8 +43,8 @@ impl LifecycleManager for MyLifecycleManager {
 
         sys.draw_text(
             context,
-            "Lorem ipsum",
-            128.,
+            "Пиздец, будет много всякого ебучего текста. What the fuck ёпта???",
+            32.,
             Vector2::new(256., 256.),
             Color32::from_rgb_hex(0x007192),
         );
@@ -84,7 +84,8 @@ impl LifecycleManager for MyLifecycleManager {
         self.rect_draw_system.set_canvas_size(context, size);
 
         if let Some(ref mut text_sys) = self.text_draw_system {
-            text_sys.set_canvas_size(context, size)
+            text_sys.set_canvas_size(context, size);
+            text_sys.update(context);
         }
     }
 

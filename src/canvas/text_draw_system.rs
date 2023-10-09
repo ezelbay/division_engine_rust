@@ -52,14 +52,12 @@ struct TextInstance {
 
 const VERTEX_PER_RECT: usize = 4;
 const INDEX_PER_RECT: usize = 6;
-const RECT_CAPACITY: usize = 64;
-const RASTERIZED_FONT_SIZE: usize = 64;
+const RECT_CAPACITY: usize = 1024;
+const RASTERIZED_FONT_SIZE: usize = 128;
 
 impl TextDrawSystem {
     pub fn new(context: &mut Context, font_path: &Path) -> Self {
-        let char_set = [' '..='~'].into_iter().flatten();
-        let font_texture =
-            FontTexture::new(context, font_path, RASTERIZED_FONT_SIZE, char_set);
+        let font_texture = FontTexture::new(context, font_path, RASTERIZED_FONT_SIZE);
         let shader_id = context
             .create_bundled_shader_program(
                 &Path::new("resources")
@@ -135,31 +133,31 @@ impl TextDrawSystem {
         position: Vector2,
         color: Color32,
     ) -> usize {
-        let data =
-            context.vertex_buffer_data::<TextVertex, TextInstance>(self.vertex_buffer_id);
-
         let font_atlas_size = self.font_texture.size();
 
         let mut char_count = 0;
         let mut pen_x = position.x;
         let pen_y = position.y;
 
+        for ch in text.chars() {
+            self.font_texture.cache_character(context, ch);
+        }
+
+        let data =
+            context.vertex_buffer_data::<TextVertex, TextInstance>(self.vertex_buffer_id);
+
         for (i, ch) in text.chars().enumerate() {
-            let glyph_layout = self.font_texture.find_glyph_layout(ch).unwrap();
-            let glyph = glyph_layout.glyph;
+            let (glyph, pos) = self.font_texture.find_glyph_layout(ch).unwrap();
             let scaled_advance = glyph.advance_x as f32 * font_scale;
 
-            if glyph_layout.glyph.width > 0 {
+            if glyph.width > 0 {
                 let scaled_width = glyph.width as f32 * font_scale;
                 let scaled_height = glyph.height as f32 * font_scale;
                 let x_offset = glyph.left as f32 * font_scale;
                 let y_offset = (glyph.top as f32 - glyph.height as f32) * font_scale;
 
                 data.per_instance_data[self.instance_count + i] = TextInstance {
-                    texel_coord: Vector2::new(
-                        glyph_layout.x as f32,
-                        glyph_layout.y as f32,
-                    ),
+                    texel_coord: Vector2::new(pos.x as f32, pos.y as f32),
                     size: Vector2::new(scaled_width, scaled_height),
                     position: Vector2::new(pen_x + x_offset, pen_y + y_offset),
                     color: color.into(),
@@ -182,6 +180,10 @@ impl TextDrawSystem {
     pub fn set_canvas_size(&mut self, context: &mut Context, size: Vector2) {
         let data = context.uniform_buffer_data::<UniformData>(self.uniform_buffer_id);
         *(data.data) = UniformData { size };
+    }
+
+    pub fn update(&mut self, context: &mut Context) {
+        self.font_texture.upload_texture(context);
     }
 
     pub fn cleanup(&mut self, context: &mut Context) {
