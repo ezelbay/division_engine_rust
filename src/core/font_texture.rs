@@ -129,12 +129,12 @@ impl FontTexture {
             let glyph = context.get_font_glyph(self.font_id, *c).unwrap();
 
             if curr_x + glyph.width as usize > self.width {
-                if curr_y + glyph.height as usize > self.height {
+                if curr_y + self.font_size as usize > self.height {
                     panic!("Texture bounds exceeded");
                 }
 
                 curr_x = 0;
-                curr_y += max_glyph_per_row_height + GLYPH_GAP;
+                curr_y += self.font_size + GLYPH_GAP;
                 max_glyph_per_row_height = 0;
             }
 
