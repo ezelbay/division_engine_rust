@@ -41,14 +41,14 @@ impl LifecycleManager for MyLifecycleManager {
                 .join("Roboto-Medium.ttf"),
         );
 
-        sys.draw_text(
+        sys.draw_text_line(
             context,
             // Uncomment this to get error
             // "qwertyuiop[]asdfghjkl;'\\zxcvnm,./QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?",
-            "Show this text",
-            32.,
-            Vector2::new(0., 128.),
-            Color32::from_rgb_hex(0x007192),
+            "New text",
+            64.,
+            Vector2::new(256., 128.),
+            Color32::from_rgb_hex(0x757575),
         ).unwrap();
 
         let red_brush = Decoration {

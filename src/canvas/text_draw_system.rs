@@ -4,8 +4,9 @@ use division_engine_rust_macro::location;
 use division_math::{Vector2, Vector4};
 
 use crate::core::{
-    AlphaBlend, AlphaBlendOperation, Context, DivisionId, FontTexture, IdWithBinding,
-    RenderTopology, ShaderVariableType, VertexAttributeDescriptor, VertexData, font_texture::Error,
+    font_texture::Error, AlphaBlend, AlphaBlendOperation, Context, DivisionId,
+    FontTexture, IdWithBinding, RenderTopology, ShaderVariableType,
+    VertexAttributeDescriptor, VertexData,
 };
 
 use super::color::Color32;
@@ -53,11 +54,12 @@ struct TextInstance {
 const VERTEX_PER_RECT: usize = 4;
 const INDEX_PER_RECT: usize = 6;
 const RECT_CAPACITY: usize = 1024;
-const RASTERIZED_FONT_SIZE: usize = 256;
+const RASTERIZED_FONT_SIZE: usize = 64;
 
 impl TextDrawSystem {
     pub fn new(context: &mut Context, font_path: &Path) -> Self {
-        let font_texture = FontTexture::new(context, font_path, RASTERIZED_FONT_SIZE);
+        let font_texture =
+            FontTexture::new(context, font_path, RASTERIZED_FONT_SIZE).unwrap();
         let shader_id = context
             .create_bundled_shader_program(
                 &Path::new("resources")
@@ -106,7 +108,7 @@ impl TextDrawSystem {
         }
     }
 
-    pub fn draw_text(
+    pub fn draw_text_line(
         &mut self,
         context: &mut Context,
         text: &str,

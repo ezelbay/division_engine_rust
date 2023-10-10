@@ -1,10 +1,11 @@
 use division_math::Vector2;
-use std::path::Path;
+use std::{alloc::Layout, path::Path};
 
-use super::{Context, DivisionId, FontGlyph, TextureDescriptor, TextureFormat};
+use super::{context, Context, DivisionId, FontGlyph, TextureDescriptor, TextureFormat};
 
 #[derive(Debug)]
 pub enum Error {
+    Context(context::Error),
     NoSpace,
 }
 
@@ -24,9 +25,10 @@ pub struct FontTexture {
     glyphs: Vec<FontGlyph>,
     glyph_positions: Vec<GlyphPosition>,
     characters: Vec<char>,
-    pixel_buffer: Vec<u8>,
-    rasterizer_buffer: Vec<u8>,
     rows_free_space: Vec<FreeBlock>,
+    pixel_buffer: *mut u8,
+    rasterizer_buffer: *mut u8,
+    rasterizer_buffer_capacity: usize,
     width: usize,
     height: usize,
     font_size: usize,
@@ -39,7 +41,11 @@ impl FontTexture {
     pub const DEFAULT_WIDTH: usize = 1024;
     pub const DEFAULT_HEIGHT: usize = 512;
 
-    pub fn new(context: &mut Context, font_path: &Path, font_size: usize) -> Self {
+    pub fn new(
+        context: &mut Context,
+        font_path: &Path,
+        font_size: usize,
+    ) -> Result<Self, Error> {
         Self::new_with_resolution(
             context,
             font_path,
@@ -55,8 +61,10 @@ impl FontTexture {
         font_size: usize,
         width: usize,
         height: usize,
-    ) -> Self {
-        let font_id = context.create_font(&font_path, font_size as u32).unwrap();
+    ) -> Result<Self, Error> {
+        let font_id = context
+            .create_font(&font_path, font_size as u32)
+            .map_err(|e| Error::Context(e))?;
 
         let texture_id = context
             .create_texture_buffer(&TextureDescriptor::new(
@@ -64,33 +72,33 @@ impl FontTexture {
                 height,
                 TextureFormat::R8Uint,
             ))
-            .unwrap();
+            .map_err(|e| Error::Context(e))?;
 
-        let mut pixel_buffer = Vec::with_capacity(width * height);
-        unsafe {
-            pixel_buffer.set_len(pixel_buffer.capacity());
-        }
+        let pixel_buffer = unsafe {
+            std::alloc::alloc_zeroed(Layout::from_size_align_unchecked(width * height, 1))
+        };
 
         let row_count = height / font_size;
+        let approx_char_count = row_count + (width / font_size);
+
         let mut rows_free_space = Vec::with_capacity(row_count);
         rows_free_space.resize(row_count, FreeBlock { position: 0, width });
 
-        let font_texture = FontTexture {
-            glyphs: Vec::new(),
-            characters: Vec::new(),
-            rasterizer_buffer: Vec::new(),
-            glyph_positions: Vec::new(),
-            rows_free_space,
+        Ok(FontTexture {
+            glyphs: Vec::with_capacity(approx_char_count),
+            characters: Vec::with_capacity(approx_char_count),
+            glyph_positions: Vec::with_capacity(approx_char_count),
+            rasterizer_buffer: std::ptr::null_mut(),
+            rasterizer_buffer_capacity: 0,
             pixel_buffer,
+            rows_free_space,
             width,
             height,
             font_size,
             font_id,
             texture_id,
             texture_was_changed: false,
-        };
-
-        font_texture
+        })
     }
 
     #[inline]
@@ -123,7 +131,9 @@ impl FontTexture {
             return;
         }
 
-        context.set_texture_buffer_data(self.texture_id, &self.pixel_buffer);
+        unsafe {
+            context.set_texture_buffer_data_ptr(self.texture_id, self.pixel_buffer);
+        }
         self.texture_was_changed = false;
     }
 
@@ -131,14 +141,14 @@ impl FontTexture {
         &mut self,
         context: &mut Context,
         character: char,
-    ) -> Result<(), Error> {
+    ) -> Result<(&FontGlyph, &GlyphPosition), Error> {
         match self.characters.binary_search(&character) {
-            Ok(_) => Ok(()),
+            Ok(i) => Ok((&self.glyphs[i], &self.glyph_positions[i])),
             Err(i) => {
-                let (glyph, position) = self.layout_glyph(context, character, i)?;
-                self.rasterize_glyph(context, character, glyph, position);
+                self.layout_glyph(context, character, i)?;
+                self.rasterize_glyph(context, i)?;
 
-                Ok(())
+                Ok((&self.glyphs[i], &self.glyph_positions[i]))
             }
         }
     }
@@ -148,14 +158,15 @@ impl FontTexture {
         context: &mut Context,
         character: char,
         index_to_place: usize,
-    ) -> Result<(FontGlyph, GlyphPosition), Error> {
+    ) -> Result<(), Error> {
         const GLYPH_GAP: usize = 1;
-        let glyph = context.get_font_glyph(self.font_id, character).unwrap();
-        let glyph_width = glyph.width as usize;
+        let glyph = context
+            .get_font_glyph(self.font_id, character)
+            .map_err(|e| Error::Context(e))?;
 
+        let gapped_glyph_width = glyph.width as usize + GLYPH_GAP;
         for (row, free_block) in &mut self.rows_free_space.iter_mut().enumerate() {
-            let free_after =
-                free_block.width as isize - (glyph_width + GLYPH_GAP) as isize;
+            let free_after = free_block.width as isize - gapped_glyph_width as isize;
 
             if free_after < 0 {
                 continue;
@@ -166,14 +177,14 @@ impl FontTexture {
                 y: self.font_size * row,
             };
 
-            free_block.position += glyph_width + GLYPH_GAP;
+            free_block.position += gapped_glyph_width;
             free_block.width = free_after as usize;
 
             self.glyphs.insert(index_to_place, glyph);
             self.glyph_positions.insert(index_to_place, position);
             self.characters.insert(index_to_place, character);
 
-            return Ok((glyph, position));
+            return Ok(());
         }
 
         return Err(Error::NoSpace);
@@ -182,23 +193,32 @@ impl FontTexture {
     fn rasterize_glyph(
         &mut self,
         context: &mut Context,
-        character: char,
-        glyph: FontGlyph,
-        position: GlyphPosition,
-    ) {
+        glyph_index: usize,
+    ) -> Result<(), Error> {
+        let glyph = self.glyphs[glyph_index];
+        let position = self.glyph_positions[glyph_index];
+        let character = self.characters[glyph_index];
+
         let glyph_bytes = glyph.width as usize * glyph.height as usize;
 
-        self.rasterizer_buffer.reserve(glyph_bytes);
-        unsafe { self.rasterizer_buffer.set_len(glyph_bytes) }
+        if self.rasterizer_buffer_capacity < glyph_bytes {
+            unsafe {
+                self.rasterizer_buffer = std::alloc::realloc(
+                    self.rasterizer_buffer,
+                    Layout::from_size_align_unchecked(self.rasterizer_buffer_capacity, 1),
+                    glyph_bytes,
+                )
+            }
+        }
 
         unsafe {
             context
                 .rasterize_glyph_to_buffer(
                     self.font_id,
                     character,
-                    &mut self.rasterizer_buffer,
+                    self.rasterizer_buffer,
                 )
-                .unwrap();
+                .map_err(|e| Error::Context(e))?;
         }
 
         for h in 0..glyph.height {
@@ -206,16 +226,33 @@ impl FontTexture {
             let glyph_width = glyph.width as usize;
 
             let src_row_start = h * glyph_width;
-            let src_row_end = src_row_start + glyph_width;
-            let src = &self.rasterizer_buffer[src_row_start..src_row_end];
-
             let dst_row_start = position.x + (position.y + h) * self.width;
-            let dst_row_end = dst_row_start + glyph_width;
-            let dst = &mut self.pixel_buffer[dst_row_start..dst_row_end];
 
-            dst.copy_from_slice(src);
+            unsafe {
+                let src = self.rasterizer_buffer.add(src_row_start);
+                let dst = self.pixel_buffer.add(dst_row_start);
+                dst.copy_from_nonoverlapping(src, glyph_width);
+            }
         }
 
         self.texture_was_changed = true;
+
+        Ok(())
+    }
+}
+
+impl Drop for FontTexture {
+    fn drop(&mut self) {
+        unsafe {
+            std::alloc::dealloc(
+                self.pixel_buffer,
+                Layout::from_size_align_unchecked(self.width * self.height, 1),
+            );
+
+            std::alloc::dealloc(
+                self.rasterizer_buffer,
+                Layout::from_size_align_unchecked(self.rasterizer_buffer_capacity, 1),
+            );
+        }
     }
 }

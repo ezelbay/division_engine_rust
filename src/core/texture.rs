@@ -5,7 +5,8 @@ use super::{
         division_engine_texture_alloc, division_engine_texture_free,
         division_engine_texture_set_data,
     },
-    Context, DivisionId, context::Error, Image,
+    context::Error,
+    Context, DivisionId, Image,
 };
 
 pub use super::c_interface::texture::{
@@ -45,16 +46,26 @@ impl Context {
         Ok(id)
     }
 
-    pub fn set_texture_buffer_data(
+    pub fn set_texture_buffer_data(&mut self, texture_id: DivisionId, data: &[u8]) {
+        unsafe {
+            division_engine_texture_set_data(
+                &mut *self,
+                texture_id,
+                data.as_ptr() as *const c_void,
+            )
+        }
+    }
+
+    pub unsafe fn set_texture_buffer_data_ptr(
         &mut self,
-        texture_buffer_id: DivisionId,
-        data: &[u8],
+        texture_id: DivisionId,
+        data_ptr: *const u8,
     ) {
         unsafe {
             division_engine_texture_set_data(
                 &mut *self,
-                texture_buffer_id,
-                data.as_ptr() as *const c_void,
+                texture_id,
+                data_ptr as *const c_void,
             )
         }
     }

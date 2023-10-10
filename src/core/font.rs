@@ -72,14 +72,14 @@ impl Context {
         &mut self,
         font_id: DivisionId,
         glyph_char: char,
-        buffer: &mut [u8],
+        buffer: *mut u8,
     ) -> Result<(), Error> {
         let ok = unsafe {
             division_engine_font_rasterize_glyph(
                 self,
                 font_id,
                 glyph_char as i32,
-                buffer.as_mut_ptr(),
+                buffer,
             )
         };
 
