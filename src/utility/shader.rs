@@ -1,6 +1,6 @@
 use std::{env, fs, io, path::Path};
 
-use crate::core::{Context, DivisionId, Error, ShaderSourceDescriptor, ShaderType};
+use crate::core::{Context, DivisionId, context::Error, ShaderSourceDescriptor, ShaderType};
 
 impl Context {
     /// Creates program with vertex and fragment bundled shaders with same names.
@@ -51,9 +51,9 @@ impl Context {
     }
 }
 
-fn new_shader_read_error(shader_type: &str, base_error: io::Error) -> crate::core::Error {
+fn new_shader_read_error(shader_type: &str, base_error: io::Error) -> Error {
     let io_message = base_error.to_string();
-    crate::core::Error::Core(format!(
+    Error::Core(format!(
         "Failed to read {shader_type} shader. io::Error message: `{io_message}`"
     ))
 }

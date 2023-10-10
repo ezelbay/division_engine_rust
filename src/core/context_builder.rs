@@ -1,6 +1,6 @@
 use std::{ffi::CString, ptr::null_mut};
 
-use super::{c_interface::settings::DivisionSettings, Context, Error, LifecycleManager};
+use super::{c_interface::settings::DivisionSettings, context::Context, context::Error, LifecycleManager};
 
 pub struct ContextBuilder {
     title: CString,

@@ -11,7 +11,7 @@ use super::{
             DivisionVertexBufferDescriptor,
         },
     },
-    Context, DivisionId, Error,
+    Context, DivisionId, context::Error,
 };
 
 pub use super::c_interface::{

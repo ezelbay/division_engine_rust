@@ -3,6 +3,11 @@ use std::path::Path;
 
 use super::{Context, DivisionId, FontGlyph, TextureDescriptor, TextureFormat};
 
+#[derive(Debug)]
+pub enum Error {
+    NoSpace,
+}
+
 #[derive(Clone, Copy)]
 pub struct GlyphPosition {
     pub x: usize,
@@ -34,11 +39,7 @@ impl FontTexture {
     pub const DEFAULT_WIDTH: usize = 1024;
     pub const DEFAULT_HEIGHT: usize = 512;
 
-    pub fn new(
-        context: &mut Context,
-        font_path: &Path,
-        font_size: usize,
-    ) -> Self {
+    pub fn new(context: &mut Context, font_path: &Path, font_size: usize) -> Self {
         Self::new_with_resolution(
             context,
             font_path,
@@ -86,7 +87,7 @@ impl FontTexture {
             font_size,
             font_id,
             texture_id,
-            texture_was_changed: false
+            texture_was_changed: false,
         };
 
         font_texture
@@ -126,13 +127,19 @@ impl FontTexture {
         self.texture_was_changed = false;
     }
 
-    pub fn cache_character(&mut self, context: &mut Context, character: char) {
+    pub fn cache_character(
+        &mut self,
+        context: &mut Context,
+        character: char,
+    ) -> Result<(), Error> {
         match self.characters.binary_search(&character) {
-            Ok(_) => { },
+            Ok(_) => Ok(()),
             Err(i) => {
-                let (glyph, position) = self.layout_glyph(context, character, i);
+                let (glyph, position) = self.layout_glyph(context, character, i)?;
                 self.rasterize_glyph(context, character, glyph, position);
-            },
+
+                Ok(())
+            }
         }
     }
 
@@ -140,8 +147,8 @@ impl FontTexture {
         &mut self,
         context: &mut Context,
         character: char,
-        index_to_place: usize
-    ) -> (FontGlyph, GlyphPosition) {
+        index_to_place: usize,
+    ) -> Result<(FontGlyph, GlyphPosition), Error> {
         const GLYPH_GAP: usize = 1;
         let glyph = context.get_font_glyph(self.font_id, character).unwrap();
         let glyph_width = glyph.width as usize;
@@ -166,11 +173,10 @@ impl FontTexture {
             self.glyph_positions.insert(index_to_place, position);
             self.characters.insert(index_to_place, character);
 
-            return (glyph, position);
+            return Ok((glyph, position));
         }
 
-        // TODO: add LRU glyph cache
-        panic!("There is no free space for the new glyph");
+        return Err(Error::NoSpace);
     }
 
     fn rasterize_glyph(

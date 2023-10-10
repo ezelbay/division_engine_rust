@@ -12,7 +12,7 @@ use super::{
             DivisionRenderPassCapabilityMask, DivisionRenderPassDescriptor,
         },
     },
-    Context, DivisionId, Error,
+    Context, DivisionId, context::Error,
 };
 
 pub use super::c_interface::render_pass::{

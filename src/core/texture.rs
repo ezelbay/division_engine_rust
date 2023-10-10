@@ -5,7 +5,7 @@ use super::{
         division_engine_texture_alloc, division_engine_texture_free,
         division_engine_texture_set_data,
     },
-    Context, DivisionId, Error, Image,
+    Context, DivisionId, context::Error, Image,
 };
 
 pub use super::c_interface::texture::{

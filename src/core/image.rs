@@ -10,7 +10,7 @@ use super::{
         stbi_image_free, stbi_load, stbi_load_from_memory,
         stbi_set_flip_vertically_on_load, stbi_write_jpg,
     },
-    Error,
+    context::Error,
 };
 
 enum ImageImpl {

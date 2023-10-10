@@ -1,21 +1,21 @@
 pub(crate) mod c_interface;
 
-mod context;
-mod context_builder;
-mod font;
-mod font_texture;
-mod lifecycle_manager;
-mod image;
-mod render_pass;
-mod shader;
-mod texture;
-mod uniform_buffer;
-mod vertex_buffer;
+pub mod context;
+pub mod context_builder;
+pub mod font;
+pub mod font_texture;
+pub mod lifecycle_manager;
+pub mod image;
+pub mod render_pass;
+pub mod shader;
+pub mod texture;
+pub mod uniform_buffer;
+pub mod vertex_buffer;
 
-pub use context::*;
+pub use context::{Context, DivisionId};
 pub use context_builder::*;
 pub use font::*;
-pub use font_texture::*;
+pub use font_texture::{FontTexture, GlyphPosition};
 pub use lifecycle_manager::*;
 pub use image::*;
 pub use render_pass::*;

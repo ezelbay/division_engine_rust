@@ -43,11 +43,13 @@ impl LifecycleManager for MyLifecycleManager {
 
         sys.draw_text(
             context,
-            "Пиздец, будет много всякого ебучего текста. What the fuck ёпта???",
+            // Uncomment this to get error
+            // "qwertyuiop[]asdfghjkl;'\\zxcvnm,./QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?",
+            "Show this text",
             32.,
-            Vector2::new(256., 256.),
+            Vector2::new(0., 128.),
             Color32::from_rgb_hex(0x007192),
-        );
+        ).unwrap();
 
         let red_brush = Decoration {
             color: Color32::red(),

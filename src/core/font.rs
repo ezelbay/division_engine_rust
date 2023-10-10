@@ -9,7 +9,7 @@ use super::{
         division_engine_font_alloc, division_engine_font_free,
         division_engine_font_get_glyph, division_engine_font_rasterize_glyph,
     },
-    Context, DivisionId, Error,
+    Context, DivisionId, context::Error,
 };
 
 pub use super::c_interface::font::DivisionFontGlyph as FontGlyph;

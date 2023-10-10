@@ -11,7 +11,7 @@ use super::{
             DivisionUniformBufferDescriptor,
         },
     },
-    Context, DivisionId, Error,
+    Context, DivisionId, context::Error,
 };
 
 pub struct UniformBufferData<'a, T> {

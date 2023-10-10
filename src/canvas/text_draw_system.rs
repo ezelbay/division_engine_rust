@@ -5,7 +5,7 @@ use division_math::{Vector2, Vector4};
 
 use crate::core::{
     AlphaBlend, AlphaBlendOperation, Context, DivisionId, FontTexture, IdWithBinding,
-    RenderTopology, ShaderVariableType, VertexAttributeDescriptor, VertexData,
+    RenderTopology, ShaderVariableType, VertexAttributeDescriptor, VertexData, font_texture::Error,
 };
 
 use super::color::Color32;
@@ -53,7 +53,7 @@ struct TextInstance {
 const VERTEX_PER_RECT: usize = 4;
 const INDEX_PER_RECT: usize = 6;
 const RECT_CAPACITY: usize = 1024;
-const RASTERIZED_FONT_SIZE: usize = 128;
+const RASTERIZED_FONT_SIZE: usize = 256;
 
 impl TextDrawSystem {
     pub fn new(context: &mut Context, font_path: &Path) -> Self {
@@ -113,16 +113,18 @@ impl TextDrawSystem {
         font_size: f32,
         position: Vector2,
         color: Color32,
-    ) {
+    ) -> Result<(), Error> {
         let font_scale = font_size / RASTERIZED_FONT_SIZE as f32;
         let char_count =
-            self.write_text_instance_data(context, text, font_scale, position, color);
+            self.write_text_instance_data(context, text, font_scale, position, color)?;
 
         let borrowed_render_pass =
             context.borrow_render_pass_mut_ptr(self.render_pass_id);
         borrowed_render_pass.render_pass.instance_count += char_count as u64;
 
         self.instance_count += char_count;
+
+        Ok(())
     }
 
     fn write_text_instance_data(
@@ -132,7 +134,7 @@ impl TextDrawSystem {
         font_scale: f32,
         position: Vector2,
         color: Color32,
-    ) -> usize {
+    ) -> Result<usize, Error> {
         let font_atlas_size = self.font_texture.size();
 
         let mut char_count = 0;
@@ -140,7 +142,7 @@ impl TextDrawSystem {
         let pen_y = position.y;
 
         for ch in text.chars() {
-            self.font_texture.cache_character(context, ch);
+            self.font_texture.cache_character(context, ch)?;
         }
 
         let data =
@@ -174,7 +176,7 @@ impl TextDrawSystem {
             debug_assert!(self.instance_count + char_count < RECT_CAPACITY);
         }
 
-        char_count
+        Ok(char_count)
     }
 
     pub fn set_canvas_size(&mut self, context: &mut Context, size: Vector2) {

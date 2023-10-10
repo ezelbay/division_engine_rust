@@ -5,7 +5,7 @@ use super::{
         division_engine_shader_program_alloc, division_engine_shader_program_free,
         DivisionShaderSourceDescriptor,
     },
-    Context, DivisionId, Error,
+    Context, DivisionId, context::Error,
 };
 
 pub use super::c_interface::shader::DivisionShaderType as ShaderType;
