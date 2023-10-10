@@ -62,17 +62,10 @@ impl FontTexture {
         width: usize,
         height: usize,
     ) -> Result<Self, Error> {
-        let font_id = context
-            .create_font(&font_path, font_size as u32)
-            .map_err(|e| Error::Context(e))?;
+        let font_id = context.create_font(&font_path, font_size as u32)?;
 
-        let texture_id = context
-            .create_texture_buffer(&TextureDescriptor::new(
-                width,
-                height,
-                TextureFormat::R8Uint,
-            ))
-            .map_err(|e| Error::Context(e))?;
+        let tex_desc = TextureDescriptor::new(width, height, TextureFormat::R8Uint);
+        let texture_id = context.create_texture_buffer(&tex_desc)?;
 
         let pixel_buffer = unsafe {
             std::alloc::alloc_zeroed(Layout::from_size_align_unchecked(width * height, 1))
@@ -160,9 +153,7 @@ impl FontTexture {
         index_to_place: usize,
     ) -> Result<(), Error> {
         const GLYPH_GAP: usize = 1;
-        let glyph = context
-            .get_font_glyph(self.font_id, character)
-            .map_err(|e| Error::Context(e))?;
+        let glyph = context.get_font_glyph(self.font_id, character)?;
 
         let gapped_glyph_width = glyph.width as usize + GLYPH_GAP;
         for (row, free_block) in &mut self.rows_free_space.iter_mut().enumerate() {
@@ -187,7 +178,7 @@ impl FontTexture {
             return Ok(());
         }
 
-        return Err(Error::NoSpace);
+        Err(Error::NoSpace)
     }
 
     fn rasterize_glyph(
@@ -212,13 +203,11 @@ impl FontTexture {
         }
 
         unsafe {
-            context
-                .rasterize_glyph_to_buffer(
-                    self.font_id,
-                    character,
-                    self.rasterizer_buffer,
-                )
-                .map_err(|e| Error::Context(e))?;
+            context.rasterize_glyph_to_buffer(
+                self.font_id,
+                character,
+                self.rasterizer_buffer,
+            )?;
         }
 
         for h in 0..glyph.height {
@@ -254,5 +243,11 @@ impl Drop for FontTexture {
                 Layout::from_size_align_unchecked(self.rasterizer_buffer_capacity, 1),
             );
         }
+    }
+}
+
+impl From<context::Error> for Error {
+    fn from(value: context::Error) -> Self {
+        Error::Context(value)
     }
 }
