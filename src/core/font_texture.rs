@@ -104,6 +104,11 @@ impl FontTexture {
         Vector2::new(self.width as f32, self.height as f32)
     }
 
+    #[inline]
+    pub fn bytes_len(&self) -> usize {
+        self.width * self.height
+    } 
+
     pub fn find_glyph_layout(
         &self,
         glyph_char: char,
@@ -235,7 +240,7 @@ impl Drop for FontTexture {
         unsafe {
             std::alloc::dealloc(
                 self.pixel_buffer,
-                Layout::from_size_align_unchecked(self.width * self.height, 1),
+                Layout::from_size_align_unchecked(self.bytes_len(), 1),
             );
 
             std::alloc::dealloc(
