@@ -5,7 +5,7 @@ use division_engine_rust::{
         border_radius::BorderRadius, color::Color32, decoration::Decoration, rect::Rect,
         rect_draw_system::RectDrawSystem, text_draw_system::TextDrawSystem,
     },
-    core::{LifecycleManager, CoreRunner, core_state::CoreState},
+    core::{LifecycleManager, CoreRunner, CoreState},
 };
 
 use division_math::Vector2;

@@ -1,6 +1,6 @@
 use division_engine_rust::core::{
     IdWithBinding, Image, LifecycleManager, RenderTopology, ShaderVariableType,
-    VertexAttributeDescriptor, VertexData, CoreRunner, core_state::CoreState,
+    VertexAttributeDescriptor, VertexData, CoreRunner, CoreState,
 };
 use division_math::{Matrix4x4, Vector2, Vector3, Vector4};
 use std::path::Path;
