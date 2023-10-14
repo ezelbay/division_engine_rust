@@ -1,7 +1,7 @@
 use std::mem::MaybeUninit;
 
 use super::{
-    c_interface::{
+    ffi::{
         context::DivisionContext,
         vertex_buffer::{
             division_engine_vertex_buffer_alloc,
@@ -14,7 +14,7 @@ use super::{
     Context, DivisionId, context::Error,
 };
 
-pub use super::c_interface::{
+pub use super::ffi::{
     shader::DivisionShaderVariableType as ShaderVariableType,
     vertex_buffer::{
         DivisionRenderTopology as RenderTopology,

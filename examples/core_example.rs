@@ -1,6 +1,6 @@
 use division_engine_rust::core::{
-    Context, IdWithBinding, Image, LifecycleManager, RenderTopology, ShaderVariableType,
-    VertexAttributeDescriptor, VertexData,
+    IdWithBinding, Image, LifecycleManager, RenderTopology, ShaderVariableType,
+    VertexAttributeDescriptor, VertexData, CoreRunner, core_state::CoreState,
 };
 use division_math::{Matrix4x4, Vector2, Vector3, Vector4};
 use std::path::Path;
@@ -28,19 +28,18 @@ pub struct Inst {
 }
 
 fn main() {
-    let mut delegate = MyDelegate {};
+    let delegate = MyDelegate {};
 
-    let mut context = Context::builder()
+    CoreRunner::new()
         .window_size(1024, 1024)
         .window_title("Oh, my world")
-        .build(&mut delegate)
+        .run(delegate)
         .unwrap();
-
-    context.run();
 }
 
 impl LifecycleManager for MyDelegate {
-    fn init(&mut self, context: &mut Context) {
+    fn init(&mut self, core_state: &mut CoreState) {
+        let context = &mut core_state.context;
         let shader_id = context
             .create_bundled_shader_program(
                 &Path::new("resources").join("shaders").join("test"),
@@ -121,11 +120,11 @@ impl LifecycleManager for MyDelegate {
             .unwrap();
     }
 
-    fn update(&mut self, _context: &mut Context) {}
+    fn update(&mut self, _: &mut CoreState) {}
 
-    fn error(&mut self, _context: &mut Context, _error_code: i32, message: &str) {
+    fn error(&mut self, _: &mut CoreState, _error_code: i32, message: &str) {
         panic!("{message}")
     }
 
-    fn cleanup(&mut self, _context: &mut Context) {}
+    fn cleanup(&mut self, _: &mut CoreState) {}
 }

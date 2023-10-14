@@ -4,12 +4,9 @@ pub type DivisionId = u32;
 
 use division_math::{Vector2, Vector4};
 
-use super::{
-    c_interface::{
-        context::{division_engine_context_initialize, DivisionContext, DivisionColor},
-        settings::DivisionSettings,
-    },
-    context_builder::ContextBuilder,
+use super::ffi::{
+    context::{division_engine_context_initialize, DivisionColor, DivisionContext},
+    settings::DivisionSettings,
 };
 
 pub type Context = DivisionContext;
@@ -21,10 +18,6 @@ pub enum Error {
 }
 
 impl Context {
-    pub fn builder() -> ContextBuilder {
-        ContextBuilder::new()
-    }
-
     pub(crate) fn new(
         window_title: CString,
         settings: DivisionSettings,
@@ -60,9 +53,7 @@ impl Context {
     #[inline]
     pub fn get_clear_color(&self) -> Vector4 {
         let ctx = self.render_context;
-        unsafe {
-            (*ctx).clear_color.into()
-        }
+        unsafe { (*ctx).clear_color.into() }
     }
 
     #[inline]
@@ -76,16 +67,12 @@ impl Context {
 
 impl From<DivisionColor> for Vector4 {
     fn from(value: DivisionColor) -> Self {
-        unsafe {
-            std::mem::transmute(value)
-        }
+        unsafe { std::mem::transmute(value) }
     }
 }
 
 impl From<Vector4> for DivisionColor {
     fn from(value: Vector4) -> Self {
-        unsafe {
-            std::mem::transmute(value)
-        }
-    }   
+        unsafe { std::mem::transmute(value) }
+    }
 }

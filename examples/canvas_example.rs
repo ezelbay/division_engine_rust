@@ -5,7 +5,7 @@ use division_engine_rust::{
         border_radius::BorderRadius, color::Color32, decoration::Decoration, rect::Rect,
         rect_draw_system::RectDrawSystem, text_draw_system::TextDrawSystem,
     },
-    core::{Context, LifecycleManager},
+    core::{LifecycleManager, CoreRunner, core_state::CoreState},
 };
 
 use division_math::Vector2;
@@ -16,21 +16,21 @@ struct MyLifecycleManager {
 }
 
 fn main() {
-    let mut lifecycle_manager = MyLifecycleManager {
+    let lifecycle_manager = MyLifecycleManager {
         rect_draw_system: RectDrawSystem::new(),
         text_draw_system: None,
     };
-    let mut context = Context::builder()
+
+    CoreRunner::new()
         .window_size(1024, 1024)
         .window_title("Hello rect drawer")
-        .build(&mut lifecycle_manager)
+        .run(lifecycle_manager)
         .unwrap();
-
-    context.run();
 }
 
 impl LifecycleManager for MyLifecycleManager {
-    fn init(&mut self, context: &mut Context) {
+    fn init(&mut self, core_state: &mut CoreState) {
+        let context = &mut core_state.context;
         context.set_clear_color(Color32::white().into());
 
         self.rect_draw_system.init(context);
@@ -81,7 +81,8 @@ impl LifecycleManager for MyLifecycleManager {
         self.text_draw_system = Some(sys);
     }
 
-    fn update(&mut self, context: &mut Context) {
+    fn update(&mut self, core_state: &mut CoreState) {
+        let context = &mut core_state.context;
         let size = context.get_window_size();
         self.rect_draw_system.set_canvas_size(context, size);
 
@@ -91,11 +92,12 @@ impl LifecycleManager for MyLifecycleManager {
         }
     }
 
-    fn error(&mut self, _context: &mut Context, _error_code: i32, message: &str) {
+    fn error(&mut self, _: &mut CoreState, _error_code: i32, message: &str) {
         panic!("{message}");
     }
 
-    fn cleanup(&mut self, context: &mut Context) {
+    fn cleanup(&mut self, core_state: &mut CoreState) {
+        let context = &mut core_state.context;
         self.rect_draw_system.cleanup(context);
         if let Some(ref mut text_sys) = self.text_draw_system {
             text_sys.cleanup(context);

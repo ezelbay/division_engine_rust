@@ -1,7 +1,7 @@
 use std::ffi::c_void;
 
 use super::{
-    c_interface::texture::{
+    ffi::texture::{
         division_engine_texture_alloc, division_engine_texture_free,
         division_engine_texture_set_data,
     },
@@ -9,7 +9,7 @@ use super::{
     Context, DivisionId, Image,
 };
 
-pub use super::c_interface::texture::{
+pub use super::ffi::texture::{
     DivisionTextureChannelSwizzleVariant as TextureChannelSwizzleVariant,
     DivisionTextureChannelsSwizzle as TextureChannelsSwizzle,
     DivisionTextureDescriptor as TextureDescriptor,

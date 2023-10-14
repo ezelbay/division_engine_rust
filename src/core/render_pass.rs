@@ -3,7 +3,7 @@ use std::{ptr::null, usize};
 use division_math::Vector4;
 
 use super::{
-    c_interface::{
+    ffi::{
         context::DivisionContext,
         render_pass::{
             division_engine_render_pass_alloc, division_engine_render_pass_borrow,
@@ -15,7 +15,7 @@ use super::{
     Context, DivisionId, context::Error,
 };
 
-pub use super::c_interface::render_pass::{
+pub use super::ffi::render_pass::{
     DivisionAlphaBlend as AlphaBlend, DivisionAlphaBlendOperation as AlphaBlendOperation,
     DivisionColorMask as ColorMask, DivisionIdWithBinding as IdWithBinding,
 };

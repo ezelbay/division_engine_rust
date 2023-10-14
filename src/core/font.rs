@@ -5,14 +5,14 @@ use std::{
 };
 
 use super::{
-    c_interface::font::{
+    ffi::font::{
         division_engine_font_alloc, division_engine_font_free,
         division_engine_font_get_glyph, division_engine_font_rasterize_glyph,
     },
     Context, DivisionId, context::Error,
 };
 
-pub use super::c_interface::font::DivisionFontGlyph as FontGlyph;
+pub use super::ffi::font::DivisionFontGlyph as FontGlyph;
 
 impl Context {
     pub fn create_font(
