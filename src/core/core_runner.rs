@@ -1,9 +1,13 @@
 use std::{
     ffi::{c_char, c_void, CStr, CString},
+    mem::ManuallyDrop,
     ptr::null_mut,
 };
 
 use super::{
+    context::Context,
+    context::Error,
+    core_state::CoreState,
     ffi::{
         context::{
             division_engine_context_finalize, division_engine_context_register_lifecycle,
@@ -13,10 +17,7 @@ use super::{
         renderer::division_engine_renderer_run_loop,
         settings::DivisionSettings,
     },
-    context::Context,
-    context::Error,
-    core_state::CoreState,
-    LifecycleManager,
+    LifecycleManager, LifecycleManagerBuilder,
 };
 
 pub struct CoreRunner {
@@ -24,7 +25,11 @@ pub struct CoreRunner {
     settings: DivisionSettings,
 }
 
-struct ContextBridgeData<T: LifecycleManager> {
+struct ContextPreInitBridgeData<T: LifecycleManagerBuilder> {
+    pub lifecycle_manager_builder: T,
+}
+
+struct ContextPostInitBridgeData<T: LifecycleManager> {
     pub core_state: CoreState,
     pub lifecycle_manager: T,
 }
@@ -54,55 +59,72 @@ impl CoreRunner {
         self
     }
 
-    pub fn run<TManager: LifecycleManager>(
+    pub fn run<TManager: LifecycleManagerBuilder>(
         self,
-        lifecycle_manager: TManager,
+        lifecycle_manager_builder: TManager,
     ) -> Result<(), Error> {
         let context = Context::new(self.title, self.settings)?;
-        let core_state = CoreState { context };
-
-        run(core_state, lifecycle_manager);
+        run(context, lifecycle_manager_builder);
 
         Ok(())
     }
 }
 
-fn run<T: LifecycleManager>(core_state: CoreState, lifecycle_manager: T) {
+fn run<T: LifecycleManagerBuilder>(
+    context_ptr: *mut Context,
+    lifecycle_manager_builder: T,
+) {
     unsafe {
-        let mut context_data = ContextBridgeData {
-            core_state,
-            lifecycle_manager,
-        };
+        let context_data = ManuallyDrop::new(Box::new(ContextPreInitBridgeData {
+            lifecycle_manager_builder,
+        }));
 
-        context_data.core_state.context.user_data =
-            &context_data as *const ContextBridgeData<T> as *const c_void;
+        (*context_ptr).user_data =
+            context_data.as_ref() as *const ContextPreInitBridgeData<T> as *const c_void;
 
         division_engine_context_register_lifecycle(
-            context_data.core_state.context.as_mut(),
+            context_ptr,
             &DivisionLifecycle {
                 init_callback: init_callback::<T>,
-                update_callback: update_callback::<T>,
-                free_callback: free_callback::<T>,
-                error_callback: error_callback::<T>,
+                update_callback: update_callback::<T::LifecycleManager>,
+                free_callback: free_callback::<T::LifecycleManager>,
+                error_callback: error_callback::<T::LifecycleManager>,
             },
         );
 
-        division_engine_renderer_run_loop(context_data.core_state.context.as_mut());
+        division_engine_renderer_run_loop(context_ptr);
     }
 }
 
-unsafe extern "C" fn init_callback<T: LifecycleManager>(ctx: *mut DivisionContext) {
-    let owner = get_delegate_mut::<ContextBridgeData<T>>(&mut *ctx);
-    owner.lifecycle_manager.init(&mut owner.core_state);
+unsafe extern "C" fn init_callback<T: LifecycleManagerBuilder>(
+    ctx_ptr: *mut DivisionContext,
+) {
+    let mut ctx = ManuallyDrop::new(Box::from_raw(ctx_ptr));
+    let mut core_state = CoreState {
+        context: ManuallyDrop::new(Box::from_raw(ctx_ptr))
+    };
+
+    let mut pre_init = Box::from_raw(ctx.user_data as *mut ContextPreInitBridgeData<T>);
+    let mut lifecycle_manager = pre_init.lifecycle_manager_builder.build(&mut core_state);
+    lifecycle_manager.init(&mut core_state);
+
+    let post_init_data_ptr = ManuallyDrop::new(Box::new(ContextPostInitBridgeData {
+        core_state,
+        lifecycle_manager
+    }));
+
+    ctx.user_data = post_init_data_ptr.as_ref()
+        as *const ContextPostInitBridgeData<T::LifecycleManager>
+        as *const c_void;
 }
 
 unsafe extern "C" fn update_callback<T: LifecycleManager>(ctx: *mut DivisionContext) {
-    let owner = get_delegate_mut::<ContextBridgeData<T>>(&mut *ctx);
+    let owner = get_delegate_mut::<ContextPostInitBridgeData<T>>(&mut *ctx);
     owner.lifecycle_manager.update(&mut owner.core_state);
 }
 
 unsafe extern "C" fn free_callback<T: LifecycleManager>(ctx: *mut DivisionContext) {
-    let owner = get_delegate_mut::<ContextBridgeData<T>>(&mut *ctx);
+    let mut owner = Box::from_raw((*ctx).user_data as *mut ContextPostInitBridgeData<T>);
     owner.lifecycle_manager.cleanup(&mut owner.core_state);
     division_engine_context_finalize(ctx);
 }
@@ -112,7 +134,7 @@ unsafe extern "C" fn error_callback<T: LifecycleManager>(
     error_code: i32,
     message: *const c_char,
 ) {
-    let user_data = get_delegate_mut::<ContextBridgeData<T>>(&mut *ctx);
+    let user_data = get_delegate_mut::<ContextPostInitBridgeData<T>>(&mut *ctx);
     user_data.lifecycle_manager.error(
         &mut user_data.core_state,
         error_code,
@@ -123,6 +145,6 @@ unsafe extern "C" fn error_callback<T: LifecycleManager>(
 }
 
 #[inline(always)]
-fn get_delegate_mut<T>(ctx: &mut DivisionContext) -> &mut T {
+fn get_delegate_mut<'a, 'b, T>(ctx: &'a mut DivisionContext) -> &'b mut T {
     unsafe { &mut *(ctx.user_data as *mut T) }
 }

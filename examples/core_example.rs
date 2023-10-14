@@ -1,11 +1,13 @@
 use division_engine_rust::core::{
     IdWithBinding, Image, LifecycleManager, RenderTopology, ShaderVariableType,
-    VertexAttributeDescriptor, VertexData, CoreRunner, CoreState,
+    VertexAttributeDescriptor, VertexData, CoreRunner, CoreState, LifecycleManagerBuilder,
 };
 use division_math::{Matrix4x4, Vector2, Vector3, Vector4};
 use std::path::Path;
 
-pub struct MyDelegate {}
+pub struct MyDelegateBuilder;
+
+pub struct MyDelegate;
 
 #[repr(packed)]
 #[derive(Clone, Copy, VertexData)]
@@ -28,13 +30,19 @@ pub struct Inst {
 }
 
 fn main() {
-    let delegate = MyDelegate {};
-
     CoreRunner::new()
         .window_size(1024, 1024)
         .window_title("Oh, my world")
-        .run(delegate)
+        .run(MyDelegateBuilder)
         .unwrap();
+}
+
+impl LifecycleManagerBuilder for MyDelegateBuilder {
+    type LifecycleManager = MyDelegate;
+
+    fn build(&mut self, _state: &mut CoreState) -> Self::LifecycleManager {
+        MyDelegate {}
+    }
 }
 
 impl LifecycleManager for MyDelegate {

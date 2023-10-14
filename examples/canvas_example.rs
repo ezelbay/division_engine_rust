@@ -5,10 +5,14 @@ use division_engine_rust::{
         border_radius::BorderRadius, color::Color32, decoration::Decoration, rect::Rect,
         rect_draw_system::RectDrawSystem, text_draw_system::TextDrawSystem,
     },
-    core::{LifecycleManager, CoreRunner, CoreState},
+    core::{LifecycleManager, CoreRunner, CoreState, LifecycleManagerBuilder},
 };
 
 use division_math::Vector2;
+
+struct MyLifecycleManagerBuilder {
+
+}
 
 struct MyLifecycleManager {
     rect_draw_system: RectDrawSystem,
@@ -16,16 +20,22 @@ struct MyLifecycleManager {
 }
 
 fn main() {
-    let lifecycle_manager = MyLifecycleManager {
-        rect_draw_system: RectDrawSystem::new(),
-        text_draw_system: None,
-    };
-
     CoreRunner::new()
         .window_size(1024, 1024)
         .window_title("Hello rect drawer")
-        .run(lifecycle_manager)
+        .run(MyLifecycleManagerBuilder {})
         .unwrap();
+}
+
+impl LifecycleManagerBuilder for MyLifecycleManagerBuilder {
+    type LifecycleManager = MyLifecycleManager;
+
+    fn build(&mut self, _state: &mut CoreState) -> Self::LifecycleManager {
+        MyLifecycleManager {
+            rect_draw_system: RectDrawSystem::new(),
+            text_draw_system: None
+        }
+    }
 }
 
 impl LifecycleManager for MyLifecycleManager {
@@ -102,5 +112,17 @@ impl LifecycleManager for MyLifecycleManager {
         if let Some(ref mut text_sys) = self.text_draw_system {
             text_sys.cleanup(context);
         }
+    }
+}
+
+impl Drop for MyLifecycleManagerBuilder {
+    fn drop(&mut self) {
+        println!("Hey builder")
+    }
+}
+
+impl Drop for MyLifecycleManager {
+    fn drop(&mut self) {
+        println!("Hey")
     }
 }

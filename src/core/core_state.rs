@@ -1,5 +1,7 @@
+use std::mem::ManuallyDrop;
+
 use super::Context;
 
 pub struct CoreState {
-    pub context: Box<Context>,
+    pub context: ManuallyDrop<Box<Context>>,
 }
