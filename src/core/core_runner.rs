@@ -30,8 +30,8 @@ struct ContextPreInitBridgeData<T: LifecycleManagerBuilder> {
 }
 
 struct ContextPostInitBridgeData<T: LifecycleManager> {
-    pub core_state: CoreState,
     pub lifecycle_manager: T,
+    pub core_state: CoreState,
 }
 
 impl CoreRunner {
@@ -101,7 +101,7 @@ unsafe extern "C" fn init_callback<T: LifecycleManagerBuilder>(
 ) {
     let mut ctx = ManuallyDrop::new(Box::from_raw(ctx_ptr));
     let mut core_state = CoreState {
-        context: ManuallyDrop::new(Box::from_raw(ctx_ptr))
+        context: Box::from_raw(ctx_ptr)
     };
 
     let mut pre_init = Box::from_raw(ctx.user_data as *mut ContextPreInitBridgeData<T>);
@@ -123,11 +123,11 @@ unsafe extern "C" fn update_callback<T: LifecycleManager>(ctx: *mut DivisionCont
 }
 
 unsafe extern "C" fn free_callback<T: LifecycleManager>(ctx: *mut DivisionContext) {
-    let mut ctx = Box::from_raw(ctx);
-    let mut owner = Box::from_raw(ctx.user_data as *mut ContextPostInitBridgeData<T>);
-    
+    let mut owner = Box::from_raw((*ctx).user_data as *mut ContextPostInitBridgeData<T>);
+
     owner.lifecycle_manager.cleanup(&mut owner.core_state);
-    division_engine_context_finalize(ctx.as_mut() as *mut DivisionContext);
+    division_engine_context_finalize(
+        owner.core_state.context.as_mut() as *mut DivisionContext);
 }
 
 unsafe extern "C" fn error_callback<T: LifecycleManager>(
