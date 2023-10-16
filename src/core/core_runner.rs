@@ -75,12 +75,12 @@ fn run<T: LifecycleManagerBuilder>(
     lifecycle_manager_builder: T,
 ) {
     unsafe {
-        let context_data = ManuallyDrop::new(Box::new(ContextPreInitBridgeData {
+        let preinit_data = ManuallyDrop::new(Box::new(ContextPreInitBridgeData {
             lifecycle_manager_builder,
         }));
 
         (*context_ptr).user_data =
-            context_data.as_ref() as *const ContextPreInitBridgeData<T> as *const c_void;
+            preinit_data.as_ref() as *const ContextPreInitBridgeData<T> as *const c_void;
 
         division_engine_context_register_lifecycle(
             context_ptr,
@@ -124,9 +124,11 @@ unsafe extern "C" fn update_callback<T: LifecycleManager>(ctx: *mut DivisionCont
 }
 
 unsafe extern "C" fn free_callback<T: LifecycleManager>(ctx: *mut DivisionContext) {
-    let mut owner = Box::from_raw((*ctx).user_data as *mut ContextPostInitBridgeData<T>);
+    let mut ctx = Box::from_raw(ctx);
+    let mut owner = Box::from_raw(ctx.user_data as *mut ContextPostInitBridgeData<T>);
+    
     owner.lifecycle_manager.cleanup(&mut owner.core_state);
-    division_engine_context_finalize(ctx);
+    division_engine_context_finalize(ctx.as_mut() as *mut DivisionContext);
 }
 
 unsafe extern "C" fn error_callback<T: LifecycleManager>(
@@ -147,4 +149,16 @@ unsafe extern "C" fn error_callback<T: LifecycleManager>(
 #[inline(always)]
 fn get_delegate_mut<'a, 'b, T>(ctx: &'a mut DivisionContext) -> &'b mut T {
     unsafe { &mut *(ctx.user_data as *mut T) }
+}
+
+impl<T: LifecycleManager> Drop for ContextPostInitBridgeData<T> {
+    fn drop(&mut self) {
+        println!("Post data was dropped");
+    }
+}
+
+impl Drop for Context {
+    fn drop(&mut self) {
+        println!("Context was dropped")
+    }
 }
