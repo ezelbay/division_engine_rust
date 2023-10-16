@@ -149,15 +149,3 @@ unsafe extern "C" fn error_callback<T: LifecycleManager>(
 fn get_delegate_mut<'a, 'b, T>(ctx: &'a mut DivisionContext) -> &'b mut T {
     unsafe { &mut *(ctx.user_data as *mut T) }
 }
-
-impl<T: LifecycleManager> Drop for ContextPostInitBridgeData<T> {
-    fn drop(&mut self) {
-        println!("Post data was dropped");
-    }
-}
-
-impl Drop for Context {
-    fn drop(&mut self) {
-        println!("Context was dropped")
-    }
-}
