@@ -7,7 +7,6 @@ pub trait LifecycleManagerBuilder {
 }
 
 pub trait LifecycleManager: Sized {
-    fn init(&mut self, state: &mut CoreState);
     fn update(&mut self, state: &mut CoreState);
     fn error(&mut self, state: &mut CoreState, error_code: i32, message: &str);
     fn cleanup(&mut self, state: &mut CoreState);

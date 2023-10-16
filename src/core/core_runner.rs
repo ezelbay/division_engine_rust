@@ -105,8 +105,7 @@ unsafe extern "C" fn init_callback<T: LifecycleManagerBuilder>(
     };
 
     let mut pre_init = Box::from_raw(ctx.user_data as *mut ContextPreInitBridgeData<T>);
-    let mut lifecycle_manager = pre_init.lifecycle_manager_builder.build(&mut core_state);
-    lifecycle_manager.init(&mut core_state);
+    let lifecycle_manager = pre_init.lifecycle_manager_builder.build(&mut core_state);
 
     let post_init_data_ptr = ManuallyDrop::new(Box::new(ContextPostInitBridgeData {
         core_state,
