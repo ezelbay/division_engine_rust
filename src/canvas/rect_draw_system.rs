@@ -54,16 +54,7 @@ pub const VERTEX_PER_RECT: usize = 4;
 pub const INDEX_PER_RECT: usize = 6;
 
 impl RectDrawSystem {
-    pub fn new() -> RectDrawSystem {
-        unsafe { std::mem::zeroed::<RectDrawSystem>() }
-    }
-
-    pub fn set_canvas_size(&mut self, context: &mut Context, size: Vector2) {
-        let data = context.uniform_buffer_data::<UniformData>(self.uniform_buffer_id);
-        *(data.data) = UniformData { size };
-    }
-
-    pub fn init(&mut self, context: &mut Context) {
+    pub fn new(context: &mut Context) -> RectDrawSystem {
         let white_texture = context
             .create_texture_buffer_from_data(
                 &TextureDescriptor::new(1, 1, TextureFormat::RGBA32Uint),
@@ -71,16 +62,15 @@ impl RectDrawSystem {
             )
             .unwrap();
 
-        self.init_with_texture(context, white_texture, false)
+        Self::with_texture(context, white_texture, false)
     }
 
-    pub fn init_with_texture(
-        &mut self,
+    pub fn with_texture(
         context: &mut Context,
         texture_buffer_id: DivisionId,
         flip_vertical: bool,
-    ) {
-        self.shader_id = context
+    ) -> RectDrawSystem {
+        let shader_id = context
             .create_bundled_shader_program(
                 &Path::new("resources")
                     .join("shaders")
@@ -89,26 +79,22 @@ impl RectDrawSystem {
             )
             .unwrap();
 
-        self.vertex_buffer_id = Self::make_vertex_buffer(context);
-        Self::generate_rect_drawer_vertex_data(
-            context,
-            self.vertex_buffer_id,
-            flip_vertical,
-        );
+        let vertex_buffer_id = Self::make_vertex_buffer(context);
+        Self::generate_rect_drawer_vertex_data(context, vertex_buffer_id, flip_vertical);
 
-        self.uniform_buffer_id = context
+        let uniform_buffer_id = context
             .create_uniform_buffer_with_size_of::<UniformData>()
             .unwrap();
 
-        self.texture_buffer_id = texture_buffer_id;
+        let texture_buffer_id = texture_buffer_id;
 
-        self.render_pass_id = context
+        let render_pass_id = context
             .render_pass_builder()
-            .shader(self.shader_id)
-            .fragment_textures(&[IdWithBinding::new(self.texture_buffer_id, 0)])
-            .vertex_uniform_buffers(&[IdWithBinding::new(self.uniform_buffer_id, 1)])
-            .fragment_uniform_buffers(&[IdWithBinding::new(self.uniform_buffer_id, 1)])
-            .vertex_buffer(self.vertex_buffer_id, VERTEX_PER_RECT, INDEX_PER_RECT)
+            .shader(shader_id)
+            .fragment_textures(&[IdWithBinding::new(texture_buffer_id, 0)])
+            .vertex_uniform_buffers(&[IdWithBinding::new(uniform_buffer_id, 1)])
+            .fragment_uniform_buffers(&[IdWithBinding::new(uniform_buffer_id, 1)])
+            .vertex_buffer(vertex_buffer_id, VERTEX_PER_RECT, INDEX_PER_RECT)
             .enable_instancing()
             .alpha_blending(
                 AlphaBlend::SrcAlpha,
@@ -117,6 +103,15 @@ impl RectDrawSystem {
             )
             .build()
             .unwrap();
+
+        RectDrawSystem {
+            shader_id,
+            uniform_buffer_id,
+            vertex_buffer_id,
+            render_pass_id,
+            texture_buffer_id,
+            instance_count: 0,
+        }
     }
 
     pub fn cleanup(&mut self, context: &mut Context) {
@@ -125,6 +120,11 @@ impl RectDrawSystem {
         context.delete_uniform_buffer(self.uniform_buffer_id);
         context.delete_vertex_buffer(self.vertex_buffer_id);
         context.delete_shader_program(self.shader_id);
+    }
+
+    pub fn set_canvas_size(&mut self, context: &mut Context, size: Vector2) {
+        let data = context.uniform_buffer_data::<UniformData>(self.uniform_buffer_id);
+        *(data.data) = UniformData { size };
     }
 
     fn make_vertex_buffer(context: &mut Context) -> DivisionId {

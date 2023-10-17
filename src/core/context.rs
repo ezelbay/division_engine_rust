@@ -21,7 +21,7 @@ impl Context {
     pub(crate) fn new(
         window_title: CString,
         settings: DivisionSettings,
-    ) -> Result<Box<Context>, Error> {
+    ) -> Result<*mut Context, Error> {
         let mut settings = settings;
 
         unsafe {
@@ -35,7 +35,7 @@ impl Context {
                 )));
             }
 
-            Ok(Box::from_raw(ctx))
+            Ok(ctx)
         }
     }
 

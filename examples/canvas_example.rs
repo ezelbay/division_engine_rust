@@ -5,43 +5,72 @@ use division_engine_rust::{
         border_radius::BorderRadius, color::Color32, decoration::Decoration, rect::Rect,
         rect_draw_system::RectDrawSystem, text_draw_system::TextDrawSystem,
     },
-    core::{LifecycleManager, CoreRunner, CoreState},
+    core::{LifecycleManager, CoreRunner, CoreState, LifecycleManagerBuilder, Context},
 };
 
 use division_math::Vector2;
 
+struct MyLifecycleManagerBuilder {
+
+}
+
 struct MyLifecycleManager {
     rect_draw_system: RectDrawSystem,
-    text_draw_system: Option<TextDrawSystem>,
+    text_draw_system: TextDrawSystem,
 }
 
 fn main() {
-    let lifecycle_manager = MyLifecycleManager {
-        rect_draw_system: RectDrawSystem::new(),
-        text_draw_system: None,
-    };
-
     CoreRunner::new()
         .window_size(1024, 1024)
         .window_title("Hello rect drawer")
-        .run(lifecycle_manager)
+        .run(MyLifecycleManagerBuilder {})
         .unwrap();
 }
 
+impl LifecycleManagerBuilder for MyLifecycleManagerBuilder {
+    type LifecycleManager = MyLifecycleManager;
+
+    fn build(&mut self, state: &mut CoreState) -> Self::LifecycleManager {
+        let context = &mut state.context;
+
+        let mut manager = MyLifecycleManager {
+            rect_draw_system: RectDrawSystem::new(context),
+            text_draw_system: TextDrawSystem::new(context, &Path::new("resources")
+            .join("fonts")
+            .join("Roboto-Medium.ttf"))
+        };
+        manager.draw(context);
+
+        manager
+    }
+}
+
 impl LifecycleManager for MyLifecycleManager {
-    fn init(&mut self, core_state: &mut CoreState) {
+    fn update(&mut self, core_state: &mut CoreState) {
         let context = &mut core_state.context;
+        let size = context.get_window_size();
+        self.rect_draw_system.set_canvas_size(context, size);
+
+        self.text_draw_system.set_canvas_size(context, size);
+        self.text_draw_system.update(context);
+    }
+
+    fn error(&mut self, _: &mut CoreState, _error_code: i32, message: &str) {
+        panic!("{message}");
+    }
+
+    fn cleanup(&mut self, core_state: &mut CoreState) {
+        let context = &mut core_state.context;
+        self.rect_draw_system.cleanup(context);
+        self.text_draw_system.cleanup(context);
+    }
+}
+
+impl MyLifecycleManager {
+    fn draw(&mut self, context: &mut Context) {
         context.set_clear_color(Color32::white().into());
 
-        self.rect_draw_system.init(context);
-        let mut sys = TextDrawSystem::new(
-            context,
-            &Path::new("resources")
-                .join("fonts")
-                .join("Roboto-Medium.ttf"),
-        );
-
-        sys.draw_text_line(
+        self.text_draw_system.draw_text_line(
             context,
             // Uncomment this to get error
             // "qwertyuiop[]asdfghjkl;'\\zxcvnm,./QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?",
@@ -77,30 +106,17 @@ impl LifecycleManager for MyLifecycleManager {
         for r in purple_rects {
             self.rect_draw_system.draw_rect(context, r, purple_brush);
         }
-
-        self.text_draw_system = Some(sys);
     }
+}
 
-    fn update(&mut self, core_state: &mut CoreState) {
-        let context = &mut core_state.context;
-        let size = context.get_window_size();
-        self.rect_draw_system.set_canvas_size(context, size);
-
-        if let Some(ref mut text_sys) = self.text_draw_system {
-            text_sys.set_canvas_size(context, size);
-            text_sys.update(context);
-        }
+impl Drop for MyLifecycleManagerBuilder {
+    fn drop(&mut self) {
+        println!("Builder was dropped")
     }
+}
 
-    fn error(&mut self, _: &mut CoreState, _error_code: i32, message: &str) {
-        panic!("{message}");
-    }
-
-    fn cleanup(&mut self, core_state: &mut CoreState) {
-        let context = &mut core_state.context;
-        self.rect_draw_system.cleanup(context);
-        if let Some(ref mut text_sys) = self.text_draw_system {
-            text_sys.cleanup(context);
-        }
+impl Drop for MyLifecycleManager {
+    fn drop(&mut self) {
+        println!("Manager was dropped")
     }
 }

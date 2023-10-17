@@ -1,11 +1,14 @@
 use division_engine_rust::core::{
-    IdWithBinding, Image, LifecycleManager, RenderTopology, ShaderVariableType,
-    VertexAttributeDescriptor, VertexData, CoreRunner, CoreState,
+    Context, CoreRunner, CoreState, IdWithBinding, Image, LifecycleManager,
+    LifecycleManagerBuilder, RenderTopology, ShaderVariableType,
+    VertexAttributeDescriptor, VertexData,
 };
 use division_math::{Matrix4x4, Vector2, Vector3, Vector4};
 use std::path::Path;
 
-pub struct MyDelegate {}
+pub struct MyDelegateBuilder;
+
+pub struct MyDelegate;
 
 #[repr(packed)]
 #[derive(Clone, Copy, VertexData)]
@@ -28,18 +31,26 @@ pub struct Inst {
 }
 
 fn main() {
-    let delegate = MyDelegate {};
-
     CoreRunner::new()
         .window_size(1024, 1024)
         .window_title("Oh, my world")
-        .run(delegate)
+        .run(MyDelegateBuilder)
         .unwrap();
 }
 
-impl LifecycleManager for MyDelegate {
-    fn init(&mut self, core_state: &mut CoreState) {
-        let context = &mut core_state.context;
+impl LifecycleManagerBuilder for MyDelegateBuilder {
+    type LifecycleManager = MyDelegate;
+
+    fn build(&mut self, state: &mut CoreState) -> Self::LifecycleManager {
+        let mut manager = MyDelegate {};
+        manager.draw(&mut state.context);
+
+        manager
+    }
+}
+
+impl MyDelegate {
+    fn draw(&mut self, context: &mut Context) {
         let shader_id = context
             .create_bundled_shader_program(
                 &Path::new("resources").join("shaders").join("test"),
@@ -119,7 +130,9 @@ impl LifecycleManager for MyDelegate {
             .build()
             .unwrap();
     }
+}
 
+impl LifecycleManager for MyDelegate {
     fn update(&mut self, _: &mut CoreState) {}
 
     fn error(&mut self, _: &mut CoreState, _error_code: i32, message: &str) {
