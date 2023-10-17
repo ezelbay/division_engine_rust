@@ -25,6 +25,10 @@ fn main() {
         .join("examples");
 
     Config::new(division_engine_core)
+        .configure_arg("-DFT_DISABLE_HARFBUZZ:BOOL=ON")
+        .configure_arg("-DFT_DISABLE_BZIP2:BOOL=ON")
+        .configure_arg("-DFT_DISABLE_PNG:BOOL=ON")
+        .configure_arg("-DFT_DISABLE_BROTLI:BOOL=ON")
         .target(division_engine_core)
         .out_dir(&out_dir)
         .build();
