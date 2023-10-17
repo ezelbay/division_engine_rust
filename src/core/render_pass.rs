@@ -1,4 +1,4 @@
-use std::{ptr::null, usize};
+use std::{ptr::null, usize, ops::{Deref, DerefMut}};
 
 use division_math::Vector4;
 
@@ -26,8 +26,7 @@ pub struct RenderPassBuilder {
 }
 
 pub struct BorrowedRenderPass<'a> {
-    pub render_pass: &'a mut DivisionRenderPassDescriptor,
-
+    render_pass: &'a mut DivisionRenderPassDescriptor,
     ctx: *mut DivisionContext,
     render_pass_id: u32,
 }
@@ -61,7 +60,7 @@ impl Context {
         }
     }
 
-    pub fn borrow_render_pass_mut_ptr(
+    pub fn borrow_render_pass_mut(
         &mut self,
         render_pass_id: DivisionId,
     ) -> BorrowedRenderPass {
@@ -229,5 +228,19 @@ impl<'a> Drop for BorrowedRenderPass<'a> {
                 self.render_pass,
             );
         }
+    }
+}
+
+impl<'a> Deref for BorrowedRenderPass<'a> {
+    type Target = DivisionRenderPassDescriptor;
+
+    fn deref(&self) -> &Self::Target {
+        &self.render_pass
+    }
+}
+
+impl<'a> DerefMut for BorrowedRenderPass<'a> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.render_pass
     }
 }

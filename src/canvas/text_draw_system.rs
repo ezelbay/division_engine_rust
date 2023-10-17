@@ -120,9 +120,9 @@ impl TextDrawSystem {
         let char_count =
             self.write_text_instance_data(context, text, font_scale, position, color)?;
 
-        let borrowed_render_pass =
-            context.borrow_render_pass_mut_ptr(self.render_pass_id);
-        borrowed_render_pass.render_pass.instance_count += char_count as u64;
+        let mut borrowed_render_pass =
+            context.borrow_render_pass_mut(self.render_pass_id);
+        borrowed_render_pass.instance_count += char_count as u64;
 
         self.instance_count += char_count;
 

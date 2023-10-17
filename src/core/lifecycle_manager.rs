@@ -1,13 +1,13 @@
-use super::core_state::CoreState;
+use crate::EngineState;
 
 pub trait LifecycleManagerBuilder {
     type LifecycleManager: LifecycleManager + 'static;
 
-    fn build(&mut self, state: &mut CoreState) -> Self::LifecycleManager;
+    fn build(&mut self, state: &mut EngineState) -> Self::LifecycleManager;
 }
 
 pub trait LifecycleManager: Sized {
-    fn update(&mut self, state: &mut CoreState);
-    fn error(&mut self, state: &mut CoreState, error_code: i32, message: &str);
-    fn cleanup(&mut self, state: &mut CoreState);
+    fn update(&mut self, state: &mut EngineState);
+    fn error(&mut self, state: &mut EngineState, error_code: i32, message: &str);
+    fn cleanup(&mut self, state: &mut EngineState);
 }

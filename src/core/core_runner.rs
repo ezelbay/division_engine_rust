@@ -4,10 +4,11 @@ use std::{
     ptr::null_mut,
 };
 
+use crate::EngineState;
+
 use super::{
     context::Context,
     context::Error,
-    core_state::CoreState,
     ffi::{
         context::{
             division_engine_context_finalize, division_engine_context_register_lifecycle,
@@ -31,7 +32,7 @@ struct ContextPreInitBridgeData<T: LifecycleManagerBuilder> {
 
 struct ContextPostInitBridgeData<T: LifecycleManager> {
     pub lifecycle_manager: T,
-    pub core_state: CoreState,
+    pub core_state: EngineState,
 }
 
 impl CoreRunner {
@@ -100,7 +101,7 @@ unsafe extern "C" fn init_callback<T: LifecycleManagerBuilder>(
     ctx_ptr: *mut DivisionContext,
 ) {
     let mut ctx = ManuallyDrop::new(Box::from_raw(ctx_ptr));
-    let mut core_state = CoreState {
+    let mut core_state = EngineState {
         context: Box::from_raw(ctx_ptr)
     };
 

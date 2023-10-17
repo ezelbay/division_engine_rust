@@ -5,14 +5,13 @@ use division_engine_rust::{
         border_radius::BorderRadius, color::Color32, decoration::Decoration, rect::Rect,
         rect_draw_system::RectDrawSystem, text_draw_system::TextDrawSystem,
     },
-    core::{LifecycleManager, CoreRunner, CoreState, LifecycleManagerBuilder, Context},
+    core::{Context, CoreRunner, LifecycleManager, LifecycleManagerBuilder},
+    EngineState,
 };
 
 use division_math::Vector2;
 
-struct MyLifecycleManagerBuilder {
-
-}
+struct MyLifecycleManagerBuilder {}
 
 struct MyLifecycleManager {
     rect_draw_system: RectDrawSystem,
@@ -30,14 +29,17 @@ fn main() {
 impl LifecycleManagerBuilder for MyLifecycleManagerBuilder {
     type LifecycleManager = MyLifecycleManager;
 
-    fn build(&mut self, state: &mut CoreState) -> Self::LifecycleManager {
+    fn build(&mut self, state: &mut EngineState) -> Self::LifecycleManager {
         let context = &mut state.context;
 
         let mut manager = MyLifecycleManager {
             rect_draw_system: RectDrawSystem::new(context),
-            text_draw_system: TextDrawSystem::new(context, &Path::new("resources")
-            .join("fonts")
-            .join("Roboto-Medium.ttf"))
+            text_draw_system: TextDrawSystem::new(
+                context,
+                &Path::new("resources")
+                    .join("fonts")
+                    .join("Roboto-Medium.ttf"),
+            ),
         };
         manager.draw(context);
 
@@ -46,7 +48,7 @@ impl LifecycleManagerBuilder for MyLifecycleManagerBuilder {
 }
 
 impl LifecycleManager for MyLifecycleManager {
-    fn update(&mut self, core_state: &mut CoreState) {
+    fn update(&mut self, core_state: &mut EngineState) {
         let context = &mut core_state.context;
         let size = context.get_window_size();
         self.rect_draw_system.set_canvas_size(context, size);
@@ -55,11 +57,11 @@ impl LifecycleManager for MyLifecycleManager {
         self.text_draw_system.update(context);
     }
 
-    fn error(&mut self, _: &mut CoreState, _error_code: i32, message: &str) {
+    fn error(&mut self, _: &mut EngineState, _error_code: i32, message: &str) {
         panic!("{message}");
     }
 
-    fn cleanup(&mut self, core_state: &mut CoreState) {
+    fn cleanup(&mut self, core_state: &mut EngineState) {
         let context = &mut core_state.context;
         self.rect_draw_system.cleanup(context);
         self.text_draw_system.cleanup(context);
@@ -70,15 +72,17 @@ impl MyLifecycleManager {
     fn draw(&mut self, context: &mut Context) {
         context.set_clear_color(Color32::white().into());
 
-        self.text_draw_system.draw_text_line(
-            context,
-            // Uncomment this to get error
-            // "qwertyuiop[]asdfghjkl;'\\zxcvnm,./QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?",
-            "New text",
-            64.,
-            Vector2::new(256., 128.),
-            Color32::from_rgb_hex(0x757575),
-        ).unwrap();
+        self.text_draw_system
+            .draw_text_line(
+                context,
+                // Uncomment this to get error
+                // "qwertyuiop[]asdfghjkl;'\\zxcvnm,./QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?",
+                "New text",
+                64.,
+                Vector2::new(256., 128.),
+                Color32::from_rgb_hex(0x757575),
+            )
+            .unwrap();
 
         let red_brush = Decoration {
             color: Color32::red(),

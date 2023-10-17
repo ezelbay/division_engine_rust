@@ -1,7 +1,10 @@
-use division_engine_rust::core::{
-    Context, CoreRunner, CoreState, IdWithBinding, Image, LifecycleManager,
-    LifecycleManagerBuilder, RenderTopology, ShaderVariableType,
-    VertexAttributeDescriptor, VertexData,
+use division_engine_rust::{
+    core::{
+        Context, CoreRunner, IdWithBinding, Image, LifecycleManager,
+        LifecycleManagerBuilder, RenderTopology, ShaderVariableType,
+        VertexAttributeDescriptor, VertexData,
+    },
+    EngineState,
 };
 use division_math::{Matrix4x4, Vector2, Vector3, Vector4};
 use std::path::Path;
@@ -41,7 +44,7 @@ fn main() {
 impl LifecycleManagerBuilder for MyDelegateBuilder {
     type LifecycleManager = MyDelegate;
 
-    fn build(&mut self, state: &mut CoreState) -> Self::LifecycleManager {
+    fn build(&mut self, state: &mut EngineState) -> Self::LifecycleManager {
         let mut manager = MyDelegate {};
         manager.draw(&mut state.context);
 
@@ -133,11 +136,11 @@ impl MyDelegate {
 }
 
 impl LifecycleManager for MyDelegate {
-    fn update(&mut self, _: &mut CoreState) {}
+    fn update(&mut self, _: &mut EngineState) {}
 
-    fn error(&mut self, _: &mut CoreState, _error_code: i32, message: &str) {
+    fn error(&mut self, _: &mut EngineState, _error_code: i32, message: &str) {
         panic!("{message}")
     }
 
-    fn cleanup(&mut self, _: &mut CoreState) {}
+    fn cleanup(&mut self, _: &mut EngineState) {}
 }

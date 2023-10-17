@@ -1,6 +1,5 @@
 pub(crate) mod ffi;
 
-pub mod core_state;
 pub mod context;
 pub mod core_runner;
 pub mod font;
@@ -15,7 +14,6 @@ pub mod vertex_buffer;
 
 pub use context::{Context, DivisionId};
 pub use core_runner::*;
-pub use core_state::*;
 pub use font::*;
 pub use font_texture::{FontTexture, GlyphPosition};
 pub use lifecycle_manager::*;

@@ -182,8 +182,8 @@ impl RectDrawSystem {
 
         self.instance_count += 1;
 
-        let borrowed_pass = context.borrow_render_pass_mut_ptr(self.render_pass_id);
-        borrowed_pass.render_pass.instance_count = self.instance_count as u64;
+        let mut borrowed_pass = context.borrow_render_pass_mut(self.render_pass_id);
+        borrowed_pass.instance_count = self.instance_count as u64;
     }
 
     fn write_rect_data(
