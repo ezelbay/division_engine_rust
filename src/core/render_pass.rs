@@ -1,8 +1,13 @@
-use std::{ptr::null, usize, ops::{Deref, DerefMut}};
+use std::{
+    ops::{Deref, DerefMut},
+    ptr::null,
+    usize,
+};
 
 use division_math::Vector4;
 
 use super::{
+    context::Error,
     ffi::{
         context::DivisionContext,
         render_pass::{
@@ -12,7 +17,7 @@ use super::{
             DivisionRenderPassCapabilityMask, DivisionRenderPassDescriptor,
         },
     },
-    Context, DivisionId, context::Error,
+    Context, DivisionId,
 };
 
 pub use super::ffi::render_pass::{
@@ -209,6 +214,17 @@ impl RenderPassBuilder {
 impl IdWithBinding {
     pub fn new(id: u32, shader_binding: u32) -> IdWithBinding {
         IdWithBinding { id, shader_binding }
+    }
+}
+
+impl<'a> BorrowedRenderPass<'a> {
+    pub fn fragment_textures_slice(&self) -> &[IdWithBinding] {
+        unsafe {
+            std::slice::from_raw_parts(
+                self.fragment_textures,
+                self.fragment_texture_count as usize,
+            )
+        }
     }
 }
 

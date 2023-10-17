@@ -2,10 +2,14 @@ use std::path::Path;
 
 use division_engine_rust::{
     canvas::{
-        border_radius::BorderRadius, color::Color32, decoration::Decoration, rect::Rect,
-        rect_draw_system::RectDrawSystem, text_draw_system::TextDrawSystem,
+        border_radius::BorderRadius,
+        color::Color32,
+        decoration::Decoration,
+        rect::Rect,
+        rect_draw_system::{DrawableRect, RectDrawSystem},
+        text_draw_system::TextDrawSystem,
     },
-    core::{Context, CoreRunner, LifecycleManager, LifecycleManagerBuilder},
+    core::{Context, CoreRunner, DivisionId, LifecycleManager, LifecycleManagerBuilder},
     EngineState,
 };
 
@@ -13,7 +17,15 @@ use division_math::Vector2;
 
 struct MyLifecycleManagerBuilder {}
 
+struct RectInfo {
+    index: usize,
+    id: DivisionId
+}
+
 struct MyLifecycleManager {
+    rects: Vec<DivisionId>,
+    rects_to_remove: Vec<RectInfo>,
+
     rect_draw_system: RectDrawSystem,
     text_draw_system: TextDrawSystem,
 }
@@ -40,6 +52,8 @@ impl LifecycleManagerBuilder for MyLifecycleManagerBuilder {
                     .join("fonts")
                     .join("Roboto-Medium.ttf"),
             ),
+            rects: Vec::new(),
+            rects_to_remove: Vec::new(),
         };
         manager.draw(context);
 
@@ -51,10 +65,26 @@ impl LifecycleManager for MyLifecycleManager {
     fn update(&mut self, core_state: &mut EngineState) {
         let context = &mut core_state.context;
         let size = context.get_window_size();
-        self.rect_draw_system.set_canvas_size(context, size);
+        self.rect_draw_system.update(context, size);
 
         self.text_draw_system.set_canvas_size(context, size);
         self.text_draw_system.update(context);
+
+        for (index, id) in self.rects.iter().enumerate() {
+            let id = *id;
+            let r = self.rect_draw_system.get_rect_mut(id);
+            r.rect.center.x += 0.5;
+
+            if r.rect.center.x >= 512. {
+                self.rects_to_remove.push(RectInfo { index, id });
+            }
+        }
+
+        for remove_rect in &self.rects_to_remove {
+            self.rect_draw_system.remove_rect(remove_rect.id);
+            self.rects.remove(remove_rect.index);
+        }
+        self.rects_to_remove.clear();
     }
 
     fn error(&mut self, _: &mut EngineState, _error_code: i32, message: &str) {
@@ -72,25 +102,15 @@ impl MyLifecycleManager {
     fn draw(&mut self, context: &mut Context) {
         context.set_clear_color(Color32::white().into());
 
-        self.text_draw_system
-            .draw_text_line(
-                context,
-                // Uncomment this to get error
-                // "qwertyuiop[]asdfghjkl;'\\zxcvnm,./QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?",
-                "New text",
-                64.,
-                Vector2::new(256., 128.),
-                Color32::from_rgb_hex(0x757575),
-            )
-            .unwrap();
-
         let red_brush = Decoration {
             color: Color32::red(),
             border_radius: BorderRadius::all(1.),
+            texture: self.rect_draw_system.white_texture_id(),
         };
         let purple_brush = Decoration {
             color: Color32::purple(),
             border_radius: BorderRadius::top_bottom(50., 30.),
+            texture: self.rect_draw_system.white_texture_id(),
         };
 
         let red_rects = [
@@ -103,13 +123,37 @@ impl MyLifecycleManager {
             Vector2::new(200., 100.),
         )];
 
-        for r in red_rects {
-            self.rect_draw_system.draw_rect(context, r, red_brush);
+        for rect in red_rects {
+            self.rects.push(self.rect_draw_system.add_rect(
+                context,
+                DrawableRect {
+                    rect,
+                    decoration: red_brush,
+                },
+            ));
         }
 
-        for r in purple_rects {
-            self.rect_draw_system.draw_rect(context, r, purple_brush);
+        for rect in purple_rects {
+            self.rects.push(self.rect_draw_system.add_rect(
+                context,
+                DrawableRect {
+                    rect,
+                    decoration: purple_brush,
+                },
+            ));
         }
+
+        self.text_draw_system
+            .draw_text_line(
+                context,
+                // Uncomment this to get error
+                // "qwertyuiop[]asdfghjkl;'\\zxcvnm,./QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?",
+                "New text",
+                64.,
+                Vector2::new(256., 128.),
+                Color32::from_rgb_hex(0x757575),
+            )
+            .unwrap();
     }
 }
 
