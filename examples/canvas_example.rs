@@ -81,7 +81,7 @@ impl LifecycleManager for MyLifecycleManager {
         }
 
         for remove_rect in &self.rects_to_remove {
-            self.rect_draw_system.remove_rect(remove_rect.id);
+            self.rect_draw_system.remove_rect(context, remove_rect.id);
             self.rects.remove(remove_rect.index);
         }
         self.rects_to_remove.clear();
