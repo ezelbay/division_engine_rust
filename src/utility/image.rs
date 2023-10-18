@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use crate::core::{Image, TextureFormat, ImageSettings};
+use crate::core::{Image, ImageSettings};
 
 use super::make_exe_dir_path;
 
