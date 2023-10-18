@@ -9,7 +9,10 @@ use division_engine_rust::{
         rect_draw_system::{DrawableRect, RectDrawSystem},
         text_draw_system::TextDrawSystem,
     },
-    core::{Context, CoreRunner, DivisionId, LifecycleManager, LifecycleManagerBuilder},
+    core::{
+        Context, CoreRunner, DivisionId, Image, LifecycleManager,
+        LifecycleManagerBuilder, ImageSettings,
+    },
     EngineState,
 };
 
@@ -19,7 +22,7 @@ struct MyLifecycleManagerBuilder {}
 
 struct RectInfo {
     index: usize,
-    id: DivisionId
+    id: DivisionId,
 }
 
 struct MyLifecycleManager {
@@ -102,10 +105,19 @@ impl MyLifecycleManager {
     fn draw(&mut self, context: &mut Context) {
         context.set_clear_color(Color32::white().into());
 
+        let nevsky = Image::create_bundled_image(
+            &Path::new("resources").join("images").join("nevsky.jpg"),
+            ImageSettings::with_vertical_flip(true),
+        )
+        .unwrap();
+        let nevsky = context
+            .create_texture_buffer_from_image(&nevsky)
+            .unwrap();
+
         let red_brush = Decoration {
             color: Color32::red(),
             border_radius: BorderRadius::all(1.),
-            texture: self.rect_draw_system.white_texture_id(),
+            texture: nevsky,
         };
         let purple_brush = Decoration {
             color: Color32::purple(),

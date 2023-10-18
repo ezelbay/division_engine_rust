@@ -109,6 +109,7 @@ impl RectDrawSystem {
         drawable_rect: DrawableRect,
     ) -> DivisionId {
         let decoration = drawable_rect.decoration;
+        let texture = drawable_rect.decoration.texture;
 
         let rect_index = if let Some(idx) = self.free_rects.pop() {
             idx
@@ -127,7 +128,7 @@ impl RectDrawSystem {
                 let pass_id = self.create_new_render_pass_with_vertex_buffer(
                     context,
                     false,
-                    self.white_pixel_texture_id,
+                    texture,
                 );
 
                 self.render_pass_ids.insert(target_pass_idx, pass_id);
@@ -245,16 +246,12 @@ impl RectDrawSystem {
         context.delete_shader_program(self.shader_id);
 
         for pass_id in self.render_pass_ids.iter() {
-            let (vertex_buffer, texture_id) = {
+            let vertex_buffer = {
                 let pass = context.borrow_render_pass_mut(*pass_id);
-                (pass.vertex_buffer, pass.fragment_textures_slice()[0].id)
+                pass.vertex_buffer
             };
 
             context.delete_vertex_buffer(vertex_buffer);
-
-            if texture_id != self.white_pixel_texture_id {
-                context.delete_texture_buffer(texture_id);
-            }
         }
     }
 

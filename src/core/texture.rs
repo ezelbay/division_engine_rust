@@ -76,7 +76,7 @@ impl Context {
     ) -> Result<DivisionId, Error> {
         self.create_texture_buffer_from_image_advanced(
             image,
-            None,
+            channels_to_default_swizzle(image.channels()),
             TextureMinMagFilter::Nearest,
             TextureMinMagFilter::Nearest,
         )
@@ -123,6 +123,20 @@ fn channels_to_texture_format(channels: usize) -> Result<TextureFormat, Error> {
             )))
         }
     })
+}
+
+#[inline]
+fn channels_to_default_swizzle(channels: usize) -> Option<TextureChannelsSwizzle> {
+    match channels {
+        1 => Some(TextureChannelsSwizzle::all(TextureChannelSwizzleVariant::Red)),
+        3 => Some(TextureChannelsSwizzle {
+            red: TextureChannelSwizzleVariant::Red,
+            green: TextureChannelSwizzleVariant::Green,
+            blue: TextureChannelSwizzleVariant::Blue,
+            alpha: TextureChannelSwizzleVariant::One
+        }),
+        _ => None
+    }
 }
 
 impl TextureChannelsSwizzle {
