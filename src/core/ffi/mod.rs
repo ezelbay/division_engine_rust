@@ -1,7 +1,8 @@
 pub mod context;
 pub mod font;
 pub mod lifecycle;
-pub mod render_pass;
+pub mod render_pass_descriptor;
+pub mod render_pass_instance;
 pub mod renderer;
 pub mod settings;
 pub mod shader;

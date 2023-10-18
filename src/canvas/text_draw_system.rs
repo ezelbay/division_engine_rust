@@ -5,7 +5,8 @@ use division_math::{Vector2, Vector4};
 
 use crate::core::{
     font_texture::Error, AlphaBlend, AlphaBlendOperation, Context, DivisionId,
-    FontTexture, IdWithBinding, RenderTopology, ShaderVariableType,
+    FontTexture, IdWithBinding, RenderPassDescriptor, RenderPassInstance,
+    RenderPassInstanceOwned, RenderTopology, ShaderVariableType,
     VertexAttributeDescriptor, VertexData,
 };
 
@@ -15,8 +16,8 @@ pub struct TextDrawSystem {
     font_texture: FontTexture,
     vertex_buffer_id: u32,
     uniform_buffer_id: u32,
-    render_pass_id: u32,
-    instance_count: usize,
+    render_pass_desc_id: u32,
+    render_pass_instance: RenderPassInstanceOwned,
 }
 
 #[repr(C, packed)]
@@ -84,27 +85,34 @@ impl TextDrawSystem {
             .create_uniform_buffer_with_size_of::<UniformData>()
             .unwrap();
 
-        let render_pass_id = context
-            .render_pass_builder()
-            .shader(shader_id)
-            .vertex_buffer(vertex_buffer_id, VERTEX_PER_RECT, INDEX_PER_RECT)
-            .vertex_uniform_buffers(&[IdWithBinding::new(uniform_buffer_id, 1)])
-            .fragment_textures(&[IdWithBinding::new(font_texture.texture_id(), 0)])
-            .enable_instancing()
-            .alpha_blending(
-                AlphaBlend::SrcAlpha,
-                AlphaBlend::OneMinusSrcAlpha,
-                AlphaBlendOperation::Add,
+        let render_pass_desc_id = context
+            .create_render_pass_descriptor(
+                &RenderPassDescriptor::with_shader_and_vertex_buffer(
+                    shader_id,
+                    vertex_buffer_id,
+                )
+                .alpha_blending(
+                    AlphaBlend::SrcAlpha,
+                    AlphaBlend::OneMinusSrcAlpha,
+                    AlphaBlendOperation::Add,
+                ),
             )
-            .build()
             .unwrap();
+
+        let render_pass_instance = RenderPassInstanceOwned::new(
+            RenderPassInstance::new(render_pass_desc_id)
+                .vertices(VERTEX_PER_RECT, INDEX_PER_RECT)
+                .enable_instancing(),
+        )
+        .vertex_uniform_buffers(&[IdWithBinding::new(uniform_buffer_id, 1)])
+        .fragment_textures(&[IdWithBinding::new(font_texture.texture_id(), 0)]);
 
         TextDrawSystem {
             font_texture,
             vertex_buffer_id,
             uniform_buffer_id,
-            render_pass_id,
-            instance_count: 0,
+            render_pass_desc_id,
+            render_pass_instance,
         }
     }
 
@@ -120,11 +128,7 @@ impl TextDrawSystem {
         let char_count =
             self.write_text_instance_data(context, text, font_scale, position, color)?;
 
-        let mut borrowed_render_pass =
-            context.borrow_render_pass_mut(self.render_pass_id);
-        borrowed_render_pass.instance_count += char_count as u64;
-
-        self.instance_count += char_count;
+        self.render_pass_instance.instance_count += char_count as u32;
 
         Ok(())
     }
@@ -142,6 +146,7 @@ impl TextDrawSystem {
         let mut char_count = 0;
         let mut pen_x = position.x;
         let pen_y = position.y;
+        let instance_count = self.render_pass_instance.instance_count as usize;
 
         for ch in text.chars() {
             self.font_texture.cache_character(context, ch)?;
@@ -160,7 +165,7 @@ impl TextDrawSystem {
                 let x_offset = glyph.left as f32 * font_scale;
                 let y_offset = (glyph.top as f32 - glyph.height as f32) * font_scale;
 
-                data.per_instance_data[self.instance_count + i] = TextInstance {
+                data.per_instance_data[instance_count + i] = TextInstance {
                     texel_coord: Vector2::new(pos.x as f32, pos.y as f32),
                     size: Vector2::new(scaled_width, scaled_height),
                     position: Vector2::new(pen_x + x_offset, pen_y + y_offset),
@@ -175,7 +180,7 @@ impl TextDrawSystem {
 
             pen_x += scaled_advance as f32;
             char_count += 1;
-            debug_assert!(self.instance_count + char_count < RECT_CAPACITY);
+            debug_assert!(instance_count + char_count < RECT_CAPACITY);
         }
 
         Ok(char_count)
@@ -188,10 +193,11 @@ impl TextDrawSystem {
 
     pub fn update(&mut self, context: &mut Context) {
         self.font_texture.upload_texture(context);
+        context.draw_single_render_pass(&self.render_pass_instance);
     }
 
     pub fn cleanup(&mut self, context: &mut Context) {
-        context.delete_render_pass(self.render_pass_id);
+        context.delete_render_pass_descriptor(self.render_pass_desc_id);
 
         self.font_texture.delete(context);
         context.delete_vertex_buffer(self.vertex_buffer_id);

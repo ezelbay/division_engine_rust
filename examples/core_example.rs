@@ -1,8 +1,9 @@
 use division_engine_rust::{
     core::{
-        Context, CoreRunner, IdWithBinding, Image, LifecycleManager,
-        LifecycleManagerBuilder, RenderTopology, ShaderVariableType,
-        VertexAttributeDescriptor, VertexData, ImageSettings,
+        Context, CoreRunner, IdWithBinding, Image, ImageSettings, LifecycleManager,
+        LifecycleManagerBuilder, RenderPassDescriptor, RenderPassInstance,
+        RenderPassInstanceOwned, RenderTopology, ShaderVariableType,
+        VertexAttributeDescriptor, VertexData,
     },
     EngineState,
 };
@@ -11,7 +12,9 @@ use std::path::Path;
 
 pub struct MyDelegateBuilder;
 
-pub struct MyDelegate;
+pub struct MyDelegate {
+    render_pass_instance: RenderPassInstanceOwned,
+}
 
 #[repr(packed)]
 #[derive(Clone, Copy, VertexData)]
@@ -45,15 +48,7 @@ impl LifecycleManagerBuilder for MyDelegateBuilder {
     type LifecycleManager = MyDelegate;
 
     fn build(&mut self, state: &mut EngineState) -> Self::LifecycleManager {
-        let mut manager = MyDelegate {};
-        manager.draw(&mut state.context);
-
-        manager
-    }
-}
-
-impl MyDelegate {
-    fn draw(&mut self, context: &mut Context) {
+        let context: &mut Context = &mut state.context;
         let shader_id = context
             .create_bundled_shader_program(
                 &Path::new("resources").join("shaders").join("test"),
@@ -106,7 +101,7 @@ impl MyDelegate {
         let texture_id = {
             let image = Image::create_bundled_image(
                 &Path::new("resources").join("images").join("nevsky.jpg"),
-                ImageSettings::default()
+                ImageSettings::default(),
             )
             .unwrap();
 
@@ -124,20 +119,35 @@ impl MyDelegate {
             *buff_data.data = Vector4::one() * 0.5;
         }
 
-        context
-            .render_pass_builder()
-            .vertex_buffer(vertex_buffer_id, vertices_data.len(), indices.len())
-            .instances(instances_data.len())
-            .fragment_textures(&[IdWithBinding::new(texture_id, 0)])
-            .fragment_uniform_buffers(&[IdWithBinding::new(buff_id, 1)])
-            .shader(shader_id)
-            .build()
+        let pass_desc_id = context
+            .create_render_pass_descriptor(
+                &RenderPassDescriptor::with_shader_and_vertex_buffer(
+                    shader_id,
+                    vertex_buffer_id,
+                ),
+            )
             .unwrap();
+
+        let render_pass_instance = RenderPassInstanceOwned::new(
+            RenderPassInstance::new(pass_desc_id)
+                .vertices(vertices_data.len(), indices.len())
+                .instances(instances_data.len()),
+        )
+        .fragment_textures(&[IdWithBinding::new(texture_id, 0)])
+        .fragment_uniform_buffers(&[IdWithBinding::new(buff_id, 1)]);
+
+        MyDelegate {
+            render_pass_instance,
+        }
     }
 }
 
 impl LifecycleManager for MyDelegate {
-    fn update(&mut self, _: &mut EngineState) {}
+    fn update(&mut self, state: &mut EngineState) {
+        state
+            .context
+            .draw_single_render_pass(&self.render_pass_instance);
+    }
 
     fn error(&mut self, _: &mut EngineState, _error_code: i32, message: &str) {
         panic!("{message}")

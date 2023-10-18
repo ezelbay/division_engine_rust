@@ -1,3 +1,9 @@
+/*
+   TODO: Now it works incorrectly, because screen clears for every system! 
+         There is a need to make a global store for render passes,
+         rather than for each system
+*/
+
 use std::path::Path;
 
 use division_engine_rust::{
@@ -10,8 +16,8 @@ use division_engine_rust::{
         text_draw_system::TextDrawSystem,
     },
     core::{
-        Context, CoreRunner, DivisionId, Image, LifecycleManager,
-        LifecycleManagerBuilder, ImageSettings,
+        Context, CoreRunner, DivisionId, Image, ImageSettings, LifecycleManager,
+        LifecycleManagerBuilder,
     },
     EngineState,
 };
@@ -61,7 +67,7 @@ impl LifecycleManagerBuilder for MyLifecycleManagerBuilder {
             rects_to_remove: Vec::new(),
 
             borders_animation_incr: 1,
-            animated_borders_rect: 0
+            animated_borders_rect: 0,
         };
         manager.draw(context);
 
@@ -126,9 +132,7 @@ impl MyLifecycleManager {
             ImageSettings::with_vertical_flip(true),
         )
         .unwrap();
-        let nevsky = context
-            .create_texture_buffer_from_image(&nevsky)
-            .unwrap();
+        let nevsky = context.create_texture_buffer_from_image(&nevsky).unwrap();
 
         let red_brush = Decoration {
             color: Color32::red(),

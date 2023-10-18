@@ -3,7 +3,8 @@ use std::path::Path;
 use division_math::{Vector2, Vector4};
 
 use crate::core::{
-    AlphaBlend, AlphaBlendOperation, Context, DivisionId, IdWithBinding, RenderTopology,
+    AlphaBlend, AlphaBlendOperation, Context, DivisionId, IdWithBinding,
+    RenderPassDescriptor, RenderPassInstance, RenderPassInstanceOwned, RenderTopology,
     ShaderVariableType, TextureDescriptor, TextureFormat, VertexAttributeDescriptor,
     VertexBufferData, VertexData,
 };
@@ -14,9 +15,11 @@ pub struct RectDrawSystem {
     shader_id: DivisionId,
     white_pixel_texture_id: DivisionId,
     uniform_buffer_id: DivisionId,
-    render_pass_ids: Vec<DivisionId>,
+    render_pass_descriptor: DivisionId,
+    render_pass_instances: Vec<RenderPassInstanceOwned>,
     render_pass_to_texture_ids: Vec<DivisionId>,
     render_pass_rects: Vec<RenderPassRectsView>,
+    vertex_buffer_id: DivisionId,
 
     rects: Vec<DrawableRect>,
     free_rects: Vec<usize>,
@@ -87,15 +90,32 @@ impl RectDrawSystem {
             .create_uniform_buffer_with_size_of::<UniformData>()
             .unwrap();
 
+        let vertex_buffer_id = Self::make_vertex_buffer(context);
+        let render_pass_descriptor = context
+            .create_render_pass_descriptor(
+                &RenderPassDescriptor::with_shader_and_vertex_buffer(
+                    shader_id,
+                    vertex_buffer_id,
+                )
+                .alpha_blending(
+                    AlphaBlend::SrcAlpha,
+                    AlphaBlend::OneMinusSrcAlpha,
+                    AlphaBlendOperation::Add,
+                ),
+            )
+            .unwrap();
+
         RectDrawSystem {
             shader_id,
             white_pixel_texture_id,
             uniform_buffer_id,
-            render_pass_ids: Vec::new(),
+            render_pass_instances: Vec::new(),
             render_pass_rects: Vec::new(),
             render_pass_to_texture_ids: Vec::new(),
             rects: Vec::new(),
             free_rects: Vec::new(),
+            render_pass_descriptor,
+            vertex_buffer_id,
         }
     }
 
@@ -125,13 +145,10 @@ impl RectDrawSystem {
         {
             Ok(target_pass_idx) => target_pass_idx,
             Err(target_pass_idx) => {
-                let pass_id = self.create_new_render_pass_with_vertex_buffer(
-                    context,
-                    false,
-                    texture,
-                );
+                let pass = self
+                    .create_new_render_pass_with_vertex_buffer(context, false, texture);
 
-                self.render_pass_ids.insert(target_pass_idx, pass_id);
+                self.render_pass_instances.insert(target_pass_idx, pass);
                 self.render_pass_rects
                     .insert(target_pass_idx, RenderPassRectsView { rects: Vec::new() });
                 self.render_pass_to_texture_ids
@@ -152,8 +169,7 @@ impl RectDrawSystem {
     pub fn remove_rect(&mut self, rect_id: DivisionId) {
         let rect_id = rect_id as usize;
 
-        for render_pass_idx in 0..self.render_pass_ids.len()
-        {
+        for render_pass_idx in 0..self.render_pass_instances.len() {
             let rects = &mut self.render_pass_rects[render_pass_idx].rects;
 
             if let Ok(idx_to_remove) = rects.binary_search(&rect_id) {
@@ -163,7 +179,7 @@ impl RectDrawSystem {
 
         match self.free_rects.binary_search(&rect_id) {
             Err(idx) => self.free_rects.insert(idx, rect_id),
-            Ok(_) => panic!("Id {rect_id} is already free!")
+            Ok(_) => panic!("Id {rect_id} is already free!"),
         }
     }
 
@@ -180,40 +196,32 @@ impl RectDrawSystem {
         context: &mut Context,
         flip_vertical: bool,
         texture_buffer_id: DivisionId,
-    ) -> DivisionId {
+    ) -> RenderPassInstanceOwned {
         let vertex_buffer_id = Self::make_vertex_buffer(context);
         Self::generate_rect_drawer_vertex_data(context, vertex_buffer_id, flip_vertical);
 
-        context
-            .render_pass_builder()
-            .shader(self.shader_id)
-            .fragment_textures(&[IdWithBinding::new(texture_buffer_id, 0)])
-            .vertex_uniform_buffers(&[IdWithBinding::new(self.uniform_buffer_id, 1)])
-            .fragment_uniform_buffers(&[IdWithBinding::new(self.uniform_buffer_id, 1)])
-            .vertex_buffer(vertex_buffer_id, VERTEX_PER_RECT, INDEX_PER_RECT)
-            .enable_instancing()
-            .alpha_blending(
-                AlphaBlend::SrcAlpha,
-                AlphaBlend::OneMinusSrcAlpha,
-                AlphaBlendOperation::Add,
-            )
-            .build()
-            .unwrap()
+        let instance = RenderPassInstanceOwned::new(
+            RenderPassInstance::new(self.render_pass_descriptor)
+                .vertices(VERTEX_PER_RECT, INDEX_PER_RECT)
+                .enable_instancing(),
+        )
+        .fragment_textures(&[IdWithBinding::new(texture_buffer_id, 0)])
+        .vertex_uniform_buffers(&[IdWithBinding::new(self.uniform_buffer_id, 1)])
+        .fragment_uniform_buffers(&[IdWithBinding::new(self.uniform_buffer_id, 1)]);
+
+        instance
     }
 
     pub fn update(&mut self, context: &mut Context, canvas_size: Vector2) {
         self.update_canvas_size_uniform(context, canvas_size);
 
         for (render_pass_idx, rect_views) in self.render_pass_rects.iter().enumerate() {
-            let render_pass_id = self.render_pass_ids[render_pass_idx];
-            let vertex_buffer_id = {
-                let render_pass = context.borrow_render_pass_mut(render_pass_id);
-                render_pass.vertex_buffer
-            };
+            let render_pass = &mut self.render_pass_instances[render_pass_idx];
 
             let instance_count = {
                 let mut instance_count = 0;
-                let vertex_buffer = Self::get_rect_drawer_data(context, vertex_buffer_id);
+                let vertex_buffer =
+                    Self::get_rect_drawer_data(context, self.vertex_buffer_id);
 
                 for draw_rect in rect_views.rects.iter().map(|r| &self.rects[*r]) {
                     let instance_data =
@@ -230,8 +238,7 @@ impl RectDrawSystem {
                 instance_count
             };
 
-            let mut render_pass = context.borrow_render_pass_mut(render_pass_id);
-            render_pass.instance_count = instance_count as u64;
+            render_pass.instance_count = instance_count as u32;
         }
     }
 
@@ -244,15 +251,8 @@ impl RectDrawSystem {
         context.delete_texture_buffer(self.white_pixel_texture_id);
         context.delete_uniform_buffer(self.uniform_buffer_id);
         context.delete_shader_program(self.shader_id);
-
-        for pass_id in self.render_pass_ids.iter() {
-            let vertex_buffer = {
-                let pass = context.borrow_render_pass_mut(*pass_id);
-                pass.vertex_buffer
-            };
-
-            context.delete_vertex_buffer(vertex_buffer);
-        }
+        context.delete_render_pass_descriptor(self.render_pass_descriptor);
+        context.delete_vertex_buffer(self.vertex_buffer_id);
     }
 
     fn make_vertex_buffer(context: &mut Context) -> DivisionId {

@@ -87,7 +87,7 @@ fn run<T: LifecycleManagerBuilder>(
             context_ptr,
             &DivisionLifecycle {
                 init_callback: init_callback::<T>,
-                update_callback: update_callback::<T::LifecycleManager>,
+                ready_to_draw_callback: update_callback::<T::LifecycleManager>,
                 free_callback: free_callback::<T::LifecycleManager>,
                 error_callback: error_callback::<T::LifecycleManager>,
             },

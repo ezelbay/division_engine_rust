@@ -1,13 +1,6 @@
 use bitflags::bitflags;
-use std::ffi::c_ulong;
 
 use super::context::DivisionContext;
-
-#[repr(C)]
-pub struct DivisionIdWithBinding {
-    pub id: u32,
-    pub shader_binding: u32,
-}
 
 bitflags! {
     #[repr(transparent)]
@@ -26,10 +19,9 @@ bitflags! {
 bitflags! {
     #[repr(transparent)]
     #[derive(PartialEq, Clone, Copy)]
-    pub struct DivisionRenderPassCapabilityMask: i32 {
+    pub struct DivisionRenderPassDescriptorCapabilityMask: i32 {
         const None = 0;
         const AlphaBlend = 1 << 0;
-        const InstancedRendering = 1 << 1;
     }
 }
 
@@ -74,42 +66,31 @@ pub struct DivisionAlphaBlendingOptions {
 #[repr(C)]
 pub struct DivisionRenderPassDescriptor {
     pub alpha_blending_options: DivisionAlphaBlendingOptions,
-
-    pub first_vertex: c_ulong,
-    pub vertex_count: c_ulong,
-    pub index_count: c_ulong,
-    pub instance_count: c_ulong,
-    pub uniform_vertex_buffers: *const DivisionIdWithBinding,
-    pub uniform_vertex_buffer_count: i32,
-    pub uniform_fragment_buffers: *const DivisionIdWithBinding,
-    pub uniform_fragment_buffer_count: i32,
-    pub fragment_textures: *const DivisionIdWithBinding,
-    pub fragment_texture_count: i32,
-    pub vertex_buffer: u32,
     pub shader_program: u32,
-    pub capabilities_mask: DivisionRenderPassCapabilityMask,
+    pub vertex_buffer_id: u32,
+    pub capabilities_mask: DivisionRenderPassDescriptorCapabilityMask,
     pub color_mask: DivisionColorMask,
 }
 
 extern "C" {
-    pub fn division_engine_render_pass_alloc(
+    pub fn division_engine_render_pass_descriptor_alloc(
         ctx: *mut DivisionContext,
         descriptor: *const DivisionRenderPassDescriptor,
         out_render_pass_id: *mut u32,
     ) -> bool;
 
-    pub fn division_engine_render_pass_borrow(
+    pub fn division_engine_render_pass_descriptor_borrow(
         ctx: *mut DivisionContext,
         render_pass_id: u32,
     ) -> *mut DivisionRenderPassDescriptor;
 
-    pub fn division_engine_render_pass_return(
+    pub fn division_engine_render_pass_descriptor_return(
         ctx: *mut DivisionContext,
         render_pass_id: u32,
         render_pass: *const DivisionRenderPassDescriptor,
     );
 
-    pub fn division_engine_render_pass_free(
+    pub fn division_engine_render_pass_descriptor_free(
         ctx: *mut DivisionContext,
         render_pass_id: u32,
     );
