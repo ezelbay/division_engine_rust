@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use division_math::Vector4;
 
 #[repr(transparent)]
@@ -59,5 +61,19 @@ impl BorderRadius {
 impl From<BorderRadius> for Vector4 {
     fn from(value: BorderRadius) -> Self {
         value.tr_br_tl_bl
+    }
+}
+
+impl Deref for BorderRadius {
+    type Target = Vector4;
+
+    fn deref(&self) -> &Self::Target {
+        &self.tr_br_tl_bl
+    }
+}
+
+impl DerefMut for BorderRadius {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.tr_br_tl_bl
     }
 }

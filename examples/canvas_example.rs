@@ -16,7 +16,7 @@ use division_engine_rust::{
     EngineState,
 };
 
-use division_math::Vector2;
+use division_math::{Vector2, Vector4};
 
 struct MyLifecycleManagerBuilder {}
 
@@ -28,6 +28,8 @@ struct RectInfo {
 struct MyLifecycleManager {
     rects: Vec<DivisionId>,
     rects_to_remove: Vec<RectInfo>,
+    animated_borders_rect: DivisionId,
+    borders_animation_incr: i32,
 
     rect_draw_system: RectDrawSystem,
     text_draw_system: TextDrawSystem,
@@ -57,6 +59,9 @@ impl LifecycleManagerBuilder for MyLifecycleManagerBuilder {
             ),
             rects: Vec::new(),
             rects_to_remove: Vec::new(),
+
+            borders_animation_incr: 1,
+            animated_borders_rect: 0
         };
         manager.draw(context);
 
@@ -77,6 +82,17 @@ impl LifecycleManager for MyLifecycleManager {
             let id = *id;
             let r = self.rect_draw_system.get_rect_mut(id);
             r.rect.center.x += 0.5;
+            r.rect.center.y += (r.rect.center.x * 0.1).sin();
+
+            if id == self.animated_borders_rect {
+                let v: &mut Vector4 = &mut r.decoration.border_radius;
+                let r = *v + Vector4::one() * self.borders_animation_incr as f32;
+                *v = r;
+
+                if v.x > 90. || v.x < 0. {
+                    self.borders_animation_incr *= -1;
+                }
+            }
 
             if r.rect.center.x >= 512. {
                 self.rects_to_remove.push(RectInfo { index, id });
@@ -121,7 +137,7 @@ impl MyLifecycleManager {
         };
         let purple_brush = Decoration {
             color: Color32::purple(),
-            border_radius: BorderRadius::top_bottom(50., 30.),
+            border_radius: BorderRadius::all(0.),
             texture: self.rect_draw_system.white_texture_id(),
         };
 
@@ -131,8 +147,8 @@ impl MyLifecycleManager {
         ];
 
         let purple_rects = [Rect::from_center(
-            Vector2::new(512., 512.),
-            Vector2::new(200., 100.),
+            Vector2::new(0., 512.),
+            Vector2::new(200., 200.),
         )];
 
         for rect in red_rects {
@@ -154,6 +170,8 @@ impl MyLifecycleManager {
                 },
             ));
         }
+
+        self.animated_borders_rect = *self.rects.last().unwrap();
 
         self.text_draw_system
             .draw_text_line(
