@@ -6,11 +6,12 @@ use std::{
 };
 
 use super::{
+    context::Error,
     ffi::stb::{
         stbi_image_free, stbi_load, stbi_load_from_memory,
         stbi_set_flip_vertically_on_load, stbi_write_jpg,
     },
-    context::Error,
+    TextureFormat,
 };
 
 enum ImageImpl {
@@ -23,6 +24,11 @@ pub struct Image {
     width: usize,
     height: usize,
     channels: usize,
+}
+
+pub struct ImageSettings {
+    channels: c_int,
+    vertical_flip: bool,
 }
 
 impl Image {
@@ -69,7 +75,10 @@ impl Image {
         }
     }
 
-    pub fn create_from_path(path: &Path) -> Option<Image> {
+    pub fn create_from_path(
+        path: &Path,
+        image_settings: ImageSettings,
+    ) -> Option<Image> {
         unsafe {
             let mut width = MaybeUninit::uninit();
             let mut height = MaybeUninit::uninit();
@@ -79,12 +88,14 @@ impl Image {
             let path = CString::new(path);
             let path = path.ok()?;
 
+            stbi_set_flip_vertically_on_load(image_settings.vertical_flip as c_int);
+
             let ptr = stbi_load(
                 path.as_ptr(),
                 width.as_mut_ptr(),
                 height.as_mut_ptr(),
                 channels.as_mut_ptr(),
-                0,
+                image_settings.channels,
             );
 
             if ptr.is_null() {
@@ -120,7 +131,7 @@ impl Image {
                 quality as c_int,
             )
         };
-        
+
         if result {
             Ok(())
         } else {
@@ -168,5 +179,45 @@ impl Drop for Image {
         if let ImageImpl::Stb(ptr) = self.imp {
             unsafe { stbi_image_free(ptr) }
         }
+    }
+}
+
+impl ImageSettings {
+    pub fn new(texture_format: TextureFormat, vertical_flip: bool) -> ImageSettings {
+        ImageSettings {
+            channels: texture_format_to_channels(texture_format),
+            vertical_flip,
+        }
+    }
+
+    pub fn with_texture_format(texture_format: TextureFormat) -> ImageSettings {
+        ImageSettings {
+            channels: texture_format_to_channels(texture_format),
+            vertical_flip: false,
+        }
+    }
+
+    pub fn with_vertical_flip(vertical_flip: bool) -> ImageSettings {
+        ImageSettings {
+            channels: 0,
+            vertical_flip,
+        }
+    }
+}
+
+impl Default for ImageSettings {
+    fn default() -> Self {
+        Self {
+            channels: 0,
+            vertical_flip: false,
+        }
+    }
+}
+
+fn texture_format_to_channels(texture_format: TextureFormat) -> c_int {
+    match texture_format {
+        TextureFormat::R8Uint => 1,
+        TextureFormat::RGB24Uint => 3,
+        TextureFormat::RGBA32Uint => 4,
     }
 }

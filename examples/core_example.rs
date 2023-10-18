@@ -2,7 +2,7 @@ use division_engine_rust::{
     core::{
         Context, CoreRunner, IdWithBinding, Image, LifecycleManager,
         LifecycleManagerBuilder, RenderTopology, ShaderVariableType,
-        VertexAttributeDescriptor, VertexData,
+        VertexAttributeDescriptor, VertexData, ImageSettings,
     },
     EngineState,
 };
@@ -106,6 +106,7 @@ impl MyDelegate {
         let texture_id = {
             let image = Image::create_bundled_image(
                 &Path::new("resources").join("images").join("nevsky.jpg"),
+                ImageSettings::default()
             )
             .unwrap();
 
