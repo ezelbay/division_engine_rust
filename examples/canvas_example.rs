@@ -19,7 +19,7 @@ use division_engine_rust::{
         Context, CoreRunner, DivisionId, Image, ImageSettings, LifecycleManager,
         LifecycleManagerBuilder,
     },
-    EngineContext,
+    EngineState,
 };
 
 use division_math::{Vector2, Vector4};
@@ -41,12 +41,6 @@ struct MyLifecycleManager {
     text_draw_system: TextDrawSystem,
 }
 
-struct MyState {
-
-}
-
-type MyContext = EngineContext<MyState>;
-
 fn main() {
     CoreRunner::new()
         .window_size(1024, 1024)
@@ -58,7 +52,9 @@ fn main() {
 impl LifecycleManagerBuilder for MyLifecycleManagerBuilder {
     type LifecycleManager = MyLifecycleManager;
 
-    fn build(&mut self, context: &mut Context) -> Self::LifecycleManager {
+    fn build(&mut self, state: &mut EngineState) -> Self::LifecycleManager {
+        let context = &mut state.context;
+
         let mut manager = MyLifecycleManager {
             rect_draw_system: RectDrawSystem::new(context),
             text_draw_system: TextDrawSystem::new(
@@ -80,14 +76,8 @@ impl LifecycleManagerBuilder for MyLifecycleManagerBuilder {
 }
 
 impl LifecycleManager for MyLifecycleManager {
-    type LifecycleState = MyState;
-
-    fn create_state(&self, _: &mut Context) -> MyState {
-        MyState {  }
-    }
-
-    fn update(&mut self, core_state: &mut MyContext) {
-        let context = &mut core_state.ffi_context;
+    fn update(&mut self, core_state: &mut EngineState) {
+        let context = &mut core_state.context;
         let size = context.get_window_size();
         self.rect_draw_system.update(context, size);
 
@@ -122,12 +112,12 @@ impl LifecycleManager for MyLifecycleManager {
         self.rects_to_remove.clear();
     }
 
-    fn error(&mut self, _: &mut MyContext, _error_code: i32, message: &str) {
+    fn error(&mut self, _: &mut EngineState, _error_code: i32, message: &str) {
         panic!("{message}");
     }
 
-    fn cleanup(&mut self, core_state: &mut MyContext) {
-        let context = &mut core_state.ffi_context;
+    fn cleanup(&mut self, core_state: &mut EngineState) {
+        let context = &mut core_state.context;
         self.rect_draw_system.cleanup(context);
         self.text_draw_system.cleanup(context);
     }

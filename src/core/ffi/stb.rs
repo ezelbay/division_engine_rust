@@ -22,6 +22,30 @@ extern "C" {
 
     pub fn stbi_image_free(data_ptr: *mut u8);
 
+    pub fn stbi_write_png(
+        file_path: *const c_char,
+        w: c_int,
+        h: c_int,
+        comp: c_int,
+        data: *const u8,
+        stride_in_bytes: c_int,
+    ) -> bool;
+    pub fn stbi_write_bmp(
+        file_path: *const c_char,
+        w: c_int,
+        h: c_int,
+        comp: c_int,
+        data: *const u8,
+    ) -> bool;
+
+    pub fn stbi_write_tga(
+        file_path: *const c_char,
+        w: c_int,
+        h: c_int,
+        comp: c_int,
+        data: *const u8,
+    ) -> bool;
+
     pub fn stbi_write_jpg(
         file_path: *const c_char,
         w: c_int,
@@ -29,5 +53,13 @@ extern "C" {
         comp: c_int,
         data: *const u8,
         quality: c_int,
+    ) -> bool;
+
+    pub fn stbi_write_hdr(
+        file_path: *const c_char,
+        w: c_int,
+        h: c_int,
+        comp: c_int,
+        data: *const u8,
     ) -> bool;
 }
