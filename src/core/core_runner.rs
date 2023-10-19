@@ -100,14 +100,19 @@ fn run<T: LifecycleManagerBuilder>(
 unsafe extern "C" fn init_callback<T: LifecycleManagerBuilder>(
     ctx_ptr: *mut DivisionContext,
 ) {
+    // All context boxes and pointers reference to the same memory locations
     let mut context = ManuallyDrop::new(Box::from_raw(ctx_ptr));
-    let mut pre_init = Box::from_raw(context.user_data as *mut ContextPreInitBridgeData<T>);
-    let lifecycle_manager = pre_init.lifecycle_manager_builder.build(&mut context);
-    let lifecycle_state = lifecycle_manager.create_state(&mut context);
+    let mut pre_init =
+        Box::from_raw(context.user_data as *mut ContextPreInitBridgeData<T>);
+    let (lifecycle_manager, lifecycle_state) =
+        pre_init.lifecycle_manager_builder.build(&mut context);
 
     let post_init_data_ptr = ManuallyDrop::new(Box::new(ContextPostInitBridgeData {
-        core_state: EngineContext { ffi_context: Box::from_raw(ctx_ptr), state: lifecycle_state },
-        lifecycle_manager
+        core_state: EngineContext {
+            ffi_context: Box::from_raw(ctx_ptr),
+            state: lifecycle_state,
+        },
+        lifecycle_manager,
     }));
 
     context.user_data = post_init_data_ptr.as_ref()
@@ -125,7 +130,8 @@ unsafe extern "C" fn free_callback<T: LifecycleManager>(ctx: *mut DivisionContex
 
     owner.lifecycle_manager.cleanup(&mut owner.core_state);
     division_engine_context_finalize(
-        owner.core_state.ffi_context.as_mut() as *mut DivisionContext);
+        owner.core_state.ffi_context.as_mut() as *mut DivisionContext
+    );
 }
 
 unsafe extern "C" fn error_callback<T: LifecycleManager>(
