@@ -4,7 +4,7 @@ use std::{
     ptr::null_mut,
 };
 
-use crate::EngineState;
+use crate::EngineContext;
 
 use super::{
     context::Context,
@@ -32,7 +32,7 @@ struct ContextPreInitBridgeData<T: LifecycleManagerBuilder> {
 
 struct ContextPostInitBridgeData<T: LifecycleManager> {
     pub lifecycle_manager: T,
-    pub core_state: EngineState,
+    pub core_state: EngineContext<T::LifecycleState>,
 }
 
 impl CoreRunner {
@@ -100,20 +100,17 @@ fn run<T: LifecycleManagerBuilder>(
 unsafe extern "C" fn init_callback<T: LifecycleManagerBuilder>(
     ctx_ptr: *mut DivisionContext,
 ) {
-    let mut ctx = ManuallyDrop::new(Box::from_raw(ctx_ptr));
-    let mut core_state = EngineState {
-        context: Box::from_raw(ctx_ptr)
-    };
-
-    let mut pre_init = Box::from_raw(ctx.user_data as *mut ContextPreInitBridgeData<T>);
-    let lifecycle_manager = pre_init.lifecycle_manager_builder.build(&mut core_state);
+    let mut context = ManuallyDrop::new(Box::from_raw(ctx_ptr));
+    let mut pre_init = Box::from_raw(context.user_data as *mut ContextPreInitBridgeData<T>);
+    let lifecycle_manager = pre_init.lifecycle_manager_builder.build(&mut context);
+    let lifecycle_state = lifecycle_manager.create_state(&mut context);
 
     let post_init_data_ptr = ManuallyDrop::new(Box::new(ContextPostInitBridgeData {
-        core_state,
+        core_state: EngineContext { ffi_context: Box::from_raw(ctx_ptr), state: lifecycle_state },
         lifecycle_manager
     }));
 
-    ctx.user_data = post_init_data_ptr.as_ref()
+    context.user_data = post_init_data_ptr.as_ref()
         as *const ContextPostInitBridgeData<T::LifecycleManager>
         as *const c_void;
 }
@@ -128,7 +125,7 @@ unsafe extern "C" fn free_callback<T: LifecycleManager>(ctx: *mut DivisionContex
 
     owner.lifecycle_manager.cleanup(&mut owner.core_state);
     division_engine_context_finalize(
-        owner.core_state.context.as_mut() as *mut DivisionContext);
+        owner.core_state.ffi_context.as_mut() as *mut DivisionContext);
 }
 
 unsafe extern "C" fn error_callback<T: LifecycleManager>(

@@ -5,7 +5,7 @@ use division_engine_rust::{
         RenderTopology, ShaderVariableType,
         VertexAttributeDescriptor, VertexData, RenderPassInstanceOwned,
     },
-    EngineState,
+    EngineContext,
 };
 use division_math::{Matrix4x4, Vector2, Vector3, Vector4};
 use std::path::Path;
@@ -44,11 +44,13 @@ fn main() {
         .unwrap();
 }
 
+type MyState = ();
+type MyContext = EngineContext<MyState>;
+
 impl LifecycleManagerBuilder for MyDelegateBuilder {
     type LifecycleManager = MyDelegate;
 
-    fn build(&mut self, state: &mut EngineState) -> Self::LifecycleManager {
-        let context: &mut Context = &mut state.context;
+    fn build(&mut self, context: &mut Context) -> Self::LifecycleManager {
         let shader_id = context
             .create_bundled_shader_program(
                 &Path::new("resources").join("shaders").join("test"),
@@ -143,15 +145,19 @@ impl LifecycleManagerBuilder for MyDelegateBuilder {
 }
 
 impl LifecycleManager for MyDelegate {
-    fn update(&mut self, state: &mut EngineState) {
+    type LifecycleState = MyState;
+
+    fn create_state(&self, _: &mut Context) -> Self::LifecycleState {}
+
+    fn update(&mut self, state: &mut MyContext) {
         state
-            .context
+            .ffi_context
             .draw_render_passes(std::slice::from_ref(&self.render_pass_instance.instance));
     }
 
-    fn error(&mut self, _: &mut EngineState, _error_code: i32, message: &str) {
+    fn error(&mut self, _: &mut MyContext, _error_code: i32, message: &str) {
         panic!("{message}")
     }
 
-    fn cleanup(&mut self, _: &mut EngineState) {}
+    fn cleanup(&mut self, _: &mut MyContext) {}
 }
