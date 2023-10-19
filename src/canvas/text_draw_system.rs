@@ -6,8 +6,8 @@ use division_math::{Vector2, Vector4};
 use crate::core::{
     font_texture::Error, AlphaBlend, AlphaBlendOperation, Context, DivisionId,
     FontTexture, IdWithBinding, RenderPassDescriptor, RenderPassInstance,
-    RenderPassInstanceOwned, RenderTopology, ShaderVariableType,
-    VertexAttributeDescriptor, VertexData,
+    RenderTopology, ShaderVariableType,
+    VertexAttributeDescriptor, VertexData, RenderPassInstanceOwned,
 };
 
 use super::color::Color32;
@@ -104,7 +104,7 @@ impl TextDrawSystem {
                 .vertices(VERTEX_PER_RECT, INDEX_PER_RECT)
                 .enable_instancing(),
         )
-        .vertex_uniform_buffers(&[IdWithBinding::new(uniform_buffer_id, 1)])
+        .uniform_vertex_buffers(&[IdWithBinding::new(uniform_buffer_id, 1)])
         .fragment_textures(&[IdWithBinding::new(font_texture.texture_id(), 0)]);
 
         TextDrawSystem {
@@ -193,7 +193,7 @@ impl TextDrawSystem {
 
     pub fn update(&mut self, context: &mut Context) {
         self.font_texture.upload_texture(context);
-        context.draw_single_render_pass(&self.render_pass_instance);
+        context.draw_render_passes(std::slice::from_ref(&self.render_pass_instance));
     }
 
     pub fn cleanup(&mut self, context: &mut Context) {

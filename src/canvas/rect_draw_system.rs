@@ -4,9 +4,9 @@ use division_math::{Vector2, Vector4};
 
 use crate::core::{
     AlphaBlend, AlphaBlendOperation, Context, DivisionId, IdWithBinding,
-    RenderPassDescriptor, RenderPassInstance, RenderPassInstanceOwned, RenderTopology,
+    RenderPassDescriptor, RenderPassInstance, RenderTopology,
     ShaderVariableType, TextureDescriptor, TextureFormat, VertexAttributeDescriptor,
-    VertexBufferData, VertexData,
+    VertexBufferData, VertexData, RenderPassInstanceOwned, RenderPassConvert
 };
 
 use super::{decoration::Decoration, rect::Rect};
@@ -206,8 +206,8 @@ impl RectDrawSystem {
                 .enable_instancing(),
         )
         .fragment_textures(&[IdWithBinding::new(texture_buffer_id, 0)])
-        .vertex_uniform_buffers(&[IdWithBinding::new(self.uniform_buffer_id, 1)])
-        .fragment_uniform_buffers(&[IdWithBinding::new(self.uniform_buffer_id, 1)]);
+        .uniform_vertex_buffers(&[IdWithBinding::new(self.uniform_buffer_id, 1)])
+        .uniform_fragment_buffers(&[IdWithBinding::new(self.uniform_buffer_id, 1)]);
 
         instance
     }
@@ -240,6 +240,8 @@ impl RectDrawSystem {
 
             render_pass.instance_count = instance_count as u32;
         }
+
+        context.draw_render_passes(self.render_pass_instances.as_instances_slice());
     }
 
     fn update_canvas_size_uniform(&self, context: &mut Context, size: Vector2) {

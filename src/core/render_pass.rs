@@ -1,5 +1,5 @@
 use std::{
-    marker::PhantomData,
+    alloc::Layout,
     ops::{Deref, DerefMut},
     ptr::null,
     usize,
@@ -45,11 +45,13 @@ pub struct BorrowedRenderPass<'a> {
     render_pass_id: u32,
 }
 
+#[repr(transparent)]
 pub struct RenderPassInstanceOwned {
-    pub instance: RenderPassInstance<'static>,
-    pub textures: Vec<IdWithBinding>,
-    pub vertex_uniforms: Vec<IdWithBinding>,
-    pub fragment_uniforms: Vec<IdWithBinding>,
+    pub instance: RenderPassInstance,
+}
+
+pub trait RenderPassConvert<'a> {
+    fn as_instances_slice(self) -> &'a [RenderPassInstance];
 }
 
 impl RenderPassDescriptor {
@@ -114,8 +116,8 @@ impl RenderPassDescriptor {
     }
 }
 
-impl<'a> RenderPassInstance<'a> {
-    pub fn new(descriptor_id: DivisionId) -> RenderPassInstance<'a> {
+impl RenderPassInstance {
+    pub fn new(descriptor_id: DivisionId) -> RenderPassInstance {
         RenderPassInstance {
             first_vertex: 0,
             first_instance: 0,
@@ -130,7 +132,6 @@ impl<'a> RenderPassInstance<'a> {
             fragment_texture_count: 0,
             render_pass_descriptor_id: descriptor_id,
             capabilities_mask: RenderPassIsntanceCapabilityMask::None,
-            lifetime_marker: PhantomData::default(),
         }
     }
 
@@ -159,67 +160,83 @@ impl<'a> RenderPassInstance<'a> {
 
         self
     }
-
-    pub fn set_vertex_uniform_buffers(
-        &mut self,
-        vertex_uniforms: &'a [IdWithBinding],
-    ) -> &mut Self {
-        self.uniform_vertex_buffers = vertex_uniforms.as_ptr();
-        self.uniform_vertex_buffer_count = vertex_uniforms.len() as i32;
-
-        self
-    }
-
-    pub fn set_fragment_uniform_buffers(
-        &mut self,
-        fragment_uniforms: &'a [IdWithBinding],
-    ) -> &mut Self {
-        self.uniform_fragment_buffers = fragment_uniforms.as_ptr();
-        self.uniform_fragment_buffer_count = fragment_uniforms.len() as i32;
-
-        self
-    }
-
-    pub fn set_fragment_textures(&mut self, texture_ids: &'a [IdWithBinding]) -> &mut Self {
-        self.fragment_textures = texture_ids.as_ptr();
-        self.fragment_texture_count = texture_ids.len() as i32;
-
-        self
-    }
 }
 
 impl RenderPassInstanceOwned {
-    pub fn new(instance: RenderPassInstance<'static>) -> RenderPassInstanceOwned {
-        RenderPassInstanceOwned {
-            instance,
-            textures: Vec::new(),
-            vertex_uniforms: Vec::new(),
-            fragment_uniforms: Vec::new(),
-        }
+    pub fn new(instance: RenderPassInstance) -> Self {
+        Self { instance }
     }
 
-    pub fn vertex_uniform_buffers(mut self, uniforms: &[IdWithBinding]) -> Self {
-        self.vertex_uniforms.extend_from_slice(uniforms);
-        self.instance.uniform_vertex_buffers = self.vertex_uniforms.as_ptr();
-        self.instance.uniform_vertex_buffer_count = self.vertex_uniforms.len() as i32;
+    pub fn uniform_vertex_buffers(mut self, buffers: &[IdWithBinding]) -> Self {
+        self.uniform_vertex_buffers = Self::alloc_buffers(
+            self.uniform_vertex_buffers,
+            self.uniform_vertex_buffer_count,
+            buffers,
+        );
+        self.uniform_vertex_buffer_count = buffers.len() as i32;
 
         self
     }
 
-    pub fn fragment_uniform_buffers(mut self, uniforms: &[IdWithBinding]) -> Self {
-        self.fragment_uniforms.extend_from_slice(uniforms);
-        self.instance.uniform_fragment_buffers = self.fragment_uniforms.as_ptr();
-        self.instance.uniform_fragment_buffer_count = self.fragment_uniforms.len() as i32;
-
+    pub fn uniform_fragment_buffers(mut self, buffers: &[IdWithBinding]) -> Self {
+        self.uniform_fragment_buffers = Self::alloc_buffers(
+            self.uniform_fragment_buffers,
+            self.uniform_fragment_buffer_count,
+            buffers,
+        );
+        self.uniform_fragment_buffer_count = buffers.len() as i32;
         self
     }
 
     pub fn fragment_textures(mut self, textures: &[IdWithBinding]) -> Self {
-        self.textures.extend_from_slice(textures);
-        self.instance.fragment_textures = self.textures.as_ptr();
-        self.instance.fragment_texture_count = self.textures.len() as i32;
+        self.fragment_textures = Self::alloc_buffers(
+            self.fragment_textures,
+            self.fragment_texture_count,
+            textures,
+        );
+        self.fragment_texture_count = textures.len() as i32;
 
         self
+    }
+
+    fn alloc_buffers(
+        ptr: *const IdWithBinding,
+        prev_size: i32,
+        buffers: &[IdWithBinding],
+    ) -> *const IdWithBinding {
+        unsafe {
+            let ptr = std::alloc::realloc(
+                ptr as *mut u8,
+                Layout::array::<IdWithBinding>(prev_size as usize).unwrap_unchecked(),
+                buffers.len(),
+            ) as *mut IdWithBinding;
+
+            ptr.copy_from_nonoverlapping(buffers.as_ptr(), buffers.len());
+            ptr
+        }
+    }
+
+    fn dealloc_buffers(ptr: *const IdWithBinding, len: i32) {
+        unsafe {
+            std::alloc::dealloc(
+                ptr as *mut u8,
+                Layout::array::<IdWithBinding>(len as usize).unwrap_unchecked(),
+            )
+        }
+    }
+}
+
+impl Drop for RenderPassInstanceOwned {
+    fn drop(&mut self) {
+        Self::dealloc_buffers(
+            self.uniform_vertex_buffers,
+            self.uniform_vertex_buffer_count,
+        );
+        Self::dealloc_buffers(
+            self.uniform_fragment_buffers,
+            self.uniform_fragment_buffer_count,
+        );
+        Self::dealloc_buffers(self.fragment_textures, self.fragment_texture_count);
     }
 }
 
@@ -265,12 +282,6 @@ impl Context {
                 instances.as_ptr(),
                 instances.len() as u32,
             );
-        }
-    }
-
-    pub fn draw_single_render_pass(&mut self, instance: &RenderPassInstance) {
-        unsafe {
-            division_engine_render_pass_instance_draw(self, instance, 1);
         }
     }
 
@@ -322,7 +333,7 @@ impl<'a> DerefMut for BorrowedRenderPass<'a> {
 }
 
 impl Deref for RenderPassInstanceOwned {
-    type Target = RenderPassInstance<'static>;
+    type Target = RenderPassInstance;
 
     fn deref(&self) -> &Self::Target {
         &self.instance
@@ -332,5 +343,11 @@ impl Deref for RenderPassInstanceOwned {
 impl DerefMut for RenderPassInstanceOwned {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.instance
+    }
+}
+
+impl<'a> RenderPassConvert<'a> for &'a [RenderPassInstanceOwned] {
+    fn as_instances_slice(self) -> &'a [RenderPassInstance] {
+        unsafe { std::mem::transmute(self) }
     }
 }

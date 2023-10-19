@@ -2,8 +2,8 @@ use division_engine_rust::{
     core::{
         Context, CoreRunner, IdWithBinding, Image, ImageSettings, LifecycleManager,
         LifecycleManagerBuilder, RenderPassDescriptor, RenderPassInstance,
-        RenderPassInstanceOwned, RenderTopology, ShaderVariableType,
-        VertexAttributeDescriptor, VertexData,
+        RenderTopology, ShaderVariableType,
+        VertexAttributeDescriptor, VertexData, RenderPassInstanceOwned,
     },
     EngineState,
 };
@@ -134,7 +134,7 @@ impl LifecycleManagerBuilder for MyDelegateBuilder {
                 .instances(instances_data.len()),
         )
         .fragment_textures(&[IdWithBinding::new(texture_id, 0)])
-        .fragment_uniform_buffers(&[IdWithBinding::new(buff_id, 1)]);
+        .uniform_fragment_buffers(&[IdWithBinding::new(buff_id, 1)]);
 
         MyDelegate {
             render_pass_instance,
@@ -146,7 +146,7 @@ impl LifecycleManager for MyDelegate {
     fn update(&mut self, state: &mut EngineState) {
         state
             .context
-            .draw_single_render_pass(&self.render_pass_instance);
+            .draw_render_passes(std::slice::from_ref(&self.render_pass_instance.instance));
     }
 
     fn error(&mut self, _: &mut EngineState, _error_code: i32, message: &str) {

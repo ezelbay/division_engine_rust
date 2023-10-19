@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-
 use bitflags::bitflags;
 
 use super::context::DivisionContext;
@@ -22,7 +20,7 @@ pub struct DivisionIdWithBinding {
 
 #[derive(Clone)]
 #[repr(C)]
-pub struct DivisionRenderPassInstance<'a> {
+pub struct DivisionRenderPassInstance {
     pub first_vertex: u32,
     pub first_instance: u32,
     pub vertex_count: u32,
@@ -37,8 +35,6 @@ pub struct DivisionRenderPassInstance<'a> {
     pub fragment_texture_count: i32,
     pub render_pass_descriptor_id: u32,
     pub capabilities_mask: DivisionRenderPassInstanceCapabilityMask,
-
-    pub(crate) lifetime_marker: PhantomData<&'a DivisionIdWithBinding>
 }
 
 extern "C" {
