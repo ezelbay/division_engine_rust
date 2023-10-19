@@ -58,11 +58,11 @@ fn main() {
 impl LifecycleManagerBuilder for MyLifecycleManagerBuilder {
     type LifecycleManager = MyLifecycleManager;
 
-    fn build(&mut self, ffi_context: &mut Context) -> (MyLifecycleManager, MyState) {
+    fn build(&mut self, context: &mut Context) -> Self::LifecycleManager {
         let mut manager = MyLifecycleManager {
-            rect_draw_system: RectDrawSystem::new(ffi_context),
+            rect_draw_system: RectDrawSystem::new(context),
             text_draw_system: TextDrawSystem::new(
-                ffi_context,
+                context,
                 &Path::new("resources")
                     .join("fonts")
                     .join("Roboto-Medium.ttf"),
@@ -73,14 +73,18 @@ impl LifecycleManagerBuilder for MyLifecycleManagerBuilder {
             borders_animation_incr: 1,
             animated_borders_rect: 0,
         };
-        manager.draw(ffi_context);
+        manager.draw(context);
 
-        (manager, MyState {})
+        manager
     }
 }
 
 impl LifecycleManager for MyLifecycleManager {
     type LifecycleState = MyState;
+
+    fn create_state(&self, _: &mut Context) -> MyState {
+        MyState {  }
+    }
 
     fn update(&mut self, core_state: &mut MyContext) {
         let context = &mut core_state.ffi_context;

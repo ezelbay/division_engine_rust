@@ -50,7 +50,7 @@ type MyContext = EngineContext<MyState>;
 impl LifecycleManagerBuilder for MyDelegateBuilder {
     type LifecycleManager = MyDelegate;
 
-    fn build(&mut self, context: &mut Context) -> (MyDelegate, MyState) {
+    fn build(&mut self, context: &mut Context) -> Self::LifecycleManager {
         let shader_id = context
             .create_bundled_shader_program(
                 &Path::new("resources").join("shaders").join("test"),
@@ -138,14 +138,16 @@ impl LifecycleManagerBuilder for MyDelegateBuilder {
         .fragment_textures(&[IdWithBinding::new(texture_id, 0)])
         .uniform_fragment_buffers(&[IdWithBinding::new(buff_id, 1)]);
 
-        let delegate = MyDelegate { render_pass_instance, };
-
-        (delegate, ())
+        MyDelegate {
+            render_pass_instance,
+        }
     }
 }
 
 impl LifecycleManager for MyDelegate {
     type LifecycleState = MyState;
+
+    fn create_state(&self, _: &mut Context) -> Self::LifecycleState {}
 
     fn update(&mut self, state: &mut MyContext) {
         state
