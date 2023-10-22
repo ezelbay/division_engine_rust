@@ -4,35 +4,18 @@ use division_math::{Vector2, Vector4};
 
 use crate::core::{
     AlphaBlend, AlphaBlendOperation, Context, DivisionId, IdWithBinding,
-    RenderPassDescriptor, RenderPassInstance, RenderTopology,
-    ShaderVariableType, TextureDescriptor, TextureFormat, VertexAttributeDescriptor,
-    VertexBufferData, VertexData, RenderPassInstanceOwned, RenderPassConvert
+    RenderPassDescriptor, RenderPassInstance, RenderPassInstanceOwned, RenderTopology,
+    ShaderVariableType, VertexAttributeDescriptor, VertexBufferData, VertexData,
 };
 
 use super::{decoration::Decoration, rect::Rect};
 
 pub struct RectDrawSystem {
     shader_id: DivisionId,
-    white_pixel_texture_id: DivisionId,
-    uniform_buffer_id: DivisionId,
+    screen_size_uniform: DivisionId,
     render_pass_descriptor: DivisionId,
-    render_pass_instances: Vec<RenderPassInstanceOwned>,
-    render_pass_to_texture_ids: Vec<DivisionId>,
-    render_pass_rects: Vec<RenderPassRectsView>,
     vertex_buffer_id: DivisionId,
-
-    rects: Vec<DrawableRect>,
-    free_rects: Vec<usize>,
-}
-
-pub struct DrawableRect {
-    pub rect: Rect,
-    pub decoration: Decoration,
-}
-
-#[repr(transparent)]
-struct RenderPassRectsView {
-    rects: Vec<usize>,
+    instance_count: usize,
 }
 
 #[repr(C, packed)]
@@ -46,7 +29,7 @@ struct RectVertexData {
 
 #[repr(C, packed)]
 #[derive(Clone, Copy, VertexData)]
-struct RectInstanceData {
+pub struct RectInstanceData {
     #[location(2)]
     size: Vector2,
     #[location(3)]
@@ -57,19 +40,12 @@ struct RectInstanceData {
     trbl_border_radius: Vector4,
 }
 
-#[repr(transparent)]
-#[derive(Clone, Copy)]
-#[allow(dead_code)]
-struct UniformData {
-    size: Vector2,
-}
-
 pub const RECT_CAPACITY: usize = 128;
 pub const VERTEX_PER_RECT: usize = 4;
 pub const INDEX_PER_RECT: usize = 6;
 
 impl RectDrawSystem {
-    pub fn new(context: &mut Context) -> RectDrawSystem {
+    pub fn new(context: &mut Context, screen_size_uniform: DivisionId) -> RectDrawSystem {
         let shader_id = context
             .create_bundled_shader_program(
                 &Path::new("resources")
@@ -79,18 +55,9 @@ impl RectDrawSystem {
             )
             .unwrap();
 
-        let white_pixel_texture_id = context
-            .create_texture_buffer_from_data(
-                &TextureDescriptor::new(1, 1, TextureFormat::RGBA32Uint),
-                &[255u8; 4],
-            )
-            .unwrap();
+        let vertex_buffer_id = make_vertex_buffer(context);
+        generate_rect_drawer_vertex_data(context, vertex_buffer_id);
 
-        let uniform_buffer_id = context
-            .create_uniform_buffer_with_size_of::<UniformData>()
-            .unwrap();
-
-        let vertex_buffer_id = Self::make_vertex_buffer(context);
         let render_pass_descriptor = context
             .create_render_pass_descriptor(
                 &RenderPassDescriptor::with_shader_and_vertex_buffer(
@@ -107,210 +74,109 @@ impl RectDrawSystem {
 
         RectDrawSystem {
             shader_id,
-            white_pixel_texture_id,
-            uniform_buffer_id,
-            render_pass_instances: Vec::new(),
-            render_pass_rects: Vec::new(),
-            render_pass_to_texture_ids: Vec::new(),
-            rects: Vec::new(),
-            free_rects: Vec::new(),
+            screen_size_uniform,
             render_pass_descriptor,
             vertex_buffer_id,
+            instance_count: 0,
         }
     }
 
-    pub fn white_texture_id(&self) -> DivisionId {
-        self.white_pixel_texture_id
+    pub fn begin_frame_render(&mut self) {
+        self.instance_count = 0;
     }
 
-    pub fn add_rect(
+    pub fn create_new_pass(
         &mut self,
         context: &mut Context,
-        drawable_rect: DrawableRect,
-    ) -> DivisionId {
-        let decoration = drawable_rect.decoration;
-        let texture = drawable_rect.decoration.texture;
-
-        let rect_index = if let Some(idx) = self.free_rects.pop() {
-            idx
-        } else {
-            self.rects.len()
-        };
-        self.rects.insert(rect_index, drawable_rect);
-
-        let rect_texture = decoration.texture;
-        let target_pass_index = match self
-            .render_pass_to_texture_ids
-            .binary_search(&rect_texture)
-        {
-            Ok(target_pass_idx) => target_pass_idx,
-            Err(target_pass_idx) => {
-                let pass = self
-                    .create_new_render_pass_with_vertex_buffer(context, false, texture);
-
-                self.render_pass_instances.insert(target_pass_idx, pass);
-                self.render_pass_rects
-                    .insert(target_pass_idx, RenderPassRectsView { rects: Vec::new() });
-                self.render_pass_to_texture_ids
-                    .insert(target_pass_idx, rect_texture);
-                target_pass_idx
-            }
-        };
-
-        let render_pass_rects = &mut self.render_pass_rects[target_pass_index].rects;
-        let render_pass_rect_idx = match render_pass_rects.binary_search(&rect_index) {
-            Ok(idx) | Err(idx) => idx,
-        };
-        render_pass_rects.insert(render_pass_rect_idx, rect_index);
-
-        rect_index as u32
-    }
-
-    pub fn remove_rect(&mut self, rect_id: DivisionId) {
-        let rect_id = rect_id as usize;
-
-        for render_pass_idx in 0..self.render_pass_instances.len() {
-            let rects = &mut self.render_pass_rects[render_pass_idx].rects;
-
-            if let Ok(idx_to_remove) = rects.binary_search(&rect_id) {
-                rects.remove(idx_to_remove);
-            }
-        }
-
-        match self.free_rects.binary_search(&rect_id) {
-            Err(idx) => self.free_rects.insert(idx, rect_id),
-            Ok(_) => panic!("Id {rect_id} is already free!"),
-        }
-    }
-
-    pub fn get_rect(&self, rect_id: DivisionId) -> &DrawableRect {
-        &self.rects[rect_id as usize]
-    }
-
-    pub fn get_rect_mut(&mut self, rect_id: DivisionId) -> &mut DrawableRect {
-        &mut self.rects[rect_id as usize]
-    }
-
-    pub fn create_new_render_pass_with_vertex_buffer(
-        &self,
-        context: &mut Context,
-        flip_vertical: bool,
         texture_buffer_id: DivisionId,
+        rects: &[RectInstanceData],
     ) -> RenderPassInstanceOwned {
-        let vertex_buffer_id = Self::make_vertex_buffer(context);
-        Self::generate_rect_drawer_vertex_data(context, vertex_buffer_id, flip_vertical);
-
-        let instance = RenderPassInstanceOwned::new(
+        let pass = RenderPassInstanceOwned::new(
             RenderPassInstance::new(self.render_pass_descriptor)
                 .vertices(VERTEX_PER_RECT, INDEX_PER_RECT)
-                .enable_instancing(),
+                .instances(rects.len()),
         )
         .fragment_textures(&[IdWithBinding::new(texture_buffer_id, 0)])
-        .uniform_vertex_buffers(&[IdWithBinding::new(self.uniform_buffer_id, 1)])
-        .uniform_fragment_buffers(&[IdWithBinding::new(self.uniform_buffer_id, 1)]);
+        .uniform_vertex_buffers(&[IdWithBinding::new(self.screen_size_uniform, 1)])
+        .uniform_fragment_buffers(&[IdWithBinding::new(self.screen_size_uniform, 1)]);
 
-        instance
-    }
+        let data = get_vertex_buffer_data(context, self.vertex_buffer_id);
+        let instance_count = pass.instance_count as usize;
+        let start = self.instance_count;
+        let end = start + instance_count;
+        let data_slice = &mut data.per_instance_data[start..end];
 
-    pub fn update(&mut self, context: &mut Context, canvas_size: Vector2) {
-        self.update_canvas_size_uniform(context, canvas_size);
+        data_slice.copy_from_slice(rects);
 
-        for (render_pass_idx, rect_views) in self.render_pass_rects.iter().enumerate() {
-            let render_pass = &mut self.render_pass_instances[render_pass_idx];
+        self.instance_count += instance_count;
 
-            let instance_count = {
-                let mut instance_count = 0;
-                let vertex_buffer =
-                    Self::get_rect_drawer_data(context, self.vertex_buffer_id);
-
-                for draw_rect in rect_views.rects.iter().map(|r| &self.rects[*r]) {
-                    let instance_data =
-                        &mut vertex_buffer.per_instance_data[instance_count];
-                    instance_data.color = draw_rect.decoration.color.into();
-                    instance_data.position = draw_rect.rect.bottom_left();
-                    instance_data.size = draw_rect.rect.size();
-                    instance_data.trbl_border_radius =
-                        draw_rect.decoration.border_radius.into();
-
-                    instance_count += 1;
-                }
-
-                instance_count
-            };
-
-            render_pass.instance_count = instance_count as u32;
-        }
-
-        context.draw_render_passes(self.render_pass_instances.as_instances_slice());
-    }
-
-    fn update_canvas_size_uniform(&self, context: &mut Context, size: Vector2) {
-        let ub_data = context.uniform_buffer_data::<UniformData>(self.uniform_buffer_id);
-        *(ub_data.data) = UniformData { size };
+        pass
     }
 
     pub fn cleanup(&mut self, context: &mut Context) {
-        context.delete_texture_buffer(self.white_pixel_texture_id);
-        context.delete_uniform_buffer(self.uniform_buffer_id);
+        context.delete_uniform_buffer(self.screen_size_uniform);
         context.delete_shader_program(self.shader_id);
         context.delete_render_pass_descriptor(self.render_pass_descriptor);
         context.delete_vertex_buffer(self.vertex_buffer_id);
     }
+}
 
-    fn make_vertex_buffer(context: &mut Context) -> DivisionId {
-        context
-            .create_vertex_buffer::<RectVertexData, RectInstanceData>(
-                VERTEX_PER_RECT,
-                INDEX_PER_RECT,
-                RECT_CAPACITY,
-                RenderTopology::Triangles,
-            )
-            .unwrap()
-    }
-
-    fn generate_rect_drawer_vertex_data(
-        context: &mut Context,
-        vertex_buffer_id: DivisionId,
-        flip_vertical: bool,
-    ) {
-        let data = Self::get_rect_drawer_data(context, vertex_buffer_id);
-        let (uv_top, uv_bottom) = if flip_vertical { (0., 1.) } else { (1., 0.) };
-
-        let vertex_data = [
-            RectVertexData {
-                vert_pos: Vector2::new(0., 1.),
-                uv: Vector2::new(0., uv_top),
-            },
-            RectVertexData {
-                vert_pos: Vector2::new(0., 0.),
-                uv: Vector2::new(0., uv_bottom),
-            },
-            RectVertexData {
-                vert_pos: Vector2::new(1., 0.),
-                uv: Vector2::new(1., uv_bottom),
-            },
-            RectVertexData {
-                vert_pos: Vector2::new(1., 1.),
-                uv: Vector2::new(1., uv_top),
-            },
-        ];
-        let indices = [0, 1, 2, 2, 3, 0];
-
-        data.vertex_indices.copy_from_slice(&indices);
-        data.per_vertex_data.copy_from_slice(&vertex_data);
-    }
-
-    #[inline(always)]
-    fn get_rect_drawer_data(
-        context: &mut Context,
-        vertex_buffer_id: DivisionId,
-    ) -> VertexBufferData<RectVertexData, RectInstanceData> {
-        context.vertex_buffer_data(vertex_buffer_id)
+impl RectInstanceData {
+    pub fn new(rect: Rect, decoration: Decoration) -> RectInstanceData {
+        RectInstanceData {
+            size: rect.size(),
+            position: rect.bottom_left(),
+            color: decoration.color.into(),
+            trbl_border_radius: decoration.border_radius.into(),
+        }
     }
 }
 
-impl DrawableRect {
-    pub fn new(rect: Rect, decoration: Decoration) -> DrawableRect {
-        DrawableRect { rect, decoration }
-    }
+fn generate_rect_drawer_vertex_data(
+    context: &mut Context,
+    vertex_buffer_id: DivisionId,
+) {
+    let data = get_vertex_buffer_data(context, vertex_buffer_id);
+
+    let vertex_data = [
+        RectVertexData {
+            vert_pos: Vector2::new(0., 1.),
+            uv: Vector2::new(0., 1.),
+        },
+        RectVertexData {
+            vert_pos: Vector2::new(0., 0.),
+            uv: Vector2::new(0., 0.),
+        },
+        RectVertexData {
+            vert_pos: Vector2::new(1., 0.),
+            uv: Vector2::new(1., 0.),
+        },
+        RectVertexData {
+            vert_pos: Vector2::new(1., 1.),
+            uv: Vector2::new(1., 1.),
+        },
+    ];
+    let indices = [0, 1, 2, 2, 3, 0];
+
+    data.vertex_indices.copy_from_slice(&indices);
+    data.per_vertex_data.copy_from_slice(&vertex_data);
+}
+
+fn make_vertex_buffer(context: &mut Context) -> DivisionId {
+    context
+        .create_vertex_buffer::<RectVertexData, RectInstanceData>(
+            VERTEX_PER_RECT,
+            INDEX_PER_RECT,
+            RECT_CAPACITY,
+            RenderTopology::Triangles,
+        )
+        .unwrap()
+}
+
+#[inline(always)]
+fn get_vertex_buffer_data(
+    context: &mut Context,
+    vertex_buffer_id: DivisionId,
+) -> VertexBufferData<RectVertexData, RectInstanceData> {
+    context.vertex_buffer_data(vertex_buffer_id)
 }

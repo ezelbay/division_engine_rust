@@ -1,5 +1,5 @@
 /*
-   TODO: Now it works incorrectly, because screen clears for every system! 
+   TODO: Now it works incorrectly, because screen clears for every system!
          There is a need to make a global store for render passes,
          rather than for each system
 */
@@ -12,30 +12,30 @@ use division_engine_rust::{
         color::Color32,
         decoration::Decoration,
         rect::Rect,
-        rect_draw_system::{DrawableRect, RectDrawSystem},
+        rect_draw_system::{RectDrawSystem, RectInstanceData},
         text_draw_system::TextDrawSystem,
     },
     core::{
-        Context, CoreRunner, DivisionId, Image, ImageSettings, LifecycleManager,
-        LifecycleManagerBuilder,
+        Context, CoreRunner, DivisionId, LifecycleManager, LifecycleManagerBuilder,
+        TextureDescriptor, TextureFormat,
     },
-    EngineState,
 };
 
-use division_math::{Vector2, Vector4};
+use division_math::Vector2;
+
+#[repr(transparent)]
+#[derive(Clone, Copy)]
+#[allow(dead_code)]
+struct UniformData {
+    size: Vector2,
+}
 
 struct MyLifecycleManagerBuilder {}
 
-struct RectInfo {
-    index: usize,
-    id: DivisionId,
-}
-
 struct MyLifecycleManager {
-    rects: Vec<DivisionId>,
-    rects_to_remove: Vec<RectInfo>,
-    animated_borders_rect: DivisionId,
-    borders_animation_incr: i32,
+    rects: Vec<RectInstanceData>,
+    white_texture: DivisionId,
+    screen_size_uniform: DivisionId,
 
     rect_draw_system: RectDrawSystem,
     text_draw_system: TextDrawSystem,
@@ -52,143 +52,84 @@ fn main() {
 impl LifecycleManagerBuilder for MyLifecycleManagerBuilder {
     type LifecycleManager = MyLifecycleManager;
 
-    fn build(&mut self, state: &mut EngineState) -> Self::LifecycleManager {
-        let context = &mut state.context;
+    fn build(&mut self, context: &mut Context) -> Self::LifecycleManager {
+        let white_texture = context
+            .create_texture_buffer_from_data(
+                &TextureDescriptor::new(1, 1, TextureFormat::RGBA32Uint),
+                &[255; 4],
+            )
+            .unwrap();
 
-        let mut manager = MyLifecycleManager {
-            rect_draw_system: RectDrawSystem::new(context),
+        let screen_size_uniform = context
+            .create_uniform_buffer_with_size_of::<UniformData>()
+            .unwrap();
+
+        let manager = MyLifecycleManager {
+            rect_draw_system: RectDrawSystem::new(context, screen_size_uniform),
             text_draw_system: TextDrawSystem::new(
                 context,
                 &Path::new("resources")
                     .join("fonts")
                     .join("Roboto-Medium.ttf"),
             ),
-            rects: Vec::new(),
-            rects_to_remove: Vec::new(),
-
-            borders_animation_incr: 1,
-            animated_borders_rect: 0,
+            screen_size_uniform,
+            rects: create_rects(),
+            white_texture,
         };
-        manager.draw(context);
 
         manager
     }
 }
 
 impl LifecycleManager for MyLifecycleManager {
-    fn update(&mut self, core_state: &mut EngineState) {
-        let context = &mut core_state.context;
-        let size = context.get_window_size();
-        self.rect_draw_system.update(context, size);
-
-        self.text_draw_system.set_canvas_size(context, size);
-        self.text_draw_system.update(context);
-
-        for (index, id) in self.rects.iter().enumerate() {
-            let id = *id;
-            let r = self.rect_draw_system.get_rect_mut(id);
-            r.rect.center.x += 0.5;
-            r.rect.center.y += (r.rect.center.x * 0.1).sin();
-
-            if id == self.animated_borders_rect {
-                let v: &mut Vector4 = &mut r.decoration.border_radius;
-                let r = *v + Vector4::one() * self.borders_animation_incr as f32;
-                *v = r;
-
-                if v.x > 90. || v.x < 0. {
-                    self.borders_animation_incr *= -1;
-                }
-            }
-
-            if r.rect.center.x >= 512. {
-                self.rects_to_remove.push(RectInfo { index, id });
-            }
+    fn update(&mut self, context: &mut Context) {
+        {
+            let window_size = context.get_window_size();
+            let screen_size =
+                context.uniform_buffer_data::<UniformData>(self.screen_size_uniform);
+            screen_size.data.size = window_size;
         }
 
-        for remove_rect in &self.rects_to_remove {
-            self.rect_draw_system.remove_rect(remove_rect.id);
-            self.rects.remove(remove_rect.index);
-        }
-        self.rects_to_remove.clear();
+        context.set_clear_color(Color32::white().into());
+
+        self.rect_draw_system.begin_frame_render();
+        let mut passes = Vec::new();
+        passes.push(self.rect_draw_system.create_new_pass(
+            context,
+            self.white_texture,
+            &self.rects,
+        ));
+
+        context.draw_render_passes(unsafe { std::mem::transmute(passes.as_slice()) });
     }
 
-    fn error(&mut self, _: &mut EngineState, _error_code: i32, message: &str) {
+    fn error(&mut self, _: &mut Context, _error_code: i32, message: &str) {
         panic!("{message}");
     }
 
-    fn cleanup(&mut self, core_state: &mut EngineState) {
-        let context = &mut core_state.context;
+    fn cleanup(&mut self, context: &mut Context) {
         self.rect_draw_system.cleanup(context);
         self.text_draw_system.cleanup(context);
     }
 }
 
-impl MyLifecycleManager {
-    fn draw(&mut self, context: &mut Context) {
-        context.set_clear_color(Color32::white().into());
-
-        let nevsky = Image::create_bundled_image(
-            &Path::new("resources").join("images").join("nevsky.jpg"),
-            ImageSettings::with_vertical_flip(true),
-        )
-        .unwrap();
-        let nevsky = context.create_texture_buffer_from_image(&nevsky).unwrap();
-
-        let red_brush = Decoration {
-            color: Color32::red(),
-            border_radius: BorderRadius::all(1.),
-            texture: nevsky,
-        };
-        let purple_brush = Decoration {
-            color: Color32::purple(),
-            border_radius: BorderRadius::all(0.),
-            texture: self.rect_draw_system.white_texture_id(),
-        };
-
-        let red_rects = [
+fn create_rects() -> Vec<RectInstanceData> {
+    vec![
+        RectInstanceData::new(
             Rect::from_bottom_left(Vector2::new(100., 100.), Vector2::new(100., 100.)),
+            Decoration {
+                color: Color32::red(),
+                border_radius: BorderRadius::all(0.),
+            },
+        ),
+        RectInstanceData::new(
             Rect::from_bottom_left(Vector2::new(0., 0.), Vector2::new(50., 50.)),
-        ];
-
-        let purple_rects = [Rect::from_center(
-            Vector2::new(0., 512.),
-            Vector2::new(200., 200.),
-        )];
-
-        for rect in red_rects {
-            self.rects.push(self.rect_draw_system.add_rect(
-                context,
-                DrawableRect {
-                    rect,
-                    decoration: red_brush,
-                },
-            ));
-        }
-
-        for rect in purple_rects {
-            self.rects.push(self.rect_draw_system.add_rect(
-                context,
-                DrawableRect {
-                    rect,
-                    decoration: purple_brush,
-                },
-            ));
-        }
-
-        self.animated_borders_rect = *self.rects.last().unwrap();
-
-        self.text_draw_system
-            .draw_text_line(
-                context,
-                // Uncomment this to get error
-                // "qwertyuiop[]asdfghjkl;'\\zxcvnm,./QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?",
-                "New text",
-                64.,
-                Vector2::new(256., 128.),
-                Color32::from_rgb_hex(0x757575),
-            )
-            .unwrap();
-    }
+            Decoration {
+                color: Color32::purple(),
+                border_radius: BorderRadius::all(10.),
+            },
+        ),
+    ]
 }
 
 impl Drop for MyLifecycleManagerBuilder {

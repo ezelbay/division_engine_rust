@@ -4,8 +4,6 @@ use std::{
     ptr::null_mut,
 };
 
-use crate::EngineState;
-
 use super::{
     context::Context,
     context::Error,
@@ -32,7 +30,7 @@ struct ContextPreInitBridgeData<T: LifecycleManagerBuilder> {
 
 struct ContextPostInitBridgeData<T: LifecycleManager> {
     pub lifecycle_manager: T,
-    pub core_state: EngineState,
+    pub context: Box<Context>,
 }
 
 impl CoreRunner {
@@ -101,34 +99,31 @@ unsafe extern "C" fn init_callback<T: LifecycleManagerBuilder>(
     ctx_ptr: *mut DivisionContext,
 ) {
     let mut ctx = ManuallyDrop::new(Box::from_raw(ctx_ptr));
-    let mut core_state = EngineState {
-        context: Box::from_raw(ctx_ptr)
-    };
 
     let mut pre_init = Box::from_raw(ctx.user_data as *mut ContextPreInitBridgeData<T>);
-    let lifecycle_manager = pre_init.lifecycle_manager_builder.build(&mut core_state);
+    let lifecycle_manager = pre_init.lifecycle_manager_builder.build(&mut ctx);
 
-    let post_init_data_ptr = ManuallyDrop::new(Box::new(ContextPostInitBridgeData {
-        core_state,
+    let mut post_init_data_ptr = ManuallyDrop::new(Box::new(ContextPostInitBridgeData {
+        context: ManuallyDrop::into_inner(ctx),
         lifecycle_manager
     }));
 
-    ctx.user_data = post_init_data_ptr.as_ref()
+    post_init_data_ptr.context.user_data = post_init_data_ptr.as_ref()
         as *const ContextPostInitBridgeData<T::LifecycleManager>
         as *const c_void;
 }
 
 unsafe extern "C" fn update_callback<T: LifecycleManager>(ctx: *mut DivisionContext) {
     let owner = get_delegate_mut::<ContextPostInitBridgeData<T>>(&mut *ctx);
-    owner.lifecycle_manager.update(&mut owner.core_state);
+    owner.lifecycle_manager.update(&mut owner.context);
 }
 
 unsafe extern "C" fn free_callback<T: LifecycleManager>(ctx: *mut DivisionContext) {
     let mut owner = Box::from_raw((*ctx).user_data as *mut ContextPostInitBridgeData<T>);
 
-    owner.lifecycle_manager.cleanup(&mut owner.core_state);
+    owner.lifecycle_manager.cleanup(&mut owner.context);
     division_engine_context_finalize(
-        owner.core_state.context.as_mut() as *mut DivisionContext);
+        owner.context.as_mut() as *mut DivisionContext);
 }
 
 unsafe extern "C" fn error_callback<T: LifecycleManager>(
@@ -138,7 +133,7 @@ unsafe extern "C" fn error_callback<T: LifecycleManager>(
 ) {
     let user_data = get_delegate_mut::<ContextPostInitBridgeData<T>>(&mut *ctx);
     user_data.lifecycle_manager.error(
-        &mut user_data.core_state,
+        &mut user_data.context,
         error_code,
         CStr::from_ptr(message)
             .to_str()
