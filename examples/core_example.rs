@@ -131,7 +131,7 @@ impl LifecycleManagerBuilder for MyDelegateBuilder {
         )
         .fragment_textures(&[IdWithBinding::new(texture_id, 0)])
         .uniform_fragment_buffers(&[IdWithBinding::new(buff_id, 1)]);
-
+        
         MyDelegate {
             render_pass_instance,
         }

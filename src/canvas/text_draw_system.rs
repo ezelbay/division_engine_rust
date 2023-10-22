@@ -6,8 +6,8 @@ use division_math::{Vector2, Vector4};
 use crate::core::{
     font_texture::Error, AlphaBlend, AlphaBlendOperation, Context, DivisionId,
     FontTexture, IdWithBinding, RenderPassDescriptor, RenderPassInstance,
-    RenderTopology, ShaderVariableType,
-    VertexAttributeDescriptor, VertexData, RenderPassInstanceOwned,
+    RenderPassInstanceOwned, RenderTopology, ShaderVariableType,
+    VertexAttributeDescriptor, VertexData,
 };
 
 use super::color::Color32;
@@ -15,7 +15,7 @@ use super::color::Color32;
 pub struct TextDrawSystem {
     font_texture: FontTexture,
     vertex_buffer_id: u32,
-    uniform_buffer_id: u32,
+    screen_size_uniform: u32,
     render_pass_desc_id: u32,
     render_pass_instance: RenderPassInstanceOwned,
 }
@@ -58,7 +58,11 @@ const RECT_CAPACITY: usize = 1024;
 const RASTERIZED_FONT_SIZE: usize = 64;
 
 impl TextDrawSystem {
-    pub fn new(context: &mut Context, font_path: &Path) -> Self {
+    pub fn new(
+        context: &mut Context,
+        screen_size_uniform: DivisionId,
+        font_path: &Path,
+    ) -> Self {
         let font_texture =
             FontTexture::new(context, font_path, RASTERIZED_FONT_SIZE).unwrap();
         let shader_id = context
@@ -81,10 +85,6 @@ impl TextDrawSystem {
 
         fill_vertex_data(context, vertex_buffer_id);
 
-        let uniform_buffer_id = context
-            .create_uniform_buffer_with_size_of::<UniformData>()
-            .unwrap();
-
         let render_pass_desc_id = context
             .create_render_pass_descriptor(
                 &RenderPassDescriptor::with_shader_and_vertex_buffer(
@@ -104,13 +104,13 @@ impl TextDrawSystem {
                 .vertices(VERTEX_PER_RECT, INDEX_PER_RECT)
                 .enable_instancing(),
         )
-        .uniform_vertex_buffers(&[IdWithBinding::new(uniform_buffer_id, 1)])
+        .uniform_vertex_buffers(&[IdWithBinding::new(screen_size_uniform, 1)])
         .fragment_textures(&[IdWithBinding::new(font_texture.texture_id(), 0)]);
 
         TextDrawSystem {
             font_texture,
             vertex_buffer_id,
-            uniform_buffer_id,
+            screen_size_uniform,
             render_pass_desc_id,
             render_pass_instance,
         }
@@ -187,7 +187,7 @@ impl TextDrawSystem {
     }
 
     pub fn set_canvas_size(&mut self, context: &mut Context, size: Vector2) {
-        let data = context.uniform_buffer_data::<UniformData>(self.uniform_buffer_id);
+        let data = context.uniform_buffer_data::<UniformData>(self.screen_size_uniform);
         *(data.data) = UniformData { size };
     }
 
@@ -195,7 +195,7 @@ impl TextDrawSystem {
         self.font_texture.upload_texture(context);
         context.draw_render_passes(
             *Color32::white(),
-            std::slice::from_ref(&self.render_pass_instance)
+            std::slice::from_ref(&self.render_pass_instance),
         );
     }
 
@@ -204,7 +204,7 @@ impl TextDrawSystem {
 
         self.font_texture.delete(context);
         context.delete_vertex_buffer(self.vertex_buffer_id);
-        context.delete_uniform_buffer(self.uniform_buffer_id);
+        context.delete_uniform_buffer(self.screen_size_uniform);
     }
 }
 

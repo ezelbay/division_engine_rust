@@ -162,6 +162,30 @@ impl RenderPassInstance {
 
         self
     }
+
+    pub unsafe fn set_uniform_vertex_buffers<'a>(
+        &'a mut self,
+        buffers: &'a [IdWithBinding],
+    ) {
+        self.uniform_vertex_buffer_count = buffers.len() as i32;
+        self.uniform_vertex_buffers = buffers.as_ptr() as *mut IdWithBinding;
+    }
+
+    pub unsafe fn set_uniform_fragment_buffers<'a>(
+        &'a mut self,
+        buffers: &'a [IdWithBinding],
+    ) {
+        self.uniform_fragment_buffer_count = buffers.len() as i32;
+        self.uniform_fragment_buffers = buffers.as_ptr() as *mut IdWithBinding;
+    }
+
+    pub unsafe fn set_uniform_fragment_textures<'a>(
+        &'a mut self,
+        buffers: &'a [IdWithBinding]
+    ) {
+        self.fragment_texture_count = buffers.len() as i32;
+        self.fragment_textures = buffers.as_ptr() as *mut IdWithBinding;
+    }
 }
 
 impl RenderPassInstanceOwned {

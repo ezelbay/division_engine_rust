@@ -12,12 +12,13 @@ use division_engine_rust::{
         color::Color32,
         decoration::Decoration,
         rect::Rect,
-        rect_draw_system::{RectDrawSystem, RectInstanceData},
-        text_draw_system::TextDrawSystem,
+        rect_draw_system::RectDrawSystem,
+        renderer::{RenderQueue, Renderer},
+        text_draw_system::TextDrawSystem, renderable_rect::RenderableRect,
     },
     core::{
-        Context, CoreRunner, DivisionId, LifecycleManager, LifecycleManagerBuilder,
-        TextureDescriptor, TextureFormat,
+        Context, CoreRunner, DivisionId, Image, ImageSettings, LifecycleManager,
+        LifecycleManagerBuilder, TextureDescriptor, TextureFormat,
     },
 };
 
@@ -33,8 +34,9 @@ struct UniformData {
 struct MyLifecycleManagerBuilder {}
 
 struct MyLifecycleManager {
-    rects: Vec<RectInstanceData>,
-    white_texture: DivisionId,
+    rects: Vec<RenderableRect>,
+    _white_texture: DivisionId,
+    render_queue: RenderQueue,
     screen_size_uniform: DivisionId,
 
     rect_draw_system: RectDrawSystem,
@@ -53,10 +55,19 @@ impl LifecycleManagerBuilder for MyLifecycleManagerBuilder {
     type LifecycleManager = MyLifecycleManager;
 
     fn build(&mut self, context: &mut Context) -> Self::LifecycleManager {
+        let nevsky_texture = {
+            let image = Image::create_bundled_image(
+                &Path::new("resources").join("images").join("nevsky.jpg"),
+                ImageSettings::with_vertical_flip(true),
+            )
+            .unwrap();
+            context.create_texture_buffer_from_image(&image).unwrap()
+        };
+
         let white_texture = context
             .create_texture_buffer_from_data(
                 &TextureDescriptor::new(1, 1, TextureFormat::RGBA32Uint),
-                &[255; 4],
+                &[255u8; 4],
             )
             .unwrap();
 
@@ -68,13 +79,15 @@ impl LifecycleManagerBuilder for MyLifecycleManagerBuilder {
             rect_draw_system: RectDrawSystem::new(context, screen_size_uniform),
             text_draw_system: TextDrawSystem::new(
                 context,
+                screen_size_uniform,
                 &Path::new("resources")
                     .join("fonts")
                     .join("Roboto-Medium.ttf"),
             ),
+            render_queue: RenderQueue::new(Color32::white()),
             screen_size_uniform,
-            rects: create_rects(),
-            white_texture,
+            rects: create_rects(nevsky_texture, white_texture),
+            _white_texture: white_texture,
         };
 
         manager
@@ -90,18 +103,16 @@ impl LifecycleManager for MyLifecycleManager {
             screen_size.data.size = window_size;
         }
 
-        self.rect_draw_system.begin_frame_render();
-        let mut passes = Vec::new();
-        passes.push(self.rect_draw_system.create_new_pass(
-            context,
-            self.white_texture,
-            &self.rects,
-        ));
+        self.rect_draw_system.before_frame_render();
 
-        context.draw_render_passes(
-            *Color32::white(),
-            unsafe { std::mem::transmute(passes.as_slice()) }
+        self.rect_draw_system.enqueue_render_passes(
+            context,
+            &mut self.rects,
+            &mut self.render_queue,
         );
+        self.render_queue.draw(context);
+
+        self.rect_draw_system.after_render_frame(context);
     }
 
     fn error(&mut self, _: &mut Context, _error_code: i32, message: &str) {
@@ -114,20 +125,25 @@ impl LifecycleManager for MyLifecycleManager {
     }
 }
 
-fn create_rects() -> Vec<RectInstanceData> {
+fn create_rects(
+    nevsky_texture: DivisionId,
+    white_texture: DivisionId,
+) -> Vec<RenderableRect> {
     vec![
-        RectInstanceData::new(
+        RenderableRect::new(
             Rect::from_bottom_left(Vector2::new(100., 100.), Vector2::new(100., 100.)),
             Decoration {
                 color: Color32::red(),
                 border_radius: BorderRadius::all(0.),
+                texture_id: white_texture,
             },
         ),
-        RectInstanceData::new(
+        RenderableRect::new(
             Rect::from_bottom_left(Vector2::new(0., 0.), Vector2::new(50., 50.)),
             Decoration {
                 color: Color32::purple(),
                 border_radius: BorderRadius::all(10.),
+                texture_id: nevsky_texture,
             },
         ),
     ]

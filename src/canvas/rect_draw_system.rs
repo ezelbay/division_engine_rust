@@ -4,17 +4,21 @@ use division_math::{Vector2, Vector4};
 
 use crate::core::{
     AlphaBlend, AlphaBlendOperation, Context, DivisionId, IdWithBinding,
-    RenderPassDescriptor, RenderPassInstance, RenderPassInstanceOwned, RenderTopology,
+    RenderPassDescriptor, RenderPassInstance, RenderTopology,
     ShaderVariableType, VertexAttributeDescriptor, VertexBufferData, VertexData,
 };
 
-use super::{decoration::Decoration, rect::Rect};
+use super::{
+    renderable_rect::RenderableRect,
+    renderer::{Renderer, RenderQueue},
+};
 
 pub struct RectDrawSystem {
     shader_id: DivisionId,
-    screen_size_uniform: DivisionId,
-    render_pass_descriptor: DivisionId,
     vertex_buffer_id: DivisionId,
+    render_pass_descriptor: DivisionId,
+    screen_size_uniform: IdWithBinding,
+    textures_heap: Vec<IdWithBinding>,
     instance_count: usize,
 }
 
@@ -29,7 +33,7 @@ struct RectVertexData {
 
 #[repr(C, packed)]
 #[derive(Clone, Copy, VertexData)]
-pub struct RectInstanceData {
+struct RectInstanceData {
     #[location(2)]
     size: Vector2,
     #[location(3)]
@@ -45,7 +49,10 @@ pub const VERTEX_PER_RECT: usize = 4;
 pub const INDEX_PER_RECT: usize = 6;
 
 impl RectDrawSystem {
-    pub fn new(context: &mut Context, screen_size_uniform: DivisionId) -> RectDrawSystem {
+    pub fn new(
+        context: &mut Context,
+        screen_size_uniform_id: DivisionId,
+    ) -> RectDrawSystem {
         let shader_id = context
             .create_bundled_shader_program(
                 &Path::new("resources")
@@ -74,68 +81,100 @@ impl RectDrawSystem {
 
         RectDrawSystem {
             shader_id,
-            screen_size_uniform,
+            screen_size_uniform: IdWithBinding {
+                id: screen_size_uniform_id,
+                shader_binding: 1,
+            },
             render_pass_descriptor,
             vertex_buffer_id,
+            textures_heap: Vec::new(),
             instance_count: 0,
         }
     }
 
-    pub fn begin_frame_render(&mut self) {
+    pub fn before_frame_render(&mut self) {
         self.instance_count = 0;
     }
 
-    pub fn create_new_pass(
-        &mut self,
-        context: &mut Context,
-        texture_buffer_id: DivisionId,
-        rects: &[RectInstanceData],
-    ) -> RenderPassInstanceOwned {
-        let pass = RenderPassInstanceOwned::new(
-            RenderPassInstance::new(self.render_pass_descriptor)
-                .vertices(VERTEX_PER_RECT, INDEX_PER_RECT)
-                .instances(rects.len()),
-        )
-        .fragment_textures(&[IdWithBinding::new(texture_buffer_id, 0)])
-        .uniform_vertex_buffers(&[IdWithBinding::new(self.screen_size_uniform, 1)])
-        .uniform_fragment_buffers(&[IdWithBinding::new(self.screen_size_uniform, 1)]);
+    fn create_new_pass(&mut self, texture_id: DivisionId) -> RenderPassInstance {
+        let mut pass = RenderPassInstance::new(self.render_pass_descriptor)
+            .vertices(VERTEX_PER_RECT, INDEX_PER_RECT)
+            .enable_instancing();
+        pass.first_instance = self.instance_count as u32;
 
-        let data = get_vertex_buffer_data(context, self.vertex_buffer_id);
-        let instance_count = pass.instance_count as usize;
-        let start = self.instance_count;
-        let end = start + instance_count;
-        let data_slice = &mut data.per_instance_data[start..end];
+        self.textures_heap.push(IdWithBinding::new(texture_id, 0));
 
-        data_slice.copy_from_slice(rects);
-
-        self.instance_count += instance_count;
+        unsafe {
+            pass.set_uniform_vertex_buffers(std::slice::from_ref(
+                &self.screen_size_uniform,
+            ));
+            pass.set_uniform_fragment_buffers(std::slice::from_ref(
+                &self.screen_size_uniform
+            ));
+            pass.set_uniform_fragment_textures(std::slice::from_ref(
+                &self.textures_heap.last().unwrap_unchecked(),
+            ));
+        }
 
         pass
     }
 
     pub fn cleanup(&mut self, context: &mut Context) {
-        context.delete_uniform_buffer(self.screen_size_uniform);
         context.delete_shader_program(self.shader_id);
         context.delete_render_pass_descriptor(self.render_pass_descriptor);
         context.delete_vertex_buffer(self.vertex_buffer_id);
     }
 }
 
-impl RectInstanceData {
-    pub fn new(rect: Rect, decoration: Decoration) -> RectInstanceData {
-        RectInstanceData {
-            size: rect.size(),
-            position: rect.bottom_left(),
-            color: *decoration.color,
-            trbl_border_radius: decoration.border_radius.into(),
-        }
+impl Renderer for RectDrawSystem {
+    type RenderableData = RenderableRect;
+
+    fn before_render_frame(&mut self, _: &mut Context) {
+        self.instance_count = 0;
+        self.textures_heap.clear();
     }
+
+    fn enqueue_render_passes(
+        &mut self,
+        context: &mut Context,
+        renderables: &[Self::RenderableData],
+        render_queue: &mut RenderQueue,
+    ) {
+        if renderables.len() == 0 {
+            return;
+        }
+
+        let mut curr_pass_tex = renderables[0].decoration.texture_id;
+        let mut pass = self.create_new_pass(curr_pass_tex);
+
+        let vertex_buffer_data = get_vertex_buffer_data(context, self.vertex_buffer_id);
+
+        for r in renderables {
+            let renderable_texture_id = r.decoration.texture_id;
+
+            if r.decoration.texture_id != curr_pass_tex {
+                render_queue.enqueue_render_pass(pass);
+                pass = self.create_new_pass(r.decoration.texture_id);
+                curr_pass_tex = renderable_texture_id;
+            }
+
+            let d = &mut vertex_buffer_data.per_instance_data[self.instance_count];
+            d.position = r.rect.bottom_left();
+            d.size = r.rect.size();
+            d.color = *r.decoration.color;
+            d.trbl_border_radius = *r.decoration.border_radius;
+
+            pass.instance_count += 1;
+            self.instance_count += 1;
+        }
+
+        render_queue.enqueue_render_pass(pass);
+    }
+
+    fn after_render_frame(&mut self, _: &mut Context) {}
 }
 
-fn generate_rect_drawer_vertex_data(
-    context: &mut Context,
-    vertex_buffer_id: DivisionId,
-) {
+fn generate_rect_drawer_vertex_data(context: &mut Context, vertex_buffer_id: DivisionId) {
     let data = get_vertex_buffer_data(context, vertex_buffer_id);
 
     let vertex_data = [
