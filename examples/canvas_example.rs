@@ -90,8 +90,6 @@ impl LifecycleManager for MyLifecycleManager {
             screen_size.data.size = window_size;
         }
 
-        context.set_clear_color(Color32::white().into());
-
         self.rect_draw_system.begin_frame_render();
         let mut passes = Vec::new();
         passes.push(self.rect_draw_system.create_new_pass(
@@ -100,7 +98,10 @@ impl LifecycleManager for MyLifecycleManager {
             &self.rects,
         ));
 
-        context.draw_render_passes(unsafe { std::mem::transmute(passes.as_slice()) });
+        context.draw_render_passes(
+            *Color32::white(),
+            unsafe { std::mem::transmute(passes.as_slice()) }
+        );
     }
 
     fn error(&mut self, _: &mut Context, _error_code: i32, message: &str) {

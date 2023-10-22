@@ -5,8 +5,8 @@ pub type DivisionId = u32;
 use division_math::{Vector2, Vector4};
 
 use super::ffi::{
-    context::{division_engine_context_initialize, DivisionColor, DivisionContext},
-    settings::DivisionSettings,
+    context::{division_engine_context_initialize, DivisionContext},
+    settings::DivisionSettings, render_pass_instance::DivisionColor,
 };
 
 pub type Context = DivisionContext;
@@ -47,20 +47,6 @@ impl Context {
                 (*ctx).frame_buffer_width as f32,
                 (*ctx).frame_buffer_height as f32,
             )
-        }
-    }
-
-    #[inline]
-    pub fn get_clear_color(&self) -> Vector4 {
-        let ctx = self.render_context;
-        unsafe { (*ctx).clear_color.into() }
-    }
-
-    #[inline]
-    pub fn set_clear_color(&mut self, color: Vector4) {
-        let ctx = self.render_context;
-        unsafe {
-            (*ctx).clear_color = color.into();
         }
     }
 }

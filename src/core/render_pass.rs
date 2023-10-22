@@ -1,7 +1,7 @@
 use std::{
     alloc::Layout,
     ops::{Deref, DerefMut},
-    ptr::null,
+    ptr::null_mut,
     usize,
 };
 
@@ -18,7 +18,9 @@ use super::{
             division_engine_render_pass_descriptor_return, DivisionColorMask,
             DivisionRenderPassDescriptorCapabilityMask,
         },
-        render_pass_instance::division_engine_render_pass_instance_draw,
+        render_pass_instance::{
+            division_engine_render_pass_instance_draw, DivisionColor,
+        },
     },
     Context, DivisionId,
 };
@@ -124,9 +126,9 @@ impl RenderPassInstance {
             vertex_count: 0,
             index_count: 0,
             instance_count: 0,
-            uniform_vertex_buffers: null(),
-            uniform_fragment_buffers: null(),
-            fragment_textures: null(),
+            uniform_vertex_buffers: null_mut(),
+            uniform_fragment_buffers: null_mut(),
+            fragment_textures: null_mut(),
             uniform_vertex_buffer_count: 0,
             uniform_fragment_buffer_count: 0,
             fragment_texture_count: 0,
@@ -200,16 +202,24 @@ impl RenderPassInstanceOwned {
     }
 
     fn alloc_buffers(
-        ptr: *const IdWithBinding,
+        ptr: *mut IdWithBinding,
         prev_size: i32,
         buffers: &[IdWithBinding],
-    ) -> *const IdWithBinding {
+    ) -> *mut IdWithBinding {
         unsafe {
-            let ptr = std::alloc::realloc(
-                ptr as *mut u8,
-                Layout::array::<IdWithBinding>(prev_size as usize).unwrap_unchecked(),
-                buffers.len(),
-            ) as *mut IdWithBinding;
+            let new_size = buffers.len();
+            let prev_size = prev_size as usize;
+            let ptr = if prev_size < new_size {
+                std::alloc::dealloc(
+                    ptr as *mut u8,
+                    Layout::array::<IdWithBinding>(prev_size).unwrap_unchecked(),
+                );
+                std::alloc::alloc(
+                    Layout::array::<IdWithBinding>(new_size).unwrap_unchecked(),
+                ) as *mut IdWithBinding
+            } else {
+                ptr
+            };
 
             ptr.copy_from_nonoverlapping(buffers.as_ptr(), buffers.len());
             ptr
@@ -275,10 +285,15 @@ impl Context {
         }
     }
 
-    pub fn draw_render_passes(&mut self, instances: &[RenderPassInstance]) {
+    pub fn draw_render_passes(
+        &mut self,
+        clear_color: Vector4,
+        instances: &[RenderPassInstance],
+    ) {
         unsafe {
             division_engine_render_pass_instance_draw(
                 self,
+                &clear_color as *const Vector4 as *const DivisionColor,
                 instances.as_ptr(),
                 instances.len() as u32,
             );

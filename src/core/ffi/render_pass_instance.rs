@@ -1,3 +1,5 @@
+use std::ffi::c_float;
+
 use bitflags::bitflags;
 
 use super::context::DivisionContext;
@@ -18,6 +20,15 @@ pub struct DivisionIdWithBinding {
     pub shader_binding: u32,
 }
 
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct DivisionColor {
+    pub r: c_float,
+    pub g: c_float,
+    pub b: c_float,
+    pub a: c_float
+}
+
 #[derive(Clone)]
 #[repr(C)]
 pub struct DivisionRenderPassInstance {
@@ -26,9 +37,9 @@ pub struct DivisionRenderPassInstance {
     pub vertex_count: u32,
     pub index_count: u32,
     pub instance_count: u32,
-    pub uniform_vertex_buffers: *const DivisionIdWithBinding,
-    pub uniform_fragment_buffers: *const DivisionIdWithBinding,
-    pub fragment_textures: *const DivisionIdWithBinding,
+    pub uniform_vertex_buffers: *mut DivisionIdWithBinding,
+    pub uniform_fragment_buffers: *mut DivisionIdWithBinding,
+    pub fragment_textures: *mut DivisionIdWithBinding,
 
     pub uniform_vertex_buffer_count: i32,
     pub uniform_fragment_buffer_count: i32,
@@ -40,6 +51,7 @@ pub struct DivisionRenderPassInstance {
 extern "C" {
     pub fn division_engine_render_pass_instance_draw(
         ctx: *mut DivisionContext,
+        clear_color: *const DivisionColor,
         render_pass_instances: *const DivisionRenderPassInstance,
         render_pass_instance_count: u32
     );

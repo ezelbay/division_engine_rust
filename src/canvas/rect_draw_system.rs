@@ -126,7 +126,7 @@ impl RectInstanceData {
         RectInstanceData {
             size: rect.size(),
             position: rect.bottom_left(),
-            color: decoration.color.into(),
+            color: *decoration.color,
             trbl_border_radius: decoration.border_radius.into(),
         }
     }

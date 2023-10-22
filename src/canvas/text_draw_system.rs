@@ -169,7 +169,7 @@ impl TextDrawSystem {
                     texel_coord: Vector2::new(pos.x as f32, pos.y as f32),
                     size: Vector2::new(scaled_width, scaled_height),
                     position: Vector2::new(pen_x + x_offset, pen_y + y_offset),
-                    color: color.into(),
+                    color: *color,
                     glyph_in_tex_size: Vector2::new(
                         glyph.width as f32,
                         glyph.height as f32,
@@ -193,7 +193,10 @@ impl TextDrawSystem {
 
     pub fn update(&mut self, context: &mut Context) {
         self.font_texture.upload_texture(context);
-        context.draw_render_passes(std::slice::from_ref(&self.render_pass_instance));
+        context.draw_render_passes(
+            *Color32::white(),
+            std::slice::from_ref(&self.render_pass_instance)
+        );
     }
 
     pub fn cleanup(&mut self, context: &mut Context) {

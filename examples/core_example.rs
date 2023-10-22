@@ -1,9 +1,9 @@
-use division_engine_rust::core::{
+use division_engine_rust::{core::{
         Context, CoreRunner, IdWithBinding, Image, ImageSettings,
         LifecycleManager, LifecycleManagerBuilder, RenderPassDescriptor,
         RenderPassInstance, RenderPassInstanceOwned, RenderTopology, ShaderVariableType,
         VertexAttributeDescriptor, VertexData,
-    };
+    }, canvas::color::Color32};
 use division_math::{Matrix4x4, Vector2, Vector3, Vector4};
 use std::path::Path;
 
@@ -140,9 +140,10 @@ impl LifecycleManagerBuilder for MyDelegateBuilder {
 
 impl LifecycleManager for MyDelegate {
     fn update(&mut self, context: &mut Context) {
-        context.draw_render_passes(std::slice::from_ref(
-            &self.render_pass_instance.instance,
-        ));
+        context.draw_render_passes(
+            *Color32::white(),
+            std::slice::from_ref(&self.render_pass_instance.instance)
+        );
     }
 
     fn error(&mut self, _: &mut Context, _error_code: i32, message: &str) {

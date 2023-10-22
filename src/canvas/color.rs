@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use division_math::Vector4;
 
 #[repr(transparent)]
@@ -79,8 +81,16 @@ impl Color32 {
     }
 }
 
-impl From<Color32> for Vector4 {
-    fn from(value: Color32) -> Self {
-        value.vec
+impl Deref for Color32 {
+    type Target = Vector4;
+
+    fn deref(&self) -> &Self::Target {
+        &self.vec
+    }
+}
+
+impl DerefMut for Color32 {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.vec
     }
 }

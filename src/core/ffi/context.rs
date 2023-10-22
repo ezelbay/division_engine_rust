@@ -1,20 +1,10 @@
 use super::lifecycle::DivisionLifecycle;
 use super::settings::DivisionSettings;
 use super::state::DivisionState;
-use std::ffi::{c_void, c_float, c_int};
-
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct DivisionColor {
-    pub r: c_float,
-    pub g: c_float,
-    pub b: c_float,
-    pub a: c_float
-}
+use std::ffi::{c_void, c_int};
 
 #[repr(C)]
 pub struct DivisionRendererSystemContext {
-    pub clear_color: DivisionColor,
     pub frame_buffer_width: c_int,
     pub frame_buffer_height: c_int,
 
