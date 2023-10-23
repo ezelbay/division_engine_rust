@@ -107,8 +107,7 @@ impl LifecycleManager for MyLifecycleManager {
         let render_time_diff = (now - self.render_draw_time).as_millis();
 
         let last_text = self.texts.last_mut().unwrap();
-        // TODO: fix spaces issue
-        last_text.text = format!("The overall render time is:{render_time_diff}ms");
+        last_text.text = format!("The overall render time is: {render_time_diff} ms");
 
         self.update_window_size(context);
 

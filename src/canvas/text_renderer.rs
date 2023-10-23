@@ -55,60 +55,18 @@ struct TextInstance {
     pub tex_size: Vector2,
 }
 
+const TEXTURE_SHADER_LOCATION: u32 = 0;
+const SCREEN_SIZE_UNIFORM_LOCATION: u32 = 1;
+
 const VERTEX_PER_RECT: usize = 4;
 const INDEX_PER_RECT: usize = 6;
 const RECT_CAPACITY: usize = 1024;
 const RASTERIZED_FONT_SIZE: usize = 64;
 
-impl<'a> Renderer for TextRenderer {
-    type RenderableData = RenderableText;
-
-    fn before_render_frame(&mut self, _: &mut Context) {
-        self.instance_count = 0;
-        self.textures_heap.clear();
-    }
-
-    fn enqueue_render_passes(
-        &mut self,
-        context: &mut Context,
-        data: &[Self::RenderableData],
-        render_queue: &mut RenderQueue,
-    ) {
-        if data.len() == 0 {
-            return;
-        }
-
-        let mut render_pass = RenderPassInstance::new(self.render_pass_desc_id)
-            .vertices(VERTEX_PER_RECT, INDEX_PER_RECT)
-            .enable_instancing();
-
-        unsafe {
-            self.textures_heap
-                .push(IdWithBinding::new(self.font_texture.texture_id(), 0));
-
-            render_pass.set_uniform_vertex_buffer_from_ref(&self.screen_size_uniform);
-            render_pass.set_uniform_fragment_texture_from_ref(
-                &self.textures_heap.last().unwrap_unchecked(),
-            );
-        }
-
-        for renderable in data {
-            self.write_renderable_text(context, &mut render_pass, renderable)
-        }
-
-        render_queue.enqueue_render_pass(render_pass);
-
-        self.font_texture.upload_texture(context);
-    }
-
-    fn after_render_frame(&mut self, _: &mut Context) {
-    }
-}
-
 impl TextRenderer {
     pub fn new(
         context: &mut Context,
-        screen_size_uniform: DivisionId,
+        screen_size_uniform_id: DivisionId,
         font_path: &Path,
     ) -> Self {
         let font_texture =
@@ -150,7 +108,10 @@ impl TextRenderer {
         TextRenderer {
             font_texture,
             vertex_buffer_id,
-            screen_size_uniform: IdWithBinding::new(screen_size_uniform, 1),
+            screen_size_uniform: IdWithBinding::new(
+                screen_size_uniform_id,
+                SCREEN_SIZE_UNIFORM_LOCATION,
+            ),
             textures_heap: Vec::new(),
             instance_count: 0,
             render_pass_desc_id,
@@ -216,6 +177,52 @@ impl TextRenderer {
         self.font_texture.delete(context);
         context.delete_vertex_buffer(self.vertex_buffer_id);
     }
+}
+
+impl<'a> Renderer for TextRenderer {
+    type RenderableData = RenderableText;
+
+    fn before_render_frame(&mut self, _: &mut Context) {
+        self.instance_count = 0;
+        self.textures_heap.clear();
+    }
+
+    fn enqueue_render_passes(
+        &mut self,
+        context: &mut Context,
+        data: &[Self::RenderableData],
+        render_queue: &mut RenderQueue,
+    ) {
+        if data.len() == 0 {
+            return;
+        }
+
+        let mut render_pass = RenderPassInstance::new(self.render_pass_desc_id)
+            .vertices(VERTEX_PER_RECT, INDEX_PER_RECT)
+            .enable_instancing();
+
+        unsafe {
+            self.textures_heap.push(IdWithBinding::new(
+                self.font_texture.texture_id(),
+                TEXTURE_SHADER_LOCATION,
+            ));
+
+            render_pass.set_uniform_vertex_buffer_from_ref(&self.screen_size_uniform);
+            render_pass.set_uniform_fragment_texture_from_ref(
+                &self.textures_heap.last().unwrap_unchecked(),
+            );
+        }
+
+        for renderable in data {
+            self.write_renderable_text(context, &mut render_pass, renderable)
+        }
+
+        render_queue.enqueue_render_pass(render_pass);
+
+        self.font_texture.upload_texture(context);
+    }
+
+    fn after_render_frame(&mut self, _: &mut Context) {}
 }
 
 fn fill_vertex_data(context: &mut Context, vertex_buffer_id: DivisionId) {

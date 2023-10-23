@@ -107,7 +107,7 @@ impl FontTexture {
     #[inline]
     pub fn bytes_len(&self) -> usize {
         self.width * self.height
-    } 
+    }
 
     pub fn find_glyph_layout(
         &self,
@@ -158,8 +158,13 @@ impl FontTexture {
         index_to_place: usize,
     ) -> Result<(), Error> {
         const GLYPH_GAP: usize = 1;
-        let glyph = context.get_font_glyph(self.font_id, character)?;
-
+        let glyph = {
+            let mut glyph = context.get_font_glyph(self.font_id, character)?;
+            if character == ' ' {
+                glyph.width = glyph.advance_x;
+            }
+            glyph
+        };
         let gapped_glyph_width = glyph.width as usize + GLYPH_GAP;
         for (row, free_block) in &mut self.rows_free_space.iter_mut().enumerate() {
             let free_after = free_block.width as isize - gapped_glyph_width as isize;
@@ -207,12 +212,18 @@ impl FontTexture {
             }
         }
 
-        unsafe {
-            context.rasterize_glyph_to_buffer(
-                self.font_id,
-                character,
-                self.rasterizer_buffer,
-            )?;
+        if character != ' ' {
+            unsafe {
+                context.rasterize_glyph_to_buffer(
+                    self.font_id,
+                    character,
+                    self.rasterizer_buffer,
+                )?;
+            }
+        } else {
+            unsafe {
+                self.rasterizer_buffer.write_bytes(0, glyph_bytes);
+            }
         }
 
         for h in 0..glyph.height {

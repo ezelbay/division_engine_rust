@@ -44,6 +44,9 @@ struct RectInstanceData {
     trbl_border_radius: Vector4,
 }
 
+pub const SCREEN_SIZE_UNIFORM_LOCATION: u32 = 1;
+pub const TEXTURE_SHADER_LOCATION: u32 = 0;
+
 pub const RECT_CAPACITY: usize = 128;
 pub const VERTEX_PER_RECT: usize = 4;
 pub const INDEX_PER_RECT: usize = 6;
@@ -83,7 +86,7 @@ impl RectRenderer {
             shader_id,
             screen_size_uniform: IdWithBinding {
                 id: screen_size_uniform_id,
-                shader_binding: 1,
+                shader_binding: SCREEN_SIZE_UNIFORM_LOCATION,
             },
             render_pass_descriptor,
             vertex_buffer_id,
@@ -98,14 +101,11 @@ impl RectRenderer {
             .enable_instancing();
         pass.first_instance = self.instance_count as u32;
 
-        self.textures_heap.push(IdWithBinding::new(texture_id, 0));
+        self.textures_heap.push(IdWithBinding::new(texture_id, TEXTURE_SHADER_LOCATION));
 
         unsafe {
             pass.set_uniform_vertex_buffers(std::slice::from_ref(
                 &self.screen_size_uniform,
-            ));
-            pass.set_uniform_fragment_buffers(std::slice::from_ref(
-                &self.screen_size_uniform
             ));
             pass.set_uniform_fragment_textures(std::slice::from_ref(
                 &self.textures_heap.last().unwrap_unchecked(),
