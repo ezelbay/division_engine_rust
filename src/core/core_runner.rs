@@ -115,7 +115,7 @@ unsafe extern "C" fn init_callback<T: LifecycleManagerBuilder>(
 
 unsafe extern "C" fn update_callback<T: LifecycleManager>(ctx: *mut DivisionContext) {
     let owner = get_delegate_mut::<ContextPostInitBridgeData<T>>(&mut *ctx);
-    owner.lifecycle_manager.update(&mut owner.context);
+    owner.lifecycle_manager.draw(&mut owner.context);
 }
 
 unsafe extern "C" fn free_callback<T: LifecycleManager>(ctx: *mut DivisionContext) {

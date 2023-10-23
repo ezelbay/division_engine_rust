@@ -4,7 +4,7 @@
          rather than for each system
 */
 
-use std::path::Path;
+use std::{path::Path, time::Instant};
 
 use division_engine_rust::{
     canvas::{
@@ -13,8 +13,10 @@ use division_engine_rust::{
         decoration::Decoration,
         rect::Rect,
         rect_draw_system::RectDrawSystem,
+        renderable_rect::RenderableRect,
+        renderable_text::RenderableText,
         renderer::{RenderQueue, Renderer},
-        text_draw_system::TextDrawSystem, renderable_rect::RenderableRect,
+        text_draw_system::TextDrawSystem,
     },
     core::{
         Context, CoreRunner, DivisionId, Image, ImageSettings, LifecycleManager,
@@ -31,23 +33,26 @@ struct UniformData {
     size: Vector2,
 }
 
-struct MyLifecycleManagerBuilder {}
+struct MyLifecycleManagerBuilder;
 
 struct MyLifecycleManager {
     rects: Vec<RenderableRect>,
-    _white_texture: DivisionId,
+    texts: Vec<RenderableText>,
     render_queue: RenderQueue,
     screen_size_uniform: DivisionId,
+    render_draw_time: Instant,
 
     rect_draw_system: RectDrawSystem,
     text_draw_system: TextDrawSystem,
+
+    _white_texture: DivisionId,
 }
 
 fn main() {
     CoreRunner::new()
         .window_size(1024, 1024)
         .window_title("Hello rect drawer")
-        .run(MyLifecycleManagerBuilder {})
+        .run(MyLifecycleManagerBuilder)
         .unwrap();
 }
 
@@ -87,6 +92,8 @@ impl LifecycleManagerBuilder for MyLifecycleManagerBuilder {
             render_queue: RenderQueue::new(Color32::white()),
             screen_size_uniform,
             rects: create_rects(nevsky_texture, white_texture),
+            texts: create_texts(),
+            render_draw_time: Instant::now(),
             _white_texture: white_texture,
         };
 
@@ -95,24 +102,35 @@ impl LifecycleManagerBuilder for MyLifecycleManagerBuilder {
 }
 
 impl LifecycleManager for MyLifecycleManager {
-    fn update(&mut self, context: &mut Context) {
-        {
-            let window_size = context.get_window_size();
-            let screen_size =
-                context.uniform_buffer_data::<UniformData>(self.screen_size_uniform);
-            screen_size.data.size = window_size;
-        }
+    fn draw(&mut self, context: &mut Context) {
+        let now = Instant::now();
+        let render_time_diff = (now - self.render_draw_time).as_millis();
 
-        self.rect_draw_system.before_frame_render();
+        let last_text = self.texts.last_mut().unwrap();
+        last_text.text = format!("The overall render time is: {render_time_diff} ms");
+
+        self.update_window_size(context);
+
+        self.rect_draw_system.before_render_frame(context);
+        self.text_draw_system.before_render_frame(context);
 
         self.rect_draw_system.enqueue_render_passes(
             context,
             &mut self.rects,
             &mut self.render_queue,
         );
+        self.text_draw_system.enqueue_render_passes(
+            context,
+            &mut self.texts,
+            &mut self.render_queue,
+        );
+
         self.render_queue.draw(context);
 
         self.rect_draw_system.after_render_frame(context);
+        self.text_draw_system.after_render_frame(context);
+
+        self.render_draw_time = Instant::now();
     }
 
     fn error(&mut self, _: &mut Context, _error_code: i32, message: &str) {
@@ -122,6 +140,15 @@ impl LifecycleManager for MyLifecycleManager {
     fn cleanup(&mut self, context: &mut Context) {
         self.rect_draw_system.cleanup(context);
         self.text_draw_system.cleanup(context);
+    }
+}
+
+impl MyLifecycleManager {
+    fn update_window_size(&mut self, context: &mut Context) {
+        let window_size = context.get_window_size();
+        let screen_size =
+            context.uniform_buffer_data::<UniformData>(self.screen_size_uniform);
+        screen_size.data.size = window_size;
     }
 }
 
@@ -146,6 +173,23 @@ fn create_rects(
                 texture_id: nevsky_texture,
             },
         ),
+    ]
+}
+
+fn create_texts() -> Vec<RenderableText> {
+    vec![
+        RenderableText {
+            color: Color32::black(),
+            position: Vector2::new(256., 256.),
+            font_size: 16.,
+            text: String::from("There is a text!"),
+        },
+        RenderableText {
+            color: Color32::red(),
+            position: Vector2::new(512., 512.),
+            font_size: 20.,
+            text: String::from("Another one!"),
+        },
     ]
 }
 

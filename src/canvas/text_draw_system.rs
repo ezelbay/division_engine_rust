@@ -4,20 +4,23 @@ use division_engine_rust_macro::location;
 use division_math::{Vector2, Vector4};
 
 use crate::core::{
-    font_texture::Error, AlphaBlend, AlphaBlendOperation, Context, DivisionId,
-    FontTexture, IdWithBinding, RenderPassDescriptor, RenderPassInstance,
-    RenderPassInstanceOwned, RenderTopology, ShaderVariableType,
+    AlphaBlend, AlphaBlendOperation, Context, DivisionId, FontTexture, IdWithBinding,
+    RenderPassDescriptor, RenderPassInstance, RenderTopology, ShaderVariableType,
     VertexAttributeDescriptor, VertexData,
 };
 
-use super::color::Color32;
+use super::{
+    renderable_text::RenderableText,
+    renderer::{RenderQueue, Renderer},
+};
 
 pub struct TextDrawSystem {
     font_texture: FontTexture,
+    screen_size_uniform: IdWithBinding,
+    textures_heap: Vec<IdWithBinding>,
+    instance_count: usize,
     vertex_buffer_id: u32,
-    screen_size_uniform: u32,
     render_pass_desc_id: u32,
-    render_pass_instance: RenderPassInstanceOwned,
 }
 
 #[repr(C, packed)]
@@ -56,6 +59,50 @@ const VERTEX_PER_RECT: usize = 4;
 const INDEX_PER_RECT: usize = 6;
 const RECT_CAPACITY: usize = 1024;
 const RASTERIZED_FONT_SIZE: usize = 64;
+
+impl<'a> Renderer for TextDrawSystem {
+    type RenderableData = RenderableText;
+
+    fn before_render_frame(&mut self, _: &mut Context) {
+        self.instance_count = 0;
+        self.textures_heap.clear();
+    }
+
+    fn enqueue_render_passes(
+        &mut self,
+        context: &mut Context,
+        data: &[Self::RenderableData],
+        render_queue: &mut RenderQueue,
+    ) {
+        if data.len() == 0 {
+            return;
+        }
+
+        let mut render_pass = RenderPassInstance::new(self.render_pass_desc_id)
+            .vertices(VERTEX_PER_RECT, INDEX_PER_RECT)
+            .enable_instancing();
+        unsafe {
+            self.textures_heap
+                .push(IdWithBinding::new(self.font_texture.texture_id(), 0));
+
+            render_pass.set_uniform_vertex_buffer_from_ref(&self.screen_size_uniform);
+            render_pass.set_uniform_fragment_texture_from_ref(
+                &self.textures_heap.last().unwrap_unchecked(),
+            );
+        }
+
+        for renderable in data {
+            self.write_renderable_text(context, &mut render_pass, renderable)
+        }
+
+        render_queue.enqueue_render_pass(render_pass);
+
+        self.font_texture.upload_texture(context);
+    }
+
+    fn after_render_frame(&mut self, _: &mut Context) {
+    }
+}
 
 impl TextDrawSystem {
     pub fn new(
@@ -99,77 +146,53 @@ impl TextDrawSystem {
             )
             .unwrap();
 
-        let render_pass_instance = RenderPassInstanceOwned::new(
-            RenderPassInstance::new(render_pass_desc_id)
-                .vertices(VERTEX_PER_RECT, INDEX_PER_RECT)
-                .enable_instancing(),
-        )
-        .uniform_vertex_buffers(&[IdWithBinding::new(screen_size_uniform, 1)])
-        .fragment_textures(&[IdWithBinding::new(font_texture.texture_id(), 0)]);
-
         TextDrawSystem {
             font_texture,
             vertex_buffer_id,
-            screen_size_uniform,
+            screen_size_uniform: IdWithBinding::new(screen_size_uniform, 0),
+            textures_heap: Vec::new(),
+            instance_count: 0,
             render_pass_desc_id,
-            render_pass_instance,
         }
     }
 
-    pub fn draw_text_line(
+    fn write_renderable_text(
         &mut self,
         context: &mut Context,
-        text: &str,
-        font_size: f32,
-        position: Vector2,
-        color: Color32,
-    ) -> Result<(), Error> {
-        let font_scale = font_size / RASTERIZED_FONT_SIZE as f32;
-        let char_count =
-            self.write_text_instance_data(context, text, font_scale, position, color)?;
-
-        self.render_pass_instance.instance_count += char_count as u32;
-
-        Ok(())
-    }
-
-    fn write_text_instance_data(
-        &mut self,
-        context: &mut Context,
-        text: &str,
-        font_scale: f32,
-        position: Vector2,
-        color: Color32,
-    ) -> Result<usize, Error> {
+        render_pass_instance: &mut RenderPassInstance,
+        renderable: &RenderableText,
+    ) {
         let font_atlas_size = self.font_texture.size();
 
-        let mut char_count = 0;
-        let mut pen_x = position.x;
-        let pen_y = position.y;
-        let instance_count = self.render_pass_instance.instance_count as usize;
+        let base_instance = self.instance_count;
+        let font_scale = renderable.font_size / RASTERIZED_FONT_SIZE as f32;
 
-        for ch in text.chars() {
-            self.font_texture.cache_character(context, ch)?;
+        for ch in renderable.text.chars() {
+            self.font_texture.cache_character(context, ch).unwrap();
         }
 
         let data =
             context.vertex_buffer_data::<TextVertex, TextInstance>(self.vertex_buffer_id);
 
-        for (i, ch) in text.chars().enumerate() {
+        let mut pen_pos = renderable.position;
+
+        for (i, ch) in renderable.text.chars().enumerate() {
             let (glyph, pos) = self.font_texture.find_glyph_layout(ch).unwrap();
             let scaled_advance = glyph.advance_x as f32 * font_scale;
 
             if glyph.width > 0 {
                 let scaled_width = glyph.width as f32 * font_scale;
                 let scaled_height = glyph.height as f32 * font_scale;
-                let x_offset = glyph.left as f32 * font_scale;
-                let y_offset = (glyph.top as f32 - glyph.height as f32) * font_scale;
+                let offset = Vector2::new(
+                    glyph.left as f32 * font_scale,
+                    (glyph.top as f32 - glyph.height as f32) * font_scale,
+                );
 
-                data.per_instance_data[instance_count + i] = TextInstance {
+                data.per_instance_data[base_instance + i] = TextInstance {
                     texel_coord: Vector2::new(pos.x as f32, pos.y as f32),
                     size: Vector2::new(scaled_width, scaled_height),
-                    position: Vector2::new(pen_x + x_offset, pen_y + y_offset),
-                    color: *color,
+                    position: pen_pos + offset,
+                    color: *renderable.color,
                     glyph_in_tex_size: Vector2::new(
                         glyph.width as f32,
                         glyph.height as f32,
@@ -178,25 +201,13 @@ impl TextDrawSystem {
                 };
             }
 
-            pen_x += scaled_advance as f32;
-            char_count += 1;
-            debug_assert!(instance_count + char_count < RECT_CAPACITY);
+            pen_pos.x += scaled_advance as f32;
+
+            render_pass_instance.instance_count += 1;
+            self.instance_count += 1;
+
+            debug_assert!(self.instance_count <= RECT_CAPACITY);
         }
-
-        Ok(char_count)
-    }
-
-    pub fn set_canvas_size(&mut self, context: &mut Context, size: Vector2) {
-        let data = context.uniform_buffer_data::<UniformData>(self.screen_size_uniform);
-        *(data.data) = UniformData { size };
-    }
-
-    pub fn update(&mut self, context: &mut Context) {
-        self.font_texture.upload_texture(context);
-        context.draw_render_passes(
-            *Color32::white(),
-            std::slice::from_ref(&self.render_pass_instance),
-        );
     }
 
     pub fn cleanup(&mut self, context: &mut Context) {
@@ -204,7 +215,6 @@ impl TextDrawSystem {
 
         self.font_texture.delete(context);
         context.delete_vertex_buffer(self.vertex_buffer_id);
-        context.delete_uniform_buffer(self.screen_size_uniform);
     }
 }
 

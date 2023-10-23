@@ -37,9 +37,9 @@ pub struct DivisionRenderPassInstance {
     pub vertex_count: u32,
     pub index_count: u32,
     pub instance_count: u32,
-    pub uniform_vertex_buffers: *mut DivisionIdWithBinding,
-    pub uniform_fragment_buffers: *mut DivisionIdWithBinding,
-    pub fragment_textures: *mut DivisionIdWithBinding,
+    pub uniform_vertex_buffers: *const DivisionIdWithBinding,
+    pub uniform_fragment_buffers: *const DivisionIdWithBinding,
+    pub fragment_textures: *const DivisionIdWithBinding,
 
     pub uniform_vertex_buffer_count: i32,
     pub uniform_fragment_buffer_count: i32,

@@ -139,7 +139,7 @@ impl LifecycleManagerBuilder for MyDelegateBuilder {
 }
 
 impl LifecycleManager for MyDelegate {
-    fn update(&mut self, context: &mut Context) {
+    fn draw(&mut self, context: &mut Context) {
         context.draw_render_passes(
             *Color32::white(),
             std::slice::from_ref(&self.render_pass_instance.instance)

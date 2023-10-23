@@ -163,12 +163,36 @@ impl RenderPassInstance {
         self
     }
 
+    pub unsafe fn set_uniform_vertex_buffer_from_ref<'a>(
+        &'a mut self,
+        buffer: &'a IdWithBinding,
+    ) {
+        self.uniform_vertex_buffers = std::slice::from_ref(buffer).as_ptr();
+        self.uniform_vertex_buffer_count = 1;
+    }
+
+    pub unsafe fn set_uniform_fragment_buffer_from_ref<'a>(
+        &'a mut self,
+        buffer: &'a IdWithBinding,
+    ) {
+        self.uniform_fragment_buffers = std::slice::from_ref(buffer).as_ptr();
+        self.uniform_fragment_buffer_count = 1;
+    }
+
+    pub unsafe fn set_uniform_fragment_texture_from_ref<'a>(
+        &'a mut self,
+        buffer: &'a IdWithBinding,
+    ) {
+        self.fragment_textures = std::slice::from_ref(buffer).as_ptr();
+        self.fragment_texture_count = 1;
+    }
+
     pub unsafe fn set_uniform_vertex_buffers<'a>(
         &'a mut self,
         buffers: &'a [IdWithBinding],
     ) {
         self.uniform_vertex_buffer_count = buffers.len() as i32;
-        self.uniform_vertex_buffers = buffers.as_ptr() as *mut IdWithBinding;
+        self.uniform_vertex_buffers = buffers.as_ptr()
     }
 
     pub unsafe fn set_uniform_fragment_buffers<'a>(
@@ -176,15 +200,15 @@ impl RenderPassInstance {
         buffers: &'a [IdWithBinding],
     ) {
         self.uniform_fragment_buffer_count = buffers.len() as i32;
-        self.uniform_fragment_buffers = buffers.as_ptr() as *mut IdWithBinding;
+        self.uniform_fragment_buffers = buffers.as_ptr();
     }
 
     pub unsafe fn set_uniform_fragment_textures<'a>(
         &'a mut self,
-        buffers: &'a [IdWithBinding]
+        buffers: &'a [IdWithBinding],
     ) {
         self.fragment_texture_count = buffers.len() as i32;
-        self.fragment_textures = buffers.as_ptr() as *mut IdWithBinding;
+        self.fragment_textures = buffers.as_ptr();
     }
 }
 
@@ -195,7 +219,7 @@ impl RenderPassInstanceOwned {
 
     pub fn uniform_vertex_buffers(mut self, buffers: &[IdWithBinding]) -> Self {
         self.uniform_vertex_buffers = Self::alloc_buffers(
-            self.uniform_vertex_buffers,
+            self.uniform_vertex_buffers as *mut IdWithBinding,
             self.uniform_vertex_buffer_count,
             buffers,
         );
@@ -206,7 +230,7 @@ impl RenderPassInstanceOwned {
 
     pub fn uniform_fragment_buffers(mut self, buffers: &[IdWithBinding]) -> Self {
         self.uniform_fragment_buffers = Self::alloc_buffers(
-            self.uniform_fragment_buffers,
+            self.uniform_fragment_buffers as *mut IdWithBinding,
             self.uniform_fragment_buffer_count,
             buffers,
         );
@@ -216,7 +240,7 @@ impl RenderPassInstanceOwned {
 
     pub fn fragment_textures(mut self, textures: &[IdWithBinding]) -> Self {
         self.fragment_textures = Self::alloc_buffers(
-            self.fragment_textures,
+            self.fragment_textures as *mut IdWithBinding,
             self.fragment_texture_count,
             textures,
         );

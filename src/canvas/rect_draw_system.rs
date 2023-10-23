@@ -92,10 +92,6 @@ impl RectDrawSystem {
         }
     }
 
-    pub fn before_frame_render(&mut self) {
-        self.instance_count = 0;
-    }
-
     fn create_new_pass(&mut self, texture_id: DivisionId) -> RenderPassInstance {
         let mut pass = RenderPassInstance::new(self.render_pass_descriptor)
             .vertices(VERTEX_PER_RECT, INDEX_PER_RECT)
