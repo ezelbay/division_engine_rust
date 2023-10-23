@@ -12,11 +12,11 @@ use division_engine_rust::{
         color::Color32,
         decoration::Decoration,
         rect::Rect,
-        rect_draw_system::RectDrawSystem,
+        rect_renderer::RectRenderer,
         renderable_rect::RenderableRect,
         renderable_text::RenderableText,
         renderer::{RenderQueue, Renderer},
-        text_draw_system::TextDrawSystem,
+        text_renderer::TextRenderer,
     },
     core::{
         Context, CoreRunner, DivisionId, Image, ImageSettings, LifecycleManager,
@@ -42,8 +42,8 @@ struct MyLifecycleManager {
     screen_size_uniform: DivisionId,
     render_draw_time: Instant,
 
-    rect_draw_system: RectDrawSystem,
-    text_draw_system: TextDrawSystem,
+    rect_draw_system: RectRenderer,
+    text_draw_system: TextRenderer,
 
     _white_texture: DivisionId,
 }
@@ -81,8 +81,8 @@ impl LifecycleManagerBuilder for MyLifecycleManagerBuilder {
             .unwrap();
 
         let manager = MyLifecycleManager {
-            rect_draw_system: RectDrawSystem::new(context, screen_size_uniform),
-            text_draw_system: TextDrawSystem::new(
+            rect_draw_system: RectRenderer::new(context, screen_size_uniform),
+            text_draw_system: TextRenderer::new(
                 context,
                 screen_size_uniform,
                 &Path::new("resources")

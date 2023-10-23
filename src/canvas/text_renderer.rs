@@ -14,7 +14,7 @@ use super::{
     renderer::{RenderQueue, Renderer},
 };
 
-pub struct TextDrawSystem {
+pub struct TextRenderer {
     font_texture: FontTexture,
     screen_size_uniform: IdWithBinding,
     textures_heap: Vec<IdWithBinding>,
@@ -60,7 +60,7 @@ const INDEX_PER_RECT: usize = 6;
 const RECT_CAPACITY: usize = 1024;
 const RASTERIZED_FONT_SIZE: usize = 64;
 
-impl<'a> Renderer for TextDrawSystem {
+impl<'a> Renderer for TextRenderer {
     type RenderableData = RenderableText;
 
     fn before_render_frame(&mut self, _: &mut Context) {
@@ -81,6 +81,7 @@ impl<'a> Renderer for TextDrawSystem {
         let mut render_pass = RenderPassInstance::new(self.render_pass_desc_id)
             .vertices(VERTEX_PER_RECT, INDEX_PER_RECT)
             .enable_instancing();
+
         unsafe {
             self.textures_heap
                 .push(IdWithBinding::new(self.font_texture.texture_id(), 0));
@@ -104,7 +105,7 @@ impl<'a> Renderer for TextDrawSystem {
     }
 }
 
-impl TextDrawSystem {
+impl TextRenderer {
     pub fn new(
         context: &mut Context,
         screen_size_uniform: DivisionId,
@@ -146,10 +147,10 @@ impl TextDrawSystem {
             )
             .unwrap();
 
-        TextDrawSystem {
+        TextRenderer {
             font_texture,
             vertex_buffer_id,
-            screen_size_uniform: IdWithBinding::new(screen_size_uniform, 0),
+            screen_size_uniform: IdWithBinding::new(screen_size_uniform, 1),
             textures_heap: Vec::new(),
             instance_count: 0,
             render_pass_desc_id,
@@ -163,8 +164,7 @@ impl TextDrawSystem {
         renderable: &RenderableText,
     ) {
         let font_atlas_size = self.font_texture.size();
-
-        let base_instance = self.instance_count;
+        let base_instance = render_pass_instance.instance_count as usize;
         let font_scale = renderable.font_size / RASTERIZED_FONT_SIZE as f32;
 
         for ch in renderable.text.chars() {

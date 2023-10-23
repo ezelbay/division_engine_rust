@@ -13,7 +13,7 @@ use super::{
     renderer::{Renderer, RenderQueue},
 };
 
-pub struct RectDrawSystem {
+pub struct RectRenderer {
     shader_id: DivisionId,
     vertex_buffer_id: DivisionId,
     render_pass_descriptor: DivisionId,
@@ -48,11 +48,11 @@ pub const RECT_CAPACITY: usize = 128;
 pub const VERTEX_PER_RECT: usize = 4;
 pub const INDEX_PER_RECT: usize = 6;
 
-impl RectDrawSystem {
+impl RectRenderer {
     pub fn new(
         context: &mut Context,
         screen_size_uniform_id: DivisionId,
-    ) -> RectDrawSystem {
+    ) -> RectRenderer {
         let shader_id = context
             .create_bundled_shader_program(
                 &Path::new("resources")
@@ -79,7 +79,7 @@ impl RectDrawSystem {
             )
             .unwrap();
 
-        RectDrawSystem {
+        RectRenderer {
             shader_id,
             screen_size_uniform: IdWithBinding {
                 id: screen_size_uniform_id,
@@ -122,7 +122,7 @@ impl RectDrawSystem {
     }
 }
 
-impl Renderer for RectDrawSystem {
+impl Renderer for RectRenderer {
     type RenderableData = RenderableRect;
 
     fn before_render_frame(&mut self, _: &mut Context) {
