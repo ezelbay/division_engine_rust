@@ -1,6 +1,7 @@
 use std::mem::MaybeUninit;
 
 use super::{
+    context::Error,
     ffi::{
         context::DivisionContext,
         vertex_buffer::{
@@ -11,7 +12,7 @@ use super::{
             DivisionVertexBufferDescriptor,
         },
     },
-    Context, DivisionId, context::Error,
+    Context, DivisionId,
 };
 
 pub use super::ffi::{
@@ -19,6 +20,7 @@ pub use super::ffi::{
     vertex_buffer::{
         DivisionRenderTopology as RenderTopology,
         DivisionVertexAttributeDescriptor as VertexAttributeDescriptor,
+        DivisionVertexBufferSize as VertexBufferSize,
     },
 };
 
@@ -41,17 +43,13 @@ pub struct VertexBufferData<'a, TVertexData, TInstanceData> {
 impl Context {
     pub fn create_vertex_buffer<TVertexData: VertexData, TInstanceData: VertexData>(
         &mut self,
-        vertex_count: usize,
-        index_count: usize,
-        instance_count: usize,
+        size: VertexBufferSize,
         topology: RenderTopology,
     ) -> Result<DivisionId, Error> {
         self.create_vertex_buffer_with_attributes(
             &TVertexData::vertex_attributes(),
             &TInstanceData::vertex_attributes(),
-            vertex_count,
-            index_count,
-            instance_count,
+            size,
             topology,
         )
     }
@@ -60,9 +58,7 @@ impl Context {
         &mut self,
         per_vertex_attributes: &[VertexAttributeDescriptor],
         per_instance_attributes: &[VertexAttributeDescriptor],
-        vertex_count: usize,
-        index_count: usize,
-        instance_count: usize,
+        size: VertexBufferSize,
         topology: RenderTopology,
     ) -> Result<DivisionId, Error> {
         let mut id = 0;
@@ -71,13 +67,11 @@ impl Context {
             if !division_engine_vertex_buffer_alloc(
                 &mut *self,
                 &DivisionVertexBufferDescriptor {
+                    size,
                     per_vertex_attributes: per_vertex_attributes.as_ptr(),
                     per_vertex_attribute_count: per_vertex_attributes.len() as i32,
                     per_instance_attributes: per_instance_attributes.as_ptr(),
                     per_instance_attribute_count: per_instance_attributes.len() as i32,
-                    vertex_count: vertex_count as i32,
-                    index_count: index_count as i32,
-                    instance_count: instance_count as i32,
                     topology,
                 },
                 &mut id,
@@ -107,23 +101,24 @@ impl Context {
             let per_vert_ptr = borrowed.vertex_data_ptr as *mut TVertex;
             let per_inst_ptr = borrowed.instance_data_ptr as *mut TInstance;
             let index_ptr = borrowed.index_data_ptr as *mut u32;
-            let vertex_count = borrowed.vertex_count as usize;
-            let index_count = borrowed.index_count as usize;
-            let instance_count = borrowed.instance_count as usize;
+            let buff_size = &borrowed.size;
 
             return VertexBufferData {
                 ctx: &mut *self,
-                borrowed,
                 vertex_buffer_id,
                 per_vertex_data: std::slice::from_raw_parts_mut(
                     per_vert_ptr,
-                    vertex_count,
+                    buff_size.vertex_count as usize,
                 ),
                 per_instance_data: std::slice::from_raw_parts_mut(
                     per_inst_ptr,
-                    instance_count,
+                    buff_size.instance_count as usize,
                 ),
-                vertex_indices: std::slice::from_raw_parts_mut(index_ptr, index_count),
+                vertex_indices: std::slice::from_raw_parts_mut(
+                    index_ptr,
+                    buff_size.index_count as usize,
+                ),
+                borrowed,
             };
         }
     }

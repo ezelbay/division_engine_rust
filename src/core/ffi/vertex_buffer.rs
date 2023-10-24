@@ -16,25 +16,28 @@ pub struct DivisionVertexAttributeDescriptor {
 }
 
 #[repr(C)]
+pub struct DivisionVertexBufferSize {
+    pub vertex_count: u32,
+    pub index_count: u32,
+    pub instance_count: u32,
+}
+
+#[repr(C)]
 pub struct DivisionVertexBufferDescriptor {
+    pub size: DivisionVertexBufferSize,
     pub per_vertex_attributes: *const DivisionVertexAttributeDescriptor,
     pub per_instance_attributes: *const DivisionVertexAttributeDescriptor,
     pub per_vertex_attribute_count: i32,
     pub per_instance_attribute_count: i32,
-    pub vertex_count: i32,
-    pub index_count: i32,
-    pub instance_count: i32,
     pub topology: DivisionRenderTopology,
 }
 
 #[repr(C)]
 pub struct DivisionVertexBufferBorrowedData {
+    pub size: DivisionVertexBufferSize,
     pub vertex_data_ptr: *mut c_void,
     pub index_data_ptr: *mut c_void,
     pub instance_data_ptr: *mut c_void,
-    pub vertex_count: u32,
-    pub index_count: u32,
-    pub instance_count: u32,
 }
 
 extern "C" {

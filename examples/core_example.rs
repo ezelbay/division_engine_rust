@@ -2,7 +2,7 @@ use division_engine_rust::{core::{
         Context, CoreRunner, IdWithBinding, Image, ImageSettings,
         LifecycleManager, LifecycleManagerBuilder, RenderPassDescriptor,
         RenderPassInstance, RenderPassInstanceOwned, RenderTopology, ShaderVariableType,
-        VertexAttributeDescriptor, VertexData,
+        VertexAttributeDescriptor, VertexData, VertexBufferSize,
     }, canvas::color::Color32};
 use division_math::{Matrix4x4, Vector2, Vector3, Vector4};
 use std::path::Path;
@@ -80,9 +80,11 @@ impl LifecycleManagerBuilder for MyDelegateBuilder {
 
         let vertex_buffer_id = context
             .create_vertex_buffer::<Vert, Inst>(
-                vertices_data.len(),
-                indices.len(),
-                instances_data.len(),
+                VertexBufferSize {
+                    vertex_count: vertices_data.len() as u32,
+                    index_count: indices.len() as u32,
+                    instance_count: instances_data.len() as u32
+                },
                 RenderTopology::Triangles,
             )
             .unwrap();

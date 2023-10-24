@@ -5,7 +5,7 @@ use division_math::{Vector2, Vector4};
 use crate::core::{
     AlphaBlend, AlphaBlendOperation, Context, DivisionId, IdWithBinding,
     RenderPassDescriptor, RenderPassInstance, RenderTopology,
-    ShaderVariableType, VertexAttributeDescriptor, VertexBufferData, VertexData,
+    ShaderVariableType, VertexAttributeDescriptor, VertexBufferData, VertexData, VertexBufferSize,
 };
 
 use super::{
@@ -200,9 +200,11 @@ fn generate_rect_drawer_vertex_data(context: &mut Context, vertex_buffer_id: Div
 fn make_vertex_buffer(context: &mut Context) -> DivisionId {
     context
         .create_vertex_buffer::<RectVertexData, RectInstanceData>(
-            VERTEX_PER_RECT,
-            INDEX_PER_RECT,
-            RECT_CAPACITY,
+            VertexBufferSize {
+                vertex_count: VERTEX_PER_RECT as u32,
+                index_count: INDEX_PER_RECT as u32,
+                instance_count: RECT_CAPACITY as u32
+            },
             RenderTopology::Triangles,
         )
         .unwrap()

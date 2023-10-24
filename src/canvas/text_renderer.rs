@@ -6,7 +6,7 @@ use division_math::{Vector2, Vector4};
 use crate::core::{
     AlphaBlend, AlphaBlendOperation, Context, DivisionId, FontTexture, IdWithBinding,
     RenderPassDescriptor, RenderPassInstance, RenderTopology, ShaderVariableType,
-    VertexAttributeDescriptor, VertexData,
+    VertexAttributeDescriptor, VertexData, VertexBufferSize,
 };
 
 use super::{
@@ -82,9 +82,11 @@ impl TextRenderer {
 
         let vertex_buffer_id = context
             .create_vertex_buffer::<TextVertex, TextInstance>(
-                VERTEX_PER_RECT,
-                INDEX_PER_RECT,
-                RECT_CAPACITY,
+                VertexBufferSize {
+                    vertex_count: VERTEX_PER_RECT as u32,
+                    index_count: INDEX_PER_RECT as u32,
+                    instance_count: RECT_CAPACITY as u32,
+                },
                 RenderTopology::Triangles,
             )
             .unwrap();
