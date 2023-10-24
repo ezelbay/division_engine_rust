@@ -6,7 +6,7 @@ use division_math::{Vector2, Vector4};
 use crate::core::{
     AlphaBlend, AlphaBlendOperation, Context, DivisionId, FontTexture, IdWithBinding,
     RenderPassDescriptor, RenderPassInstance, RenderTopology, ShaderVariableType,
-    VertexAttributeDescriptor, VertexData, VertexBufferSize,
+    VertexAttributeDescriptor, VertexBufferSize, VertexData,
 };
 
 use super::{
@@ -18,9 +18,10 @@ pub struct TextRenderer {
     font_texture: FontTexture,
     screen_size_uniform: IdWithBinding,
     textures_heap: Vec<IdWithBinding>,
-    instance_count: usize,
     vertex_buffer_id: u32,
     render_pass_desc_id: u32,
+    instance_count: u32,
+    instance_capacity: u32,
 }
 
 #[repr(C, packed)]
@@ -58,9 +59,10 @@ struct TextInstance {
 const TEXTURE_SHADER_LOCATION: u32 = 0;
 const SCREEN_SIZE_UNIFORM_LOCATION: u32 = 1;
 
-const VERTEX_PER_RECT: usize = 4;
-const INDEX_PER_RECT: usize = 6;
-const RECT_CAPACITY: usize = 1024;
+const VERTEX_PER_RECT: u32 = 4;
+const INDEX_PER_RECT: u32 = 6;
+const DEFAULT_RECT_CAPACITY: u32 = 1024;
+
 const RASTERIZED_FONT_SIZE: usize = 64;
 
 impl TextRenderer {
@@ -69,6 +71,20 @@ impl TextRenderer {
         screen_size_uniform_id: DivisionId,
         font_path: &Path,
     ) -> Self {
+        Self::with_capacity(
+            context,
+            screen_size_uniform_id,
+            font_path,
+            DEFAULT_RECT_CAPACITY,
+        )
+    }
+
+    pub fn with_capacity(
+        context: &mut Context,
+        screen_size_uniform_id: DivisionId,
+        font_path: &Path,
+        characters_capacity: u32,
+    ) -> TextRenderer {
         let font_texture =
             FontTexture::new(context, font_path, RASTERIZED_FONT_SIZE).unwrap();
         let shader_id = context
@@ -83,9 +99,9 @@ impl TextRenderer {
         let vertex_buffer_id = context
             .create_vertex_buffer::<TextVertex, TextInstance>(
                 VertexBufferSize {
-                    vertex_count: VERTEX_PER_RECT as u32,
-                    index_count: INDEX_PER_RECT as u32,
-                    instance_count: RECT_CAPACITY as u32,
+                    vertex_count: VERTEX_PER_RECT,
+                    index_count: INDEX_PER_RECT,
+                    instance_count: characters_capacity,
                 },
                 RenderTopology::Triangles,
             )
@@ -117,10 +133,11 @@ impl TextRenderer {
             textures_heap: Vec::new(),
             instance_count: 0,
             render_pass_desc_id,
+            instance_capacity: characters_capacity,
         }
     }
 
-    fn write_renderable_text(
+    fn add_text_to_pass(
         &mut self,
         context: &mut Context,
         render_pass_instance: &mut RenderPassInstance,
@@ -130,8 +147,24 @@ impl TextRenderer {
         let base_instance = render_pass_instance.instance_count as usize;
         let font_scale = renderable.font_size / RASTERIZED_FONT_SIZE as f32;
 
-        for ch in renderable.text.chars() {
-            self.font_texture.cache_character(context, ch).unwrap();
+        let char_count = {
+            let mut char_count = 0;
+            for ch in renderable.text.chars() {
+                self.font_texture.cache_character(context, ch).unwrap();
+                char_count += 1;
+            }
+            char_count
+        };
+
+        if self.instance_count + char_count > self.instance_capacity {
+            context.vertex_buffer_resize(
+                self.vertex_buffer_id,
+                VertexBufferSize {
+                    vertex_count: VERTEX_PER_RECT,
+                    index_count: INDEX_PER_RECT,
+                    instance_count: std::cmp::max(1, self.instance_capacity * 2) as u32,
+                },
+            );
         }
 
         let data =
@@ -168,8 +201,6 @@ impl TextRenderer {
 
             render_pass_instance.instance_count += 1;
             self.instance_count += 1;
-
-            debug_assert!(self.instance_count <= RECT_CAPACITY);
         }
     }
 
@@ -200,7 +231,7 @@ impl<'a> Renderer for TextRenderer {
         }
 
         let mut render_pass = RenderPassInstance::new(self.render_pass_desc_id)
-            .vertices(VERTEX_PER_RECT, INDEX_PER_RECT)
+            .vertices(VERTEX_PER_RECT as usize, INDEX_PER_RECT as usize)
             .enable_instancing();
 
         unsafe {
@@ -216,7 +247,7 @@ impl<'a> Renderer for TextRenderer {
         }
 
         for renderable in data {
-            self.write_renderable_text(context, &mut render_pass, renderable)
+            self.add_text_to_pass(context, &mut render_pass, renderable)
         }
 
         render_queue.enqueue_render_pass(render_pass);

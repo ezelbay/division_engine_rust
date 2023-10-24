@@ -63,4 +63,10 @@ extern "C" {
         vertex_buffer: u32,
         data_pointer: *mut DivisionVertexBufferBorrowedData,
     );
+
+    pub fn division_engine_vertex_buffer_resize(
+        ctx: *mut DivisionContext,
+        vertex_buffer: u32,
+        new_size: DivisionVertexBufferSize,
+    );
 }

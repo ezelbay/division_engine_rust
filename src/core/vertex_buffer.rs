@@ -7,7 +7,7 @@ use super::{
         vertex_buffer::{
             division_engine_vertex_buffer_alloc,
             division_engine_vertex_buffer_borrow_data,
-            division_engine_vertex_buffer_free,
+            division_engine_vertex_buffer_free, division_engine_vertex_buffer_resize,
             division_engine_vertex_buffer_return_data, DivisionVertexBufferBorrowedData,
             DivisionVertexBufferDescriptor,
         },
@@ -65,7 +65,7 @@ impl Context {
 
         unsafe {
             if !division_engine_vertex_buffer_alloc(
-                &mut *self,
+                self,
                 &DivisionVertexBufferDescriptor {
                     size,
                     per_vertex_attributes: per_vertex_attributes.as_ptr(),
@@ -85,6 +85,16 @@ impl Context {
         Ok(id)
     }
 
+    pub fn vertex_buffer_resize(
+        &mut self,
+        vertex_buffer_id: DivisionId,
+        new_size: VertexBufferSize,
+    ) {
+        unsafe {
+            division_engine_vertex_buffer_resize(self, vertex_buffer_id, new_size);
+        }
+    }
+
     pub fn vertex_buffer_data<'a, TVertex, TInstance>(
         &'a mut self,
         vertex_buffer_id: DivisionId,
@@ -92,7 +102,7 @@ impl Context {
         unsafe {
             let mut borrowed = MaybeUninit::uninit();
             division_engine_vertex_buffer_borrow_data(
-                &mut *self,
+                self,
                 vertex_buffer_id,
                 borrowed.as_mut_ptr(),
             );
