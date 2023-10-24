@@ -105,9 +105,14 @@ impl LifecycleManager for MyLifecycleManager {
     fn draw(&mut self, context: &mut Context) {
         let now = Instant::now();
         let render_time_diff = (now - self.render_draw_time).as_millis();
+        let input = context.get_input();
 
         let last_text = self.texts.last_mut().unwrap();
-        last_text.text = format!("The overall render time is: {render_time_diff} ms");
+        last_text.text = format!(
+            "Frame render time: {render_time_diff} ms.\
+             Mouse position: x: {}, y: {} . Mouse left button state {:?}",
+            input.mouse.pos_x, input.mouse.pos_y, input.mouse.left_button
+        );
 
         self.update_window_size(context);
 
@@ -186,7 +191,7 @@ fn create_texts() -> Vec<RenderableText> {
         },
         RenderableText {
             color: Color32::red(),
-            position: Vector2::new(512., 512.),
+            position: Vector2::new(128., 512.),
             font_size: 20.,
             text: String::from("Another one!"),
         },

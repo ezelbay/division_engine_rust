@@ -22,6 +22,7 @@ pub struct DivisionContext {
     pub uniform_buffer_context: *const c_void,
     pub texture_context: *const c_void,
     pub render_pass_context: *const c_void,
+    pub input_context: *const c_void,
     pub font_context: *const c_void,
 
     pub user_data: *const c_void,
