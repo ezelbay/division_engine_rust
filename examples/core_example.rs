@@ -128,8 +128,8 @@ impl LifecycleManagerBuilder for MyDelegateBuilder {
 
         let render_pass_instance = RenderPassInstanceOwned::new(
             RenderPassInstance::new(pass_desc_id)
-                .vertices(vertices_data.len(), indices.len())
-                .instances(instances_data.len()),
+                .vertices(vertices_data.len() as u32, indices.len() as u32)
+                .instances(instances_data.len() as u32),
         )
         .fragment_textures(&[IdWithBinding::new(texture_id, 0)])
         .uniform_fragment_buffers(&[IdWithBinding::new(buff_id, 1)]);

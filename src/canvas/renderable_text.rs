@@ -6,5 +6,5 @@ pub struct RenderableText {
     pub position: Vector2,
     pub color: Color32,
     pub text: String,
-    pub font_size: f32
+    pub font_size: f32,
 }

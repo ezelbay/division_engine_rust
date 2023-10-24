@@ -4,14 +4,14 @@ use division_engine_rust_macro::location;
 use division_math::{Vector2, Vector4};
 
 use crate::core::{
-    AlphaBlend, AlphaBlendOperation, Context, DivisionId, FontTexture, IdWithBinding,
+    AlphaBlend, AlphaBlendOperation, Context, DivisionId, IdWithBinding,
     RenderPassDescriptor, RenderPassInstance, RenderTopology, ShaderVariableType,
     VertexAttributeDescriptor, VertexBufferSize, VertexData,
 };
 
 use super::{
     renderable_text::RenderableText,
-    renderer::{RenderQueue, Renderer},
+    renderer::{RenderQueue, Renderer}, font_texture::FontTexture,
 };
 
 pub struct TextRenderer {
@@ -231,7 +231,7 @@ impl<'a> Renderer for TextRenderer {
         }
 
         let mut render_pass = RenderPassInstance::new(self.render_pass_desc_id)
-            .vertices(VERTEX_PER_RECT as usize, INDEX_PER_RECT as usize)
+            .vertices(VERTEX_PER_RECT, INDEX_PER_RECT)
             .enable_instancing();
 
         unsafe {

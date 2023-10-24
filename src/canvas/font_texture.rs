@@ -1,7 +1,7 @@
 use division_math::Vector2;
 use std::{alloc::Layout, path::Path};
 
-use super::{context, Context, DivisionId, FontGlyph, TextureDescriptor, TextureFormat};
+use crate::core::{context, Context, DivisionId, FontGlyph, TextureDescriptor, TextureFormat};
 
 #[derive(Debug)]
 pub enum Error {
@@ -46,7 +46,7 @@ impl FontTexture {
         font_path: &Path,
         font_size: usize,
     ) -> Result<Self, Error> {
-        Self::new_with_resolution(
+        Self::with_resolution(
             context,
             font_path,
             font_size,
@@ -55,7 +55,7 @@ impl FontTexture {
         )
     }
 
-    pub fn new_with_resolution(
+    pub fn with_resolution(
         context: &mut Context,
         font_path: &Path,
         font_size: usize,

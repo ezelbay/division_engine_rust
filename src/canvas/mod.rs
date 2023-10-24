@@ -1,6 +1,7 @@
 pub mod border_radius;
 pub mod color;
 pub mod decoration;
+pub mod font_texture;
 pub mod rect;
 pub mod rect_renderer;
 pub mod renderable_rect;

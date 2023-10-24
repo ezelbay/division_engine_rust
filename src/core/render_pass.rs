@@ -137,15 +137,15 @@ impl RenderPassInstance {
         }
     }
 
-    pub fn vertices(mut self, vertex_count: usize, index_count: usize) -> Self {
-        self.vertex_count = vertex_count as u32;
-        self.index_count = index_count as u32;
+    pub fn vertices(mut self, vertex_count: u32, index_count: u32) -> Self {
+        self.vertex_count = vertex_count;
+        self.index_count = index_count;
 
         self
     }
 
-    pub fn first_vertex(mut self, first_vertex: usize) -> Self {
-        self.first_vertex = first_vertex as u32;
+    pub fn first_vertex(mut self, first_vertex: u32) -> Self {
+        self.first_vertex = first_vertex;
 
         self
     }
@@ -156,8 +156,8 @@ impl RenderPassInstance {
         self
     }
 
-    pub fn instances(mut self, instance_count: usize) -> Self {
-        self.instance_count = instance_count as u32;
+    pub fn instances(mut self, instance_count: u32) -> Self {
+        self.instance_count = instance_count;
         self.capabilities_mask |= RenderPassIsntanceCapabilityMask::InstancedRendering;
 
         self

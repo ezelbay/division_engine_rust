@@ -111,7 +111,7 @@ impl RectRenderer {
 
     fn create_new_pass(&mut self, texture_id: DivisionId) -> RenderPassInstance {
         let mut pass = RenderPassInstance::new(self.render_pass_descriptor)
-            .vertices(VERTEX_PER_RECT as usize, INDEX_PER_RECT as usize)
+            .vertices(VERTEX_PER_RECT, INDEX_PER_RECT)
             .enable_instancing();
         pass.first_instance = self.instance_count as u32;
 
