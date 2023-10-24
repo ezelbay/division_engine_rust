@@ -69,16 +69,20 @@ fn get_build_options() -> DivisionBuildOptions {
 
     let common_opts = build_common();
 
-    DivisionBuildOptions { 
+    DivisionBuildOptions {
         static_libs: Vec::from_iter(
-            platform_opts.static_libs.into_iter().chain(common_opts.static_libs.into_iter())
-        ), 
+            platform_opts
+                .static_libs
+                .into_iter()
+                .chain(common_opts.static_libs.into_iter()),
+        ),
         dynamic_libs: Vec::from_iter(
-            platform_opts.dynamic_libs.into_iter().chain(common_opts.dynamic_libs.into_iter())
-        ), 
-        frameworks: Vec::from_iter(
-            platform_opts.frameworks
-        )
+            platform_opts
+                .dynamic_libs
+                .into_iter()
+                .chain(common_opts.dynamic_libs.into_iter()),
+        ),
+        frameworks: Vec::from_iter(platform_opts.frameworks),
     }
 }
 
@@ -86,7 +90,12 @@ fn build_with_osx_metal() -> DivisionBuildOptions {
     DivisionBuildOptions {
         dynamic_libs: make_strings_vec(vec!["z"]),
         static_libs: make_strings_vec(vec!["osx_metal_internal"]),
-        frameworks: make_strings_vec(vec!["Metal", "MetalKit", "AppKit"]),
+        frameworks: make_strings_vec(vec![
+            "Metal",
+            "MetalKit",
+            "AppKit",
+            "GameController",
+        ]),
     }
 }
 
@@ -99,10 +108,10 @@ fn build_with_glfw() -> DivisionBuildOptions {
 }
 
 fn build_common() -> DivisionBuildOptions {
-    DivisionBuildOptions { 
-        static_libs: vec![ freetype_name() ], 
-        dynamic_libs: make_strings_vec(vec!["z"]), 
-        frameworks: Vec::new()
+    DivisionBuildOptions {
+        static_libs: vec![freetype_name()],
+        dynamic_libs: make_strings_vec(vec!["z"]),
+        frameworks: Vec::new(),
     }
 }
 
@@ -113,9 +122,10 @@ fn make_strings_vec(strings: Vec<&str>) -> Vec<String> {
 fn freetype_name() -> String {
     let profile = env::var("PROFILE");
     match profile {
-        Ok(p) if p.as_str() == "debug"  => "freetyped",
+        Ok(p) if p.as_str() == "debug" => "freetyped",
         _ => "freetype",
-    }.to_string()
+    }
+    .to_string()
 }
 
 fn compile_shaders_to_msl() {
@@ -163,13 +173,16 @@ fn compile_shaders_to_msl() {
             }
         };
 
-        let msl_src =
-            match shader_compiler.compile_glsl_to_metal(&glsl_src, entry_point, shader_type) {
-                Ok(v) => v,
-                Err(_) => {
-                    panic!("Failed to compile the shader by path: {:?}", path);
-                }
-            };
+        let msl_src = match shader_compiler.compile_glsl_to_metal(
+            &glsl_src,
+            entry_point,
+            shader_type,
+        ) {
+            Ok(v) => v,
+            Err(_) => {
+                panic!("Failed to compile the shader by path: {:?}", path);
+            }
+        };
 
         if fs::write(format!("{}.metal", path.to_string_lossy()), msl_src).is_err() {
             eprint!("Failed to write msl output by path: {:?}", path);
@@ -178,7 +191,8 @@ fn compile_shaders_to_msl() {
 }
 
 fn copy_resources_to_build(path: &PathBuf) {
-    fs_extra::dir::remove(path.join("resources")).expect("Failed to delete resources folder");
+    fs_extra::dir::remove(path.join("resources"))
+        .expect("Failed to delete resources folder");
 
     let mut copy_options = fs_extra::dir::CopyOptions::new();
     copy_options.copy_inside = true;

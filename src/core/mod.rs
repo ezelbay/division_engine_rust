@@ -5,6 +5,7 @@ pub mod core_runner;
 pub mod font;
 pub mod lifecycle_manager;
 pub mod image;
+pub mod input;
 pub mod render_pass;
 pub mod shader;
 pub mod data_structures;
