@@ -1,6 +1,7 @@
 pub mod context;
 pub mod font;
 pub mod input;
+pub mod keycode;
 pub mod lifecycle;
 pub mod render_pass_descriptor;
 pub mod render_pass_instance;

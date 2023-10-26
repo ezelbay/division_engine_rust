@@ -20,7 +20,7 @@ use division_engine_rust::{
     },
     core::{
         Context, CoreRunner, DivisionId, Image, ImageSettings, LifecycleManager,
-        LifecycleManagerBuilder, TextureDescriptor, TextureFormat,
+        LifecycleManagerBuilder, TextureDescriptor, TextureFormat, input::Keycode
     },
 };
 
@@ -110,8 +110,9 @@ impl LifecycleManager for MyLifecycleManager {
         let last_text = self.texts.last_mut().unwrap();
         last_text.text = format!(
             "Frame render time: {render_time_diff} ms.\
-             Mouse position: x: {}, y: {} . Mouse left button state {:?}",
-            input.mouse.pos_x, input.mouse.pos_y, input.mouse.left_button
+             Mouse position: x: {}, y: {} . Keyboard Enter state {:?} ",
+            input.mouse.pos_x, input.mouse.pos_y, 
+            input.keyboard.is_key_pressed(Keycode::Enter)
         );
 
         self.update_window_size(context);
