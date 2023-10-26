@@ -4,9 +4,8 @@ use super::context::DivisionContext;
 #[derive(Debug)]
 pub enum DivisionInputState
 {
-    Down,
-    Hold,
-    Up,
+    Up = 0,
+    Down = 1,
 }
 
 #[repr(C)]
