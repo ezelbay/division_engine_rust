@@ -20,7 +20,7 @@ use division_engine_rust::{
     },
     core::{
         Context, CoreRunner, DivisionId, Image, ImageSettings, LifecycleManager,
-        LifecycleManagerBuilder, TextureDescriptor, TextureFormat, input::Keycode
+        LifecycleManagerBuilder, TextureDescriptor, TextureFormat, input::{Keycode, MouseButton}
     },
 };
 
@@ -110,8 +110,9 @@ impl LifecycleManager for MyLifecycleManager {
         let last_text = self.texts.last_mut().unwrap();
         last_text.text = format!(
             "Frame render time: {render_time_diff} ms.\
-             Mouse position: x: {}, y: {} . Keyboard Enter state {:?} ",
+             Mouse position: x: {}, y: {}. Left button: {} Keyboard Enter state {:?} ",
             input.mouse.pos_x, input.mouse.pos_y, 
+            input.mouse.is_button_pressed(MouseButton::Left),
             input.keyboard.is_key_pressed(Keycode::Enter)
         );
 
@@ -192,7 +193,7 @@ fn create_texts() -> Vec<RenderableText> {
         },
         RenderableText {
             color: Color32::red(),
-            position: Vector2::new(128., 512.),
+            position: Vector2::new(0., 512.),
             font_size: 20.,
             text: String::from("Another one!"),
         },

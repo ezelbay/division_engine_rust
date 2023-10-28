@@ -1,5 +1,5 @@
 use super::context::DivisionContext;
-use super::keycode::{DIVISION_KEYCODE_COUNT, Keycode};
+use super::keycode::Keycode;
 
 #[repr(u32)]
 pub enum MouseButton {
@@ -21,7 +21,7 @@ pub struct DivisionMouseInput
 #[repr(C)]
 pub struct DivisionKeyboardInput
 {
-    key_state_mask: [u32; (DIVISION_KEYCODE_COUNT as usize / 32) + 1]
+    key_state_mask: [u32; 4]
 }
 
 #[repr(C)]

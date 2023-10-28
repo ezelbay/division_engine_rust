@@ -88,9 +88,9 @@ pub enum Keycode {
     F10 = 76,
     F11 = 77,
     F12 = 78,
-    F13Print = 79,
-    F14Scroll = 80,
-    F15Pause = 81,
+    F13 = 79,
+    F14 = 80,
+    F15 = 81,
     F16 = 82,
     F17 = 83,
     F18 = 84,
@@ -122,8 +122,10 @@ pub enum Keycode {
     End = 107,
     PageUp = 108,
     PageDown = 109,
-    Eject = 110,
-}
 
-pub const DIVISION_KEYCODE_COUNT: u32 =
-    Keycode::Eject as u32 + 1;
+    Print = 110,
+    Scroll = 111,
+    Pause = 112,
+    
+    Eject = 113,
+}
